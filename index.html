@@ -4704,6 +4704,20 @@ textarea.form-input {
     </div>
 </div>
 
+<!-- RESIDENT DETAIL PANEL -->
+<div class="detail-panel" id="residentDetail">
+    <div class="detail-header">
+        <div>
+            <div style="font-size: 16px; font-weight: 600;" id="residentDetailName">Resident</div>
+            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;" id="residentDetailRole">resident</div>
+        </div>
+        <button class="btn btn-ghost" onclick="closeResidentDetail()" style="font-size: 20px;" title="Close (Esc)">&#10005;</button>
+    </div>
+    <div class="detail-body" id="residentDetailBody">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
 <!-- CONTENT CREATION MODAL -->
 <div class="modal-overlay" id="contentModal">
     <div class="modal">
@@ -5333,22 +5347,41 @@ function updateResidentsPage() {
         const joined = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         const langFlags = { en: 'EN', es: 'ES', zh: 'ZH', de: 'DE' };
         const flag = langFlags[p.language_pref] || '--';
-        const pushStatus = p.push_token ? '' : '—';
 
-        return `<tr style="cursor:pointer" onclick="viewResident('${p.id}')">
-            <td style="font-weight: 500;">${p.display_name || 'Anonymous'}</td>
-            <td style="color: var(--text-secondary);">${p.email || '—'}</td>
-            <td>${flag} ${(p.language_pref || 'en').toUpperCase()}</td>
-            <td><span class="tag" style="background: ${p.role === 'admin' ? 'rgba(245,148,58,0.15)' : p.role === 'staff' ? 'rgba(0,194,212,0.15)' : 'rgba(86,112,136,0.15)'}; color: ${p.role === 'admin' ? 'var(--warm-accent)' : p.role === 'staff' ? 'var(--accent)' : 'var(--text-secondary)'};">${p.role || 'resident'}</span></td>
-            <td>${pushStatus}</td>
+        // Calculate last active relative time
+        let lastActive = '—';
+        if (p.updated_at) {
+            const diff = Date.now() - new Date(p.updated_at).getTime();
+            const mins = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            if (mins < 60) lastActive = mins + ' min ago';
+            else if (hours < 24) lastActive = hours + 'h ago';
+            else lastActive = days + 'd ago';
+        }
+
+        // Count reports for this user
+        const reportCount = liveData.reports ? liveData.reports.filter(r => r.user_id === p.id).length : 0;
+
+        // Active if updated in last 30 days
+        const isActive = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 30 * 86400000;
+        const statusClass = isActive ? 'status-resolved' : 'status-draft';
+        const statusLabel = isActive ? 'Active' : 'Inactive';
+
+        // Avatar — show photo if available, otherwise initials
+        const initials = (p.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const avatarHtml = p.avatar_url
+            ? `<img src="${p.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
+            : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
+
+        return `<tr style="cursor:pointer" onclick="openResidentDetail('${p.id}')" data-status="${isActive ? 'active' : 'inactive'}">
+            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}</div></div></div></td>
+            <td style="color: var(--text-secondary); font-size: 12px;">${p.email || '—'}</td>
             <td style="color: var(--text-tertiary);">${joined}</td>
-            <td>
-                <select class="form-input" style="padding: 4px 8px; font-size: 11px; width: auto;" onchange="updateResidentRole('${p.id}', this.value)" onclick="event.stopPropagation()">
-                    <option value="resident" ${p.role === 'resident' ? 'selected' : ''}>Resident</option>
-                    <option value="staff" ${p.role === 'staff' ? 'selected' : ''}>Staff</option>
-                    <option value="admin" ${p.role === 'admin' ? 'selected' : ''}>Admin</option>
-                </select>
-            </td>
+            <td style="color: var(--text-secondary); font-size: 12px;">${lastActive}</td>
+            <td style="font-weight: 500;">${reportCount}</td>
+            <td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">${flag}</span></td>
+            <td><span class="status ${statusClass}" style="font-size: 11px;"><span class="status-dot"></span>${statusLabel}</span></td>
         </tr>`;
     }).join('');
 }
@@ -5831,6 +5864,7 @@ document.addEventListener('keydown', (e) => {
         closeBizDetail();
         closeEnforcementDetail();
         closeLeaderModal();
+        closeResidentDetail();
     }
 });
 
@@ -7656,8 +7690,8 @@ function filterResidentTable() {
 // Initialize with mayor role on load
 switchRole('mayor');
 
-// View resident detail
-function viewResident(userId) {
+// View resident detail — styled panel
+function openResidentDetail(userId) {
     if (!liveData.profiles) return;
 
     const resident = liveData.profiles.find(p => p.id === userId);
@@ -7666,18 +7700,149 @@ function viewResident(userId) {
         return;
     }
 
-    const info = [
-        `Name: ${resident.display_name || 'Not set'}`,
-        `Email: ${resident.email || 'Not set'}`,
-        `Phone: ${resident.phone || 'Not set'}`,
-        `Address: ${resident.address || 'Not set'}`,
-        `Role: ${resident.role || 'resident'}`,
-        `Language: ${resident.language_pref || 'en'}`,
-        `Push notifications: ${resident.push_token ? 'Enabled' : 'Disabled'}`,
-        `Joined: ${resident.created_at ? new Date(resident.created_at).toLocaleDateString() : 'Unknown'}`
-    ].join('\n');
+    // Header
+    document.getElementById('residentDetailName').textContent = resident.display_name || 'Anonymous';
+    document.getElementById('residentDetailRole').textContent = (resident.role || 'resident').charAt(0).toUpperCase() + (resident.role || 'resident').slice(1);
 
-    alert(info);
+    // Count reports
+    const reportCount = liveData.reports ? liveData.reports.filter(r => r.user_id === userId).length : 0;
+    const userReports = liveData.reports ? liveData.reports.filter(r => r.user_id === userId) : [];
+
+    // Avatar
+    const initials = (resident.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const avatarHtml = resident.avatar_url
+        ? `<img src="${resident.avatar_url}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
+        : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; border: 3px solid var(--accent);">${initials}</div>`;
+
+    // Joined date
+    const joined = resident.created_at ? new Date(resident.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown';
+
+    // Last active
+    let lastActive = 'Unknown';
+    if (resident.updated_at) {
+        const diff = Date.now() - new Date(resident.updated_at).getTime();
+        const mins = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+        if (mins < 60) lastActive = mins + ' min ago';
+        else if (hours < 24) lastActive = hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+        else lastActive = days + ' day' + (days > 1 ? 's' : '') + ' ago';
+    }
+
+    // Language display
+    const langNames = { en: 'English', es: 'Spanish', zh: 'Chinese', de: 'German' };
+    const langLabel = langNames[resident.language_pref] || resident.language_pref || 'English';
+
+    // Push notification status
+    const pushStatus = resident.push_token ? 'Enabled' : 'Disabled';
+
+    // Build report history
+    let reportsHtml = '';
+    if (userReports.length > 0) {
+        reportsHtml = userReports.slice(0, 5).map(r => {
+            const statusClass = r.status === 'resolved' ? 'status-resolved' : r.status === 'in_progress' ? 'status-progress' : 'status-open';
+            const statusLabel = r.status === 'resolved' ? 'Resolved' : r.status === 'in_progress' ? 'In Progress' : 'Open';
+            const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return `<div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
+                <div>
+                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">${r.category || 'Report'}</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">${date}</div>
+                </div>
+                <span class="status ${statusClass}" style="font-size: 11px;"><span class="status-dot"></span>${statusLabel}</span>
+            </div>`;
+        }).join('');
+        if (userReports.length > 5) {
+            reportsHtml += `<div style="font-size: 12px; color: var(--text-tertiary); padding-top: 8px;">+ ${userReports.length - 5} more reports</div>`;
+        }
+    } else {
+        reportsHtml = '<div style="font-size: 13px; color: var(--text-tertiary); padding: 12px 0;">No reports submitted yet</div>';
+    }
+
+    // Build body
+    document.getElementById('residentDetailBody').innerHTML = `
+        <!-- Profile Card -->
+        <div style="text-align: center; padding: 20px 0 24px;">
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">${avatarHtml}</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">${resident.display_name || 'Anonymous'}</div>
+            <div style="font-size: 13px; color: var(--accent); margin-top: 4px;">${(resident.role || 'resident').charAt(0).toUpperCase() + (resident.role || 'resident').slice(1)} · Joined ${joined}</div>
+        </div>
+
+        <!-- Contact Info -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Contact Information</div>
+            <div style="display: grid; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9993;</div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Email</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${resident.email || 'Not provided'}</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9742;</div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Phone</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${resident.phone || 'Not provided'}</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#128205;</div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Address</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${resident.address || 'Not provided'}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Stats -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Activity</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--accent);">${reportCount}</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">Reports</div>
+                </div>
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: var(--info);">${langLabel}</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">Language</div>
+                </div>
+                <div>
+                    <div style="font-size: 22px; font-weight: 700; color: ${pushStatus === 'Enabled' ? 'var(--success)' : 'var(--text-tertiary)'};">${pushStatus === 'Enabled' ? 'On' : 'Off'}</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary);">Push Alerts</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last Active -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 13px; color: var(--text-secondary);">Last Active</div>
+                <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">${lastActive}</div>
+            </div>
+        </div>
+
+        <!-- Report History -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Report History</div>
+            ${reportsHtml}
+        </div>
+
+        <!-- Actions -->
+        <div style="margin-top: 20px; display: flex; gap: 8px;">
+            <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" onchange="updateResidentRole('${userId}', this.value)">
+                <option value="resident" ${resident.role === 'resident' ? 'selected' : ''}>Resident</option>
+                <option value="staff" ${resident.role === 'staff' ? 'selected' : ''}>Staff</option>
+                <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
+            </select>
+        </div>
+    `;
+
+    document.getElementById('residentDetail').classList.add('open');
+}
+
+function closeResidentDetail() {
+    document.getElementById('residentDetail').classList.remove('open');
 }
 
 // ============================================
