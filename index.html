@@ -2742,7 +2742,7 @@ textarea.form-input {
                                 <div class="popup-title">RPT-1047</div>
                                 <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Pothole on N. Main St near library</div>
                                 <div style="font-size:12px; margin-bottom:8px;">Large pothole approximately 2 feet wide on the northbound lane of N. Main Street, directly in front of the library...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">Maria Garcia</span></div>
+                                <div class="popup-line"><span>Reporter</span><span class="popup-val">—</span></div>
                                 <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-roads" style="font-size:10px;">Roads</span><span class="tag tag-alert-med" style="font-size:10px;">Medium</span></div>
                             </div>
                         </tr>
@@ -4632,7 +4632,7 @@ textarea.form-input {
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Submitted by</div>
-                <div style="font-size: 14px; font-weight: 500;">Maria Garcia</div>
+                <div id="reportSubmittedBy" style="font-size: 14px; font-weight: 500;">—</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Photos</div>
@@ -5192,6 +5192,14 @@ function updateReportsTable() {
     const tbody = document.querySelector('#reportsTableBody');
     if (!tbody) return;
 
+    // Build a profile lookup map for fast resident name resolution
+    const profileMap = {};
+    if (liveData.profiles) {
+        liveData.profiles.forEach(p => {
+            profileMap[p.id] = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.email || 'Unknown';
+        });
+    }
+
     tbody.innerHTML = liveData.reports.slice(0, 30).map(r => {
         const statusMap = {
             submitted: { label: 'Open', color: 'var(--info)', class: 'status-open' },
@@ -5203,13 +5211,14 @@ function updateReportsTable() {
         const st = statusMap[r.status] || statusMap.submitted;
         const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
         const assignee = r.ai_summary?.match(/Assigned to: ([^.]+)/)?.[1] || 'Unassigned';
+        const resident = r.user_id && profileMap[r.user_id] ? profileMap[r.user_id] : (r.address ? r.address.split(',')[0] : 'Anonymous');
 
         return `<tr onclick="openReportDetail('${r.id}')" style="cursor:pointer">
             <td style="font-weight: 500; color: var(--accent);">RPT-${r.id.substring(0,4).toUpperCase()}</td>
             <td>${r.title || 'Untitled'}</td>
             <td><span class="tag">${r.category || 'General'}</span></td>
             <td><span class="status ${st.class}"><span class="status-dot"></span>${st.label}</span></td>
-            <td>${r.address ? r.address.split(',')[0] : '—'}</td>
+            <td>${resident}</td>
             <td style="color: ${assignee === 'Unassigned' ? 'var(--text-tertiary)' : 'var(--text-primary)'}">${assignee}</td>
             <td style="color: var(--text-tertiary);">${date}</td>
         </tr>`;
@@ -5875,6 +5884,30 @@ async function openReportDetail(idOrUuid) {
         // Set priority
         const prioritySelect = document.getElementById('reportPrioritySelect');
         if (prioritySelect) prioritySelect.value = report.priority || 0;
+
+        // Look up submitter name from profiles
+        const submittedByEl = document.getElementById('reportSubmittedBy');
+        if (submittedByEl && report.user_id) {
+            let submitterName = '—';
+            if (liveData.profiles && liveData.profiles.length > 0) {
+                const profile = liveData.profiles.find(p => p.id === report.user_id);
+                if (profile) {
+                    submitterName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.email || 'Unknown';
+                }
+            }
+            // If not found in cached profiles, try a direct lookup
+            if (submitterName === '—' && sbClient) {
+                try {
+                    const { data: prof } = await sbClient.from('profiles').select('first_name, last_name, email').eq('id', report.user_id).single();
+                    if (prof) {
+                        submitterName = [prof.first_name, prof.last_name].filter(Boolean).join(' ') || prof.email || 'Unknown';
+                    }
+                } catch(e) { /* fallback to dash */ }
+            }
+            submittedByEl.textContent = submitterName;
+        } else if (submittedByEl) {
+            submittedByEl.textContent = 'Anonymous';
+        }
 
     } else {
         currentReportId = idOrUuid;
