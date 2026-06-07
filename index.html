@@ -4827,9 +4827,9 @@ window.onerror = function(msg, url, line) {
 const SUPABASE_URL = 'https://ocmqgjltgmybqboynsce.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jbXFnamx0Z215YnFib3luc2NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDkzOTQsImV4cCI6MjA5NDcyNTM5NH0.8X6IoPTLMhxJTIbrlBPIF1-zVSr1-uk18cF0npClHCA';
 
-let supabase;
+let sbClient;
 try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch(e) {
     console.warn('Supabase client failed to initialize, using mock data:', e);
 }
@@ -4881,13 +4881,13 @@ async function handleLogin(e) {
     btn.style.opacity = '0.6';
 
     try {
-        if (!supabase) throw new Error('Supabase not initialized');
+        if (!sbClient) throw new Error('Supabase not initialized');
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
 
         // Check role in profiles table
-        const { data: profile, error: profileErr } = await supabase
+        const { data: profile, error: profileErr } = await sbClient
             .from('profiles')
             .select('role')
             .eq('id', data.user.id)
@@ -4897,7 +4897,7 @@ async function handleLogin(e) {
 
         const role = (profile?.role || '').toLowerCase();
         if (role !== 'admin' && role !== 'staff') {
-            await supabase.auth.signOut();
+            await sbClient.auth.signOut();
             throw new Error('Access denied — admin role required');
         }
 
@@ -4915,13 +4915,13 @@ async function handleLogin(e) {
 
 // Auto-restore session on page load
 async function checkExistingSession() {
-    if (!supabase) return;
+    if (!sbClient) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await sbClient.auth.getSession();
         if (!session) return;
 
         // Verify role
-        const { data: profile } = await supabase
+        const { data: profile } = await sbClient
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
@@ -4931,7 +4931,7 @@ async function checkExistingSession() {
         if (role === 'admin' || role === 'staff') {
             document.getElementById('loginOverlay').style.display = 'none';
         } else {
-            await supabase.auth.signOut();
+            await sbClient.auth.signOut();
         }
     } catch (e) {
         console.warn('Session check failed:', e);
@@ -4953,16 +4953,16 @@ let liveData = {
 
 // Fetch all data from Supabase
 async function fetchAllData() {
-    if (!supabase) return;
+    if (!sbClient) return;
 
     try {
         const [reports, news, alerts, events, leaders, profiles] = await Promise.allSettled([
-            supabase.from('reports').select('*').order('created_at', { ascending: false }),
-            supabase.from('news').select('*').eq('published', true).order('published_at', { ascending: false }),
-            supabase.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }),
-            supabase.from('events').select('*').eq('published', true).order('event_date', { ascending: true }),
-            supabase.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }),
-            supabase.from('profiles').select('*').order('created_at', { ascending: false })
+            sbClient.from('reports').select('*').order('created_at', { ascending: false }),
+            sbClient.from('news').select('*').eq('published', true).order('published_at', { ascending: false }),
+            sbClient.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }),
+            sbClient.from('events').select('*').eq('published', true).order('event_date', { ascending: true }),
+            sbClient.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }),
+            sbClient.from('profiles').select('*').order('created_at', { ascending: false })
         ]);
 
         if (reports.status === 'fulfilled' && !reports.value.error) liveData.reports = reports.value.data;
@@ -5377,8 +5377,8 @@ async function sendPushNotification() {
     try {
         // Get auth token if logged in
         let token = null;
-        if (typeof supabase !== 'undefined' && supabase?.auth) {
-            const session = await supabase.auth.getSession();
+        if (sbClient?.auth) {
+            const session = await sbClient.auth.getSession();
             token = session?.data?.session?.access_token;
         }
 
@@ -5405,8 +5405,8 @@ async function sendPushNotification() {
             showToast(`Notification sent! ${result.sent || 0} delivered, ${result.failed || 0} failed.`, 'success');
 
             // Save to notifications table for audit trail
-            if (typeof supabase !== 'undefined') {
-                await supabase.from('notifications').insert({
+            if (sbClient) {
+                await sbClient.from('notifications').insert({
                     title: title,
                     message: body,
                     type: isBroadcast ? 'broadcast' : 'targeted',
@@ -5726,13 +5726,13 @@ async function openReportDetail(idOrUuid) {
 
 // Update report status
 async function updateReportStatus(newStatus) {
-    if (!currentReportId || !supabase) {
+    if (!currentReportId || !sbClient) {
         showToast('No report selected or Supabase not connected', 'error');
         return;
     }
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('reports')
             .update({
                 status: newStatus,
@@ -5761,10 +5761,10 @@ async function updateReportStatus(newStatus) {
 
 // Update report priority
 async function updateReportPriority(priority) {
-    if (!currentReportId || !supabase) return;
+    if (!currentReportId || !sbClient) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('reports')
             .update({
                 priority: parseInt(priority),
@@ -5782,7 +5782,7 @@ async function updateReportPriority(priority) {
 
 // Assign report to staff member
 async function assignReport() {
-    if (!currentReportId || !supabase) return;
+    if (!currentReportId || !sbClient) return;
 
     const assignSelect = document.getElementById('reportAssignSelect');
     const notesField = document.getElementById('reportNotes');
@@ -5804,7 +5804,7 @@ async function assignReport() {
         if (notes) updateData.ai_summary = `Assigned to: ${assignee}. Notes: ${notes}`;
         else updateData.ai_summary = `Assigned to: ${assignee}.`;
 
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('reports')
             .update(updateData)
             .eq('id', currentReportId);
@@ -5821,10 +5821,10 @@ async function assignReport() {
 
 // Close/resolve a report
 async function resolveReport() {
-    if (!currentReportId || !supabase) return;
+    if (!currentReportId || !sbClient) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('reports')
             .update({
                 status: 'resolved',
@@ -5848,7 +5848,7 @@ async function resolveReport() {
 
 // Create new content (news, event, or alert)
 async function publishContent() {
-    if (!supabase) {
+    if (!sbClient) {
         showToast('Supabase not connected', 'error');
         return;
     }
@@ -5874,7 +5874,7 @@ async function publishContent() {
         let result;
 
         if (contentType === 'News Article') {
-            const { data, error } = await supabase.from('news').insert({
+            const { data, error } = await sbClient.from('news').insert({
                 title_en: titleEn,
                 title_es: titleEs || null,
                 excerpt_en: bodyEn?.substring(0, 200) || null,
@@ -5889,7 +5889,7 @@ async function publishContent() {
             result = data;
 
         } else if (contentType === 'Community Event') {
-            const { data, error } = await supabase.from('events').insert({
+            const { data, error } = await sbClient.from('events').insert({
                 title_en: titleEn,
                 title_es: titleEs || null,
                 description_en: bodyEn || null,
@@ -5903,7 +5903,7 @@ async function publishContent() {
             result = data;
 
         } else if (contentType === 'Civic Alert') {
-            const { data, error } = await supabase.from('alerts').insert({
+            const { data, error } = await sbClient.from('alerts').insert({
                 title_en: titleEn,
                 title_es: titleEs || null,
                 message_en: bodyEn || titleEn,
@@ -5933,7 +5933,7 @@ async function publishContent() {
 
 // Save content as draft (unpublished)
 async function saveDraft() {
-    if (!supabase) {
+    if (!sbClient) {
         showToast('Supabase not connected', 'error');
         return;
     }
@@ -5956,7 +5956,7 @@ async function saveDraft() {
 
     try {
         if (contentType === 'News Article') {
-            const { error } = await supabase.from('news').insert({
+            const { error } = await sbClient.from('news').insert({
                 title_en: titleEn,
                 title_es: titleEs || null,
                 body_en: bodyEn || null,
@@ -5966,7 +5966,7 @@ async function saveDraft() {
             });
             if (error) throw error;
         } else if (contentType === 'Community Event') {
-            const { error } = await supabase.from('events').insert({
+            const { error } = await sbClient.from('events').insert({
                 title_en: titleEn,
                 title_es: titleEs || null,
                 description_en: bodyEn || null,
@@ -5987,13 +5987,13 @@ async function saveDraft() {
 
 // Toggle publish/unpublish for content
 async function togglePublish(table, id, currentlyPublished) {
-    if (!supabase) return;
+    if (!sbClient) return;
 
     const field = table === 'alerts' ? 'active' : 'published';
     const newValue = !currentlyPublished;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from(table)
             .update({ [field]: newValue })
             .eq('id', id);
@@ -6009,12 +6009,12 @@ async function togglePublish(table, id, currentlyPublished) {
 
 // Delete content item
 async function deleteContent(table, id) {
-    if (!supabase) return;
+    if (!sbClient) return;
 
     if (!confirm('Are you sure you want to delete this item? This cannot be undone.')) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from(table)
             .delete()
             .eq('id', id);
@@ -6030,10 +6030,10 @@ async function deleteContent(table, id) {
 
 // Deactivate an alert
 async function deactivateAlert(id) {
-    if (!supabase) return;
+    if (!sbClient) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('alerts')
             .update({ active: false })
             .eq('id', id);
@@ -6053,10 +6053,10 @@ async function deactivateAlert(id) {
 
 // Update resident role
 async function updateResidentRole(userId, newRole) {
-    if (!supabase) return;
+    if (!sbClient) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sbClient
             .from('profiles')
             .update({ role: newRole, updated_at: new Date().toISOString() })
             .eq('id', userId);
@@ -6720,7 +6720,7 @@ function saveLeader() {
         showToast(`${name} updated successfully`, 'success');
 
         // In production: save to Supabase
-        // await supabase.from('city_leaders').update(leaderData).eq('id', editingLeaderId);
+        // await sbClient.from('city_leaders').update(leaderData).eq('id', editingLeaderId);
     } else {
         // Add new
         leaderData.id = 'ldr-' + Date.now().toString(36);
@@ -6728,7 +6728,7 @@ function saveLeader() {
         showToast(`${name} added to City Leaders`, 'success');
 
         // In production: insert into Supabase
-        // await supabase.from('city_leaders').insert(leaderData);
+        // await sbClient.from('city_leaders').insert(leaderData);
     }
 
     closeLeaderModal();
@@ -6748,7 +6748,7 @@ function deleteLeader() {
     renderLeaders();
 
     // In production: delete from Supabase
-    // await supabase.from('city_leaders').delete().eq('id', editingLeaderId);
+    // await sbClient.from('city_leaders').delete().eq('id', editingLeaderId);
 }
 
 // Close leader modal on overlay click
