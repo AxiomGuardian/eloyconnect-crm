@@ -2067,29 +2067,23 @@ textarea.form-input {
    ============================================ */
 .hover-popup {
     display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #1C1C1F;
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px;
     padding: 14px 18px;
-    z-index: 9999;
+    z-index: 99999;
     min-width: 240px;
     max-width: 360px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6);
     font-size: 13px;
     color: var(--text-secondary);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.15s ease;
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
 }
-.metric-card:hover .hover-popup,
-.staff-card:hover .hover-popup,
-.content-row-hover:hover .hover-popup,
-*:hover > .hover-popup {
+.hover-popup.visible {
     display: block;
     opacity: 1;
 }
@@ -2126,10 +2120,7 @@ textarea.form-input {
     position: relative;
 }
 .data-table tbody tr .hover-popup {
-    bottom: calc(100% + 8px);
-    top: auto;
-    left: 40px;
-    transform: none;
+    /* positioned by JS */
 }
 
 /* Override overflow:hidden for popup containers */
@@ -2140,19 +2131,9 @@ textarea.form-input {
 .staff-card {
     overflow: visible;
 }
-.metric-card .hover-popup {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 8px;
-}
 
-/* Staff card popup */
+/* Staff card popup — positioned by JS */
 .staff-card .hover-popup {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 8px;
     text-align: left;
 }
 
@@ -7428,6 +7409,63 @@ function viewResident(userId) {
     }
 
     console.log('Navigation initialized: ' + document.querySelectorAll('.nav-item[data-page]').length + ' nav items found');
+})();
+
+// --- Hover popup positioning system ---
+(function() {
+    function positionPopup(parentEl, popupEl) {
+        var rect = parentEl.getBoundingClientRect();
+        var popupW = popupEl.offsetWidth || 280;
+        var popupH = popupEl.offsetHeight || 120;
+
+        // Position above the element by default
+        var top = rect.top - popupH - 10;
+        var left = rect.left + (rect.width / 2) - (popupW / 2);
+
+        // If not enough room above, show below
+        if (top < 10) {
+            top = rect.bottom + 10;
+        }
+
+        // Keep within viewport horizontally
+        if (left < 10) left = 10;
+        if (left + popupW > window.innerWidth - 10) {
+            left = window.innerWidth - popupW - 10;
+        }
+
+        popupEl.style.top = top + 'px';
+        popupEl.style.left = left + 'px';
+    }
+
+    document.addEventListener('mouseenter', function(e) {
+        var parent = e.target.closest('.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
+        if (!parent) {
+            // Also check table rows
+            parent = e.target.closest('.data-table tbody tr');
+        }
+        if (!parent) return;
+        var popup = parent.querySelector('.hover-popup');
+        if (!popup) return;
+
+        popup.classList.add('visible');
+        positionPopup(parent, popup);
+    }, true);
+
+    document.addEventListener('mouseleave', function(e) {
+        var parent = e.target.closest('.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
+        if (!parent) {
+            parent = e.target.closest('.data-table tbody tr');
+        }
+        if (!parent) return;
+        var popup = parent.querySelector('.hover-popup');
+        if (!popup) return;
+
+        // Check if we're moving to the popup itself or a child
+        var related = e.relatedTarget;
+        if (related && (parent.contains(related) || popup.contains(related))) return;
+
+        popup.classList.remove('visible');
+    }, true);
 })();
 
 </script>
