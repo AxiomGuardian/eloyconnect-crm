@@ -4938,7 +4938,8 @@ let liveData = {
     events: null,
     leaders: null,
     profiles: null,
-    notifications: null
+    notifications: null,
+    businesses: null
 };
 
 // Fetch all data from Supabase
@@ -4946,13 +4947,15 @@ async function fetchAllData() {
     if (!sbClient) return;
 
     try {
-        const [reports, news, alerts, events, leaders, profiles] = await Promise.allSettled([
+        const [reports, news, alerts, events, leaders, profiles, notifications, businesses] = await Promise.allSettled([
             sbClient.from('reports').select('*').order('created_at', { ascending: false }),
             sbClient.from('news').select('*').eq('published', true).order('published_at', { ascending: false }),
             sbClient.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }),
             sbClient.from('events').select('*').eq('published', true).order('event_date', { ascending: true }),
             sbClient.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }),
-            sbClient.from('profiles').select('*').order('created_at', { ascending: false })
+            sbClient.from('profiles').select('*').order('created_at', { ascending: false }),
+            sbClient.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
+            sbClient.from('businesses').select('*').order('name', { ascending: true })
         ]);
 
         if (reports.status === 'fulfilled' && !reports.value.error) liveData.reports = reports.value.data;
@@ -4961,6 +4964,8 @@ async function fetchAllData() {
         if (events.status === 'fulfilled' && !events.value.error) liveData.events = events.value.data;
         if (leaders.status === 'fulfilled' && !leaders.value.error) liveData.leaders = leaders.value.data;
         if (profiles.status === 'fulfilled' && !profiles.value.error) liveData.profiles = profiles.value.data;
+        if (notifications.status === 'fulfilled' && !notifications.value.error) liveData.notifications = notifications.value.data;
+        if (businesses.status === 'fulfilled' && !businesses.value.error) liveData.businesses = businesses.value.data;
 
         updateDashboardWithLiveData();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
