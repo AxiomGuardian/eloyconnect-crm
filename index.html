@@ -4617,11 +4617,19 @@ textarea.form-input {
             <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">Large pothole approximately 2 feet wide on the northbound lane of N. Main Street, directly in front of the Eloy Santa Cruz Library. It's deep enough to damage vehicle tires and is creating a hazard for cyclists.</p>
         </div>
 
-        <div id="reportMapArea" style="background: var(--surface); border-radius: var(--radius-md); height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; border: 1px solid var(--border); overflow:hidden;">
-            <div style="text-align: center; color: var(--text-tertiary);">
-                <div style="font-size: 14px; margin-bottom: 8px; color: var(--accent); font-weight: 600;">MAP</div>
-                <div id="reportGPS" style="font-size: 13px;">GPS: —</div>
-                <div id="reportAddress" style="font-size: 11px; margin-top: 4px;">—</div>
+        <div id="reportMapArea" style="background: var(--surface); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center;">
+                    <span style="font-size:16px;">📍</span>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Report Location</div>
+                    <div id="reportAddress" style="font-size:14px; font-weight:500; color:var(--text-primary);">—</div>
+                </div>
+            </div>
+            <div id="reportGPS" style="font-size:11px; color:var(--text-tertiary); margin-bottom:12px; font-family:monospace;">GPS: —</div>
+            <div id="reportLocationActions" style="display:flex; gap:8px; flex-wrap:wrap;">
+                <!-- Populated dynamically -->
             </div>
         </div>
 
@@ -5946,18 +5954,45 @@ async function openReportDetail(idOrUuid) {
             }
         }
 
-        // Update GPS + address
+        // Update GPS + address + map links
         const gpsEl = document.getElementById('reportGPS');
         const addrEl = document.getElementById('reportAddress');
+        const actionsEl = document.getElementById('reportLocationActions');
+        const lat = report.latitude ? Number(report.latitude) : null;
+        const lng = report.longitude ? Number(report.longitude) : null;
+        const addr = report.address || '';
+
+        if (addrEl) {
+            addrEl.textContent = addr || 'No address provided';
+        }
         if (gpsEl) {
-            if (report.latitude && report.longitude) {
-                gpsEl.textContent = `GPS: ${Number(report.latitude).toFixed(4)}° N, ${Math.abs(Number(report.longitude)).toFixed(4)}° W`;
+            if (lat && lng) {
+                gpsEl.textContent = `GPS: ${lat.toFixed(4)}° N, ${Math.abs(lng).toFixed(4)}° W`;
             } else {
                 gpsEl.textContent = 'GPS: Not available';
             }
         }
-        if (addrEl) {
-            addrEl.textContent = report.address || 'No address provided';
+        if (actionsEl) {
+            const btnStyle = 'display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:500; text-decoration:none; cursor:pointer; border:1px solid var(--border); transition:all 0.15s;';
+            let buttons = '';
+
+            if (lat && lng) {
+                const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+                const amapsUrl = `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(addr || 'Report Location')}`;
+                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">🗺️ Google Maps</a>`;
+                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">🍎 Apple Maps</a>`;
+            }
+
+            if (addr) {
+                buttons += `<button onclick="navigator.clipboard.writeText('${addr.replace(/'/g, "\\'")}'); this.innerHTML='✅ Copied!'; setTimeout(() => this.innerHTML='📋 Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">📋 Copy Address</button>`;
+            }
+
+            if (lat && lng) {
+                const coordStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                buttons += `<button onclick="navigator.clipboard.writeText('${coordStr}'); this.innerHTML='✅ Copied!'; setTimeout(() => this.innerHTML='📌 Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">📌 Copy GPS</button>`;
+            }
+
+            actionsEl.innerHTML = buttons || '<span style="font-size:12px; color:var(--text-tertiary);">No location data available</span>';
         }
 
         // Update submission time
