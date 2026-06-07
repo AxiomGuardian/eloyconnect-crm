@@ -5374,8 +5374,11 @@ function updateResidentsPage() {
             ? `<img src="${p.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
             : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
 
+        const hasDeletionReq = !!p.deletion_requested_at;
+        const deletionBadge = hasDeletionReq ? ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(255,152,0,0.15);color:#ff9800;font-weight:500;margin-left:6px;">⚠ Deletion</span>' : '';
+
         return `<tr style="cursor:pointer" onclick="openResidentDetail('${p.id}')" data-status="${isActive ? 'active' : 'inactive'}">
-            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}</div></div></div></td>
+            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}${deletionBadge}</div></div></div></td>
             <td style="color: var(--text-secondary); font-size: 12px;">${p.email || '—'}</td>
             <td style="color: var(--text-tertiary);">${joined}</td>
             <td style="color: var(--text-secondary); font-size: 12px;">${lastActive}</td>
@@ -7828,13 +7831,37 @@ function openResidentDetail(userId) {
             ${reportsHtml}
         </div>
 
+        <!-- Deletion Request Banner -->
+        ${resident.deletion_requested_at ? `
+        <div style="background: rgba(255,152,0,0.12); border: 1px solid rgba(255,152,0,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,152,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px;">&#9888;</div>
+                <div>
+                    <div style="font-size: 13px; font-weight: 600; color: #ff9800;">Account Deletion Requested</div>
+                    <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">Requested ${new Date(resident.deletion_requested_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" style="flex: 1; background: #d32f2f; border-color: #d32f2f; font-size: 12px; padding: 8px 12px;" onclick="processAccountDeletion('${userId}')">&#128465; Delete Account</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="dismissDeletionRequest('${userId}')">Dismiss Request</button>
+            </div>
+        </div>` : ''}
+
         <!-- Actions -->
-        <div style="margin-top: 20px; display: flex; gap: 8px;">
-            <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" onchange="updateResidentRole('${userId}', this.value)">
-                <option value="resident" ${resident.role === 'resident' ? 'selected' : ''}>Resident</option>
-                <option value="staff" ${resident.role === 'staff' ? 'selected' : ''}>Staff</option>
-                <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
-            </select>
+        <div style="margin-top: 20px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Account Management</div>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" onchange="updateResidentRole('${userId}', this.value)">
+                    <option value="resident" ${resident.role === 'resident' ? 'selected' : ''}>Resident</option>
+                    <option value="staff" ${resident.role === 'staff' ? 'selected' : ''}>Staff</option>
+                    <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
+                </select>
+            </div>
+            ${!resident.deletion_requested_at ? `
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #d32f2f; border-color: rgba(211,47,47,0.3);" onclick="processAccountDeletion('${userId}')">&#128465; Delete Account</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #ff9800; border-color: rgba(255,152,0,0.3);" onclick="deactivateResident('${userId}')">Deactivate</button>
+            </div>` : ''}
         </div>
     `;
 
@@ -7843,6 +7870,77 @@ function openResidentDetail(userId) {
 
 function closeResidentDetail() {
     document.getElementById('residentDetail').classList.remove('open');
+}
+
+// ── Account Deletion & Deactivation ──
+
+async function processAccountDeletion(userId) {
+    if (!sbClient) return;
+    const resident = liveData.profiles?.find(p => p.id === userId);
+    const name = resident?.display_name || 'this resident';
+
+    if (!confirm(`⚠️ PERMANENT ACTION\n\nAre you sure you want to delete ${name}'s account?\n\nThis will:\n• Remove their profile data\n• Clear their reports history\n• Revoke app access\n\nThis cannot be undone.`)) return;
+
+    try {
+        // Delete the user's profile (cascade will handle related data if configured)
+        const { error } = await sbClient
+            .from('profiles')
+            .delete()
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast(`${name}'s account has been deleted`, 'success');
+        closeResidentDetail();
+        await fetchAllData();
+    } catch(e) {
+        showToast('Failed to delete account: ' + e.message, 'error');
+    }
+}
+
+async function dismissDeletionRequest(userId) {
+    if (!sbClient) return;
+
+    try {
+        const { error } = await sbClient
+            .from('profiles')
+            .update({ deletion_requested_at: null, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast('Deletion request dismissed', 'success');
+        // Re-open the detail panel to refresh it
+        await fetchAllData();
+        openResidentDetail(userId);
+    } catch(e) {
+        showToast('Failed to dismiss request: ' + e.message, 'error');
+    }
+}
+
+async function deactivateResident(userId) {
+    if (!sbClient) return;
+    const resident = liveData.profiles?.find(p => p.id === userId);
+    const name = resident?.display_name || 'this resident';
+
+    if (!confirm(`Deactivate ${name}'s account?\n\nTheir data will be preserved but they will not appear as active.`)) return;
+
+    try {
+        // Set updated_at far in the past so they show as "inactive" (>30 days)
+        const pastDate = new Date(Date.now() - 90 * 86400000).toISOString();
+        const { error } = await sbClient
+            .from('profiles')
+            .update({ updated_at: pastDate })
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast(`${name} has been deactivated`, 'success');
+        await fetchAllData();
+        openResidentDetail(userId);
+    } catch(e) {
+        showToast('Failed to deactivate: ' + e.message, 'error');
+    }
 }
 
 // ============================================
