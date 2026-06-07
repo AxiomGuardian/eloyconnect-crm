@@ -2068,11 +2068,14 @@ textarea.form-input {
 .hover-popup {
     display: none;
     position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
     background: #1C1C1F;
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px;
     padding: 14px 18px;
-    z-index: 200;
+    z-index: 9999;
     min-width: 240px;
     max-width: 360px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.5);
@@ -2123,9 +2126,10 @@ textarea.form-input {
     position: relative;
 }
 .data-table tbody tr .hover-popup {
-    top: 100%;
+    bottom: calc(100% + 8px);
+    top: auto;
     left: 40px;
-    margin-top: 4px;
+    transform: none;
 }
 
 /* Override overflow:hidden for popup containers */
