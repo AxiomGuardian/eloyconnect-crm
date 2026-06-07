@@ -166,14 +166,32 @@ body {
     align-items: center;
     gap: 2px;
     flex: 1;
-    justify-content: center;
+    justify-content: flex-start;
     min-width: 0;
     overflow-x: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    padding: 0 12px;
+    mask-image: linear-gradient(to right, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
 }
 
 .topnav-tabs::-webkit-scrollbar { display: none; }
+
+/* Responsive nav — shrink padding on smaller screens */
+@media (max-width: 1400px) {
+    .topnav-tabs { gap: 0px; }
+    .nav-item { padding: 6px 8px; font-size: 12px; }
+    .topnav { padding: 0 12px; gap: 8px; }
+    .topnav-brand h1 { font-size: 12px; }
+    .topnav-right { gap: 6px; }
+}
+@media (max-width: 1100px) {
+    .nav-item { padding: 6px 6px; font-size: 11px; }
+    .topnav { padding: 0 8px; gap: 4px; }
+    .topnav-brand h1 { font-size: 11px; letter-spacing: 0.04em; }
+    .nav-group-divider { margin: 0 4px; }
+}
 
 /* Group divider */
 .nav-group-divider {
@@ -4785,7 +4803,10 @@ function navigateTo(page) {
     var pageEl = document.getElementById('page-' + page);
     if (pageEl) { pageEl.classList.add('active'); } else { var fb = document.getElementById('page-dashboard'); if (fb) fb.classList.add('active'); page = 'dashboard'; }
     var navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
-    if (navItem) navItem.classList.add('active');
+    if (navItem) {
+        navItem.classList.add('active');
+        navItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
     if (pages[page]) { var pt = document.getElementById('page-title'); var ps = document.getElementById('page-subtitle'); if (pt) pt.textContent = pages[page].title; if (ps) ps.textContent = pages[page].subtitle; }
     try { var c = document.querySelector('.content'); if (c) c.scrollTop = 0; } catch(e) {}
 }
