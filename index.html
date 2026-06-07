@@ -2133,6 +2133,13 @@ textarea.form-input {
     font-style: italic;
 }
 
+/* Global popup — always on top, outside stacking contexts */
+#globalPopup {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+}
+
 /* Table row hover popup */
 .data-table tbody tr {
     position: relative;
@@ -2407,7 +2414,7 @@ textarea.form-input {
     <div class="topnav-tabs">
         <!-- Main group -->
         <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">Dashboard</div>
-        <div class="nav-item" data-page="reports" onclick="navigateTo('reports')">Reports <span class="badge">47</span></div>
+        <div class="nav-item" data-page="reports" onclick="navigateTo('reports')">Reports <span class="badge" id="navReportsBadge">—</span></div>
         <div class="nav-item" data-page="content" onclick="navigateTo('content')">Content</div>
         <div class="nav-item" data-page="residents" onclick="navigateTo('residents')">Residents</div>
 
@@ -2503,7 +2510,8 @@ textarea.form-input {
     <header class="topbar">
         <div class="topbar-left">
             <h2 id="page-title">Dashboard</h2>
-            <p id="page-subtitle">Tuesday, May 26, 2026 — Welcome back, Andrew</p>
+            <p id="page-subtitle">Loading...</p>
+            <script>document.getElementById('page-subtitle').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' — Welcome back';</script>
         </div>
         <div class="topbar-actions" id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Administrator</div>
     </header>
@@ -2517,9 +2525,9 @@ textarea.form-input {
                 <div class="metric-card" data-accent="orange">
                     <div class="metric-header">
                         <div class="metric-icon orange" style="font-size:15px; font-weight:700;">!</div>
-                        <span class="metric-change up">+12 this week</span>
+                        <span class="metric-change up" id="dash-reports-change"></span>
                     </div>
-                    <div class="metric-value">47</div>
+                    <div class="metric-value">—</div>
                     <div class="metric-label">Open Reports</div>
                     <div class="hover-popup">
                         <div class="popup-title">Priority Breakdown</div>
@@ -2532,9 +2540,9 @@ textarea.form-input {
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-header">
                         <div class="metric-icon teal" style="font-size:15px; font-weight:700;">U</div>
-                        <span class="metric-change up">+89 this month</span>
+                        <span class="metric-change up" id="dash-residents-change"></span>
                     </div>
-                    <div class="metric-value">1,284</div>
+                    <div class="metric-value">—</div>
                     <div class="metric-label">Active Residents</div>
                     <div class="hover-popup">
                         <div class="popup-title">User Breakdown</div>
@@ -2605,46 +2613,18 @@ textarea.form-input {
                         Recent Activity
                         <button class="btn btn-ghost" style="font-size: 12px;">View All</button>
                     </div>
-                    <div>
+                    <div id="recentActivityContainer">
                         <div class="activity-item">
-                            <div class="activity-dot" style="background: var(--warm-accent);"></div>
+                            <div class="activity-dot" style="background: var(--text-tertiary);"></div>
                             <div>
-                                <div class="activity-text"><strong>Maria Garcia</strong> submitted a new report: Pothole on N. Main St near library</div>
-                                <div class="activity-time">2 hours ago</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background: var(--accent);"></div>
-                            <div>
-                                <div class="activity-text"><strong>J. Martinez</strong> assigned to report RPT-1045: Water pressure low — W. Houser Rd</div>
-                                <div class="activity-time">3 hours ago</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background: var(--success);"></div>
-                            <div>
-                                <div class="activity-text"><strong>R. Gomez</strong> resolved report RPT-1038: Streetlight out — 600 block E. 5th St</div>
-                                <div class="activity-time">5 hours ago</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background: var(--info);"></div>
-                            <div>
-                                <div class="activity-text">New alert published: <strong>Heat Advisory</strong> — extreme temperatures expected this weekend</div>
-                                <div class="activity-time">Yesterday at 4:30 PM</div>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-dot" style="background: var(--accent);"></div>
-                            <div>
-                                <div class="activity-text"><strong>15 new residents</strong> registered on Eloy Connect today</div>
-                                <div class="activity-time">Yesterday</div>
+                                <div class="activity-text" style="color: var(--text-tertiary);">Loading recent activity...</div>
+                                <div class="activity-time">Syncing with Supabase</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">App Users — 6 Months</div>
+                    <div class="chart-title">App Users — 6 Months <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px;">Demo</span></div>
                     <div style="height: 220px; position: relative;">
                         <canvas id="chartGrowth"></canvas>
                     </div>
@@ -2702,7 +2682,7 @@ textarea.form-input {
             <div class="section-header">
                 <div>
                     <h3>Citizen Reports</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">47 open · 12 in progress · 268 resolved this month</p>
+                    <p id="reportsPageSubtitle" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Loading report data...</p>
                 </div>
                 <div class="flex gap-8">
                     <button class="btn btn-secondary">Export CSV</button>
@@ -2884,7 +2864,7 @@ textarea.form-input {
                         <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">T</div>
                         <div>
                             <div class="ai-panel-title">Smart Triage</div>
-                            <div class="ai-panel-subtitle">AI-recommended priority and assignment</div>
+                            <div class="ai-panel-subtitle">AI-recommended priority and assignment <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 4px;">Preview</span></div>
                         </div>
                         <span class="ai-badge">AI</span>
                     </div>
@@ -2916,7 +2896,7 @@ textarea.form-input {
                         <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">A</div>
                         <div>
                             <div class="ai-panel-title">Pattern Analysis</div>
-                            <div class="ai-panel-subtitle">Trends and anomalies in report data</div>
+                            <div class="ai-panel-subtitle">Trends and anomalies in report data <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 4px;">Preview</span></div>
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
@@ -3244,7 +3224,7 @@ textarea.form-input {
             <div class="section-header">
                 <div>
                     <h3>Resident Directory</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">2,847 total users · 1,284 monthly active</p>
+                    <p id="residentsPageSubtitle" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Loading user data...</p>
                 </div>
                 <div class="flex gap-8">
                     <input class="form-input" id="residentSearchInput" placeholder="Search by name or email..." style="width: 300px;" oninput="filterResidentTable()">
@@ -3261,36 +3241,36 @@ textarea.form-input {
 
             <div class="metrics-grid anim-stagger" style="grid-template-columns: repeat(5, 1fr);">
                 <div class="metric-card" data-accent="teal">
-                    <div class="metric-value" style="font-size: 22px;">2,847</div>
+                    <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Total Users</div>
                 </div>
                 <div class="metric-card" data-accent="green">
-                    <div class="metric-value" style="font-size: 22px;">1,284</div>
+                    <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Monthly Active</div>
                 </div>
                 <div class="metric-card" data-accent="orange">
-                    <div class="metric-value" style="font-size: 22px;">62%</div>
+                    <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">English</div>
                 </div>
                 <div class="metric-card" data-accent="orange">
-                    <div class="metric-value" style="font-size: 22px;">32%</div>
+                    <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Spanish</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value" style="font-size: 22px;">6%</div>
+                    <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">ZH / DE</div>
                 </div>
             </div>
 
             <div class="charts-row" style="grid-template-columns: 1fr 1fr;">
                 <div class="chart-card">
-                    <div class="chart-title">User Growth — 6 Months</div>
+                    <div class="chart-title">User Growth — 6 Months <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px;">Demo</span></div>
                     <div style="height: 220px; position: relative;">
                         <canvas id="chartResidentGrowth"></canvas>
                     </div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Feature Adoption</div>
+                    <div class="chart-title">Feature Adoption <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px;">Demo</span></div>
                     <div style="height: 220px; position: relative;">
                         <canvas id="chartFeatures"></canvas>
                     </div>
@@ -3399,8 +3379,8 @@ textarea.form-input {
                     <div>
                         <div style="font-size: 12px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Good morning, Andrew</div>
                         <div style="font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px;">Your daily briefing</div>
-                        <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 600px;">
-                            You have <strong style="color: var(--warm-accent);">47 open reports</strong> (3 new since yesterday), <strong style="color: var(--warning);">1 critical</strong> (fire hydrant leak on W. Shedd Rd), and <strong style="color: var(--accent);">2 content drafts</strong> waiting for review. Ask Eloy handled 156 resident sessions today — top question was about water pressure. The heat advisory push got a 66% open rate.
+                        <div id="briefingSummaryText" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 600px;">
+                            Loading live data...
                         </div>
                     </div>
                     <div style="text-align: center; flex-shrink: 0; margin-left: 24px;">
@@ -3619,26 +3599,27 @@ textarea.form-input {
             <div class="metrics-grid anim-stagger" style="margin-bottom: 24px;">
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-value" style="font-size: 22px;">8,428</div>
-                    <div class="metric-label">Total Sent (30d)</div>
+                    <div class="metric-label">Total Sent (30d) <span style="font-size: 9px; color: var(--text-tertiary);">Demo</span></div>
                     <div class="hover-popup">
                         <div class="popup-title">Delivery Breakdown</div>
                         <div class="popup-line"><span>Broadcasts</span><span class="popup-val">3</span></div>
                         <div class="popup-line"><span>Targeted</span><span class="popup-val">2</span></div>
-                        <div class="popup-highlight">5 campaigns this month</div>
+                        <div class="popup-highlight">Demo data — notification tracking coming soon</div>
                     </div>
                 </div>
                 <div class="metric-card" data-accent="green">
                     <div class="metric-value" style="font-size: 22px;">66%</div>
-                    <div class="metric-label">Avg. Open Rate</div>
+                    <div class="metric-label">Avg. Open Rate <span style="font-size: 9px; color: var(--text-tertiary);">Demo</span></div>
                     <div class="hover-popup">
                         <div class="popup-title">Open Rate by Type</div>
                         <div class="popup-line"><span>Alerts</span><span class="popup-val" style="color:var(--success);">72%</span></div>
                         <div class="popup-line"><span>News</span><span class="popup-val">61%</span></div>
                         <div class="popup-line"><span>Events</span><span class="popup-val">58%</span></div>
+                        <div class="popup-highlight">Demo data — analytics coming soon</div>
                     </div>
                 </div>
                 <div class="metric-card" data-accent="orange">
-                    <div class="metric-value" style="font-size: 22px;">2,847</div>
+                    <div class="metric-value" id="notif-reachable" style="font-size: 22px;">—</div>
                     <div class="metric-label">Reachable Users</div>
                 </div>
                 <div class="metric-card" data-accent="blue">
@@ -3973,7 +3954,7 @@ textarea.form-input {
                     <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">CE</div>
                     <div>
                         <div class="ai-panel-title">Code Enforcement Overview</div>
-                        <div class="ai-panel-subtitle">AI-generated summary of current enforcement activity</div>
+                        <div class="ai-panel-subtitle">AI-generated summary of current enforcement activity <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 6px;">Demo Data</span></div>
                     </div>
                     <span class="ai-badge">Live AI</span>
                 </div>
@@ -4189,6 +4170,7 @@ textarea.form-input {
         <div class="page" id="page-directory">
 
             <!-- STATS BAR -->
+            <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><span style="padding: 2px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; font-size: 10px; letter-spacing: 0.5px;">DEMO DATA</span> Business listings shown below are sample data for presentation</div>
             <div class="metrics-grid anim-stagger">
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-header">
@@ -4981,42 +4963,81 @@ async function fetchAllData() {
 
 // Update dashboard metrics with live data
 function updateDashboardWithLiveData() {
-    // Update metric cards on dashboard
-    if (liveData.reports) {
-        const totalReports = liveData.reports.length;
-        const pendingReports = liveData.reports.filter(r => r.status === 'submitted' || r.status === 'in_review').length;
-        const resolvedReports = liveData.reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+    // --- Dashboard page metric cards ---
+    const dashMetrics = document.querySelectorAll('#page-dashboard > .metrics-grid .metric-value');
 
-        // Update dashboard metric cards if they exist
-        const metricCards = document.querySelectorAll('.metric-value');
-        if (metricCards.length >= 4) {
-            metricCards[0].textContent = totalReports.toLocaleString(); // Total reports
+    if (liveData.reports) {
+        const openReports = liveData.reports.filter(r => r.status === 'submitted' || r.status === 'in_review' || r.status === 'open').length;
+        const inProgress = liveData.reports.filter(r => r.status === 'in_progress' || r.status === 'in_review').length;
+        const resolvedReports = liveData.reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+        const totalReports = liveData.reports.length;
+
+        if (dashMetrics.length >= 1) dashMetrics[0].textContent = openReports.toLocaleString();
+
+        // Update Reports page header subtitle
+        const reportsSubtitle = document.getElementById('reportsPageSubtitle');
+        if (reportsSubtitle) {
+            reportsSubtitle.textContent = openReports + ' open · ' + inProgress + ' in progress · ' + resolvedReports + ' resolved';
         }
+
+        // Update nav badge
+        const reportsBadge = document.getElementById('navReportsBadge');
+        if (reportsBadge) reportsBadge.textContent = openReports || totalReports;
+
+        // Update pages subtitle for reports
+        pages.reports.subtitle = (openReports || totalReports) + ' reports require attention';
+
+        // Update AI briefing reference to reports
+        updateAIBriefingCounts(openReports, inProgress);
+
+        // Update Report Volume chart with live data
+        updateReportVolumeChart();
+
+        // Update Reports by Category chart
+        updateCategoryChart();
+
+        // Update Recent Activity
+        updateRecentActivity();
     }
 
     if (liveData.profiles) {
         const totalResidents = liveData.profiles.length;
-        const metricCards = document.querySelectorAll('.metric-value');
-        if (metricCards.length >= 4) {
-            metricCards[1].textContent = totalResidents.toLocaleString(); // Active residents
+        if (dashMetrics.length >= 2) dashMetrics[1].textContent = totalResidents.toLocaleString();
+
+        // Update Residents page stats
+        const residentsSubtitle = document.getElementById('residentsPageSubtitle');
+        if (residentsSubtitle) {
+            residentsSubtitle.textContent = totalResidents.toLocaleString() + ' total users · Live data from Supabase';
         }
+        pages.residents.subtitle = totalResidents.toLocaleString() + ' registered users';
+
+        // Update Residents metric cards
+        const resMetrics = document.querySelectorAll('#page-residents .metrics-grid .metric-value');
+        if (resMetrics.length >= 2) {
+            resMetrics[0].textContent = totalResidents.toLocaleString();
+            resMetrics[1].textContent = totalResidents.toLocaleString(); // monthly active = total for now
+        }
+        // Compute language breakdown
+        if (resMetrics.length >= 5) {
+            const langCounts = {};
+            liveData.profiles.forEach(p => {
+                const lang = (p.language_pref || 'en').toLowerCase();
+                langCounts[lang] = (langCounts[lang] || 0) + 1;
+            });
+            const total = liveData.profiles.length || 1;
+            resMetrics[2].textContent = Math.round((langCounts['en'] || 0) / total * 100) + '%';
+            resMetrics[3].textContent = Math.round((langCounts['es'] || 0) / total * 100) + '%';
+            const zhDe = ((langCounts['zh'] || 0) + (langCounts['de'] || 0));
+            resMetrics[4].textContent = Math.round(zhDe / total * 100) + '%';
+        }
+
+        // Update notification reachable users
+        const notifReachable = document.getElementById('notif-reachable');
+        if (notifReachable) notifReachable.textContent = totalResidents.toLocaleString();
     }
 
-    if (liveData.events) {
-        const activeEvents = liveData.events.length;
-        const metricCards = document.querySelectorAll('.metric-value');
-        if (metricCards.length >= 4) {
-            metricCards[2].textContent = activeEvents.toLocaleString(); // Active events
-        }
-    }
-
-    if (liveData.alerts) {
-        const activeAlerts = liveData.alerts.length;
-        const metricCards = document.querySelectorAll('.metric-value');
-        if (metricCards.length >= 4) {
-            metricCards[3].textContent = activeAlerts.toLocaleString(); // Active alerts
-        }
-    }
+    // Note: Dashboard metric cards [2] (Avg Resolution Time) and [3] (Ask Eloy Sessions)
+    // are demo/presentation metrics — not updated from live data
 
     // Update Reports page table with live data
     updateReportsTable();
@@ -5026,6 +5047,143 @@ function updateDashboardWithLiveData() {
 
     // Update Residents page with live data
     updateResidentsPage();
+}
+
+// Update AI Briefing page report counts
+function updateAIBriefingCounts(openCount, inProgressCount) {
+    const briefingText = document.getElementById('briefingSummaryText');
+    if (briefingText) {
+        const newsCount = liveData.news ? liveData.news.length : 0;
+        const alertsCount = liveData.alerts ? liveData.alerts.length : 0;
+        const profilesCount = liveData.profiles ? liveData.profiles.length : 0;
+        briefingText.innerHTML = 'You have <strong style="color: var(--warm-accent);">' + openCount + ' open reports</strong>, ' +
+            '<strong style="color: var(--accent);">' + newsCount + ' published news</strong> items, ' +
+            '<strong style="color: var(--info);">' + alertsCount + ' active alerts</strong>, and ' +
+            '<strong style="color: var(--success);">' + profilesCount + ' registered users</strong>. ' +
+            'Live data synced from Supabase.';
+    }
+}
+
+// Update Report Volume chart with live data
+function updateReportVolumeChart() {
+    const canvas = document.getElementById('chartReportVolume');
+    if (!canvas || !liveData.reports) return;
+    const chart = Chart.getChart(canvas);
+    if (!chart) return;
+
+    if (liveData.reports.length === 0) {
+        // No data — set all bars to 0
+        chart.data.datasets[0].data = Array(30).fill(0);
+        chart.update();
+        return;
+    }
+
+    // Group reports by day (last 30 days)
+    const now = new Date();
+    const dayCounts = Array(30).fill(0);
+    liveData.reports.forEach(r => {
+        if (!r.created_at) return;
+        const d = new Date(r.created_at);
+        const daysAgo = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+        if (daysAgo >= 0 && daysAgo < 30) {
+            dayCounts[29 - daysAgo]++;
+        }
+    });
+    chart.data.datasets[0].data = dayCounts;
+    chart.update();
+}
+
+// Update Reports by Category doughnut chart
+function updateCategoryChart() {
+    const canvas = document.getElementById('chartCategories');
+    if (!canvas || !liveData.reports) return;
+    const chart = Chart.getChart(canvas);
+    if (!chart) return;
+
+    if (liveData.reports.length === 0) {
+        chart.data.datasets[0].data = [0, 0, 0, 0, 0];
+        chart.update();
+        // Update legend
+        const legendGrid = canvas.closest('.chart-card').querySelector('div[style*="grid-template-columns"]');
+        if (legendGrid) {
+            legendGrid.innerHTML = '<div style="font-size: 12px; color: var(--text-tertiary); grid-column: 1/-1; text-align: center; padding: 8px 0;">No report data yet</div>';
+        }
+        return;
+    }
+
+    // Count by category
+    const catCounts = {};
+    liveData.reports.forEach(r => {
+        const cat = (r.category || 'Other').toLowerCase();
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+    });
+
+    // Get top 5 categories
+    const sorted = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+    const top5 = sorted.slice(0, 5);
+    const total = liveData.reports.length;
+    const labels = top5.map(([k]) => k.charAt(0).toUpperCase() + k.slice(1));
+    const data = top5.map(([, v]) => Math.round(v / total * 100));
+    const colors = ['#3B9EF5', '#00C2D4', '#22D47E', '#F5943A', '#567088'];
+
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update();
+
+    // Update legend
+    const legendGrid = canvas.closest('.chart-card').querySelector('div[style*="grid-template-columns"]');
+    if (legendGrid) {
+        legendGrid.innerHTML = top5.map(([k, v], i) => {
+            const pct = Math.round(v / total * 100);
+            const name = k.charAt(0).toUpperCase() + k.slice(1);
+            return '<div style="display: flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: ' + colors[i] + ';"></span><span style="color: var(--text-secondary);">' + name + ' ' + pct + '%</span></div>';
+        }).join('');
+    }
+}
+
+// Update Recent Activity section with live data
+function updateRecentActivity() {
+    const activityContainer = document.getElementById('recentActivityContainer');
+    if (!activityContainer) return;
+
+    if (!liveData.reports || liveData.reports.length === 0) {
+        activityContainer.innerHTML = '<div style="text-align: center; padding: 32px 0; color: var(--text-tertiary); font-size: 13px;">No recent activity</div>';
+        return;
+    }
+
+    // Show most recent reports as activity
+    const recentItems = liveData.reports.slice(0, 5);
+    activityContainer.innerHTML = recentItems.map(r => {
+        const timeAgo = getTimeAgo(r.created_at);
+        const statusColors = {
+            submitted: 'var(--warm-accent)',
+            in_review: 'var(--info)',
+            in_progress: 'var(--accent)',
+            resolved: 'var(--success)',
+            closed: 'var(--text-tertiary)'
+        };
+        const dotColor = statusColors[r.status] || 'var(--accent)';
+        const statusLabel = r.status === 'resolved' ? 'resolved' : r.status === 'in_progress' ? 'is working on' : 'submitted';
+        return '<div class="activity-item">' +
+            '<div class="activity-dot" style="background: ' + dotColor + ';"></div>' +
+            '<div>' +
+            '<div class="activity-text">Report <strong>' + (r.title || 'Untitled') + '</strong> — ' + statusLabel + '</div>' +
+            '<div class="activity-time">' + timeAgo + '</div>' +
+            '</div></div>';
+    }).join('');
+}
+
+// Helper: time ago string
+function getTimeAgo(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const d = new Date(dateStr);
+    const diff = Math.floor((now - d) / 1000);
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' hours ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + ' days ago';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // Update reports table with live Supabase data
@@ -5228,10 +5386,10 @@ setInterval(fetchAllData, 30000);
 // NAVIGATION
 // ============================================
 // pages object already defined at top of script — update subtitles here
-pages.dashboard.subtitle = 'Tuesday, May 26, 2026 — Welcome back, Andrew';
-pages.reports.subtitle = '47 open reports require attention';
+pages.dashboard.subtitle = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' — Welcome back';
+pages.reports.subtitle = 'Loading report data...';
 pages.content.subtitle = 'Manage news, events, and alerts';
-pages.residents.subtitle = '2,847 registered users';
+pages.residents.subtitle = 'Loading user data...';
 pages.grok.subtitle = 'AI-powered city operations co-pilot';
 pages.directory.subtitle = 'Chambers of Commerce — manage business listings and reviews';
 pages.enforcement.subtitle = 'Violation notices, compliance tracking, and inspections';
@@ -7432,10 +7590,19 @@ function viewResident(userId) {
     console.log('Navigation initialized: ' + document.querySelectorAll('.nav-item[data-page]').length + ' nav items found');
 })();
 
-// --- Hover popup positioning system ---
+// --- Global Hover Popup System ---
+// Uses a single popup element appended to <body> to avoid stacking context issues
 (function() {
+    // Create global popup element
+    var globalPopup = document.createElement('div');
+    globalPopup.id = 'globalPopup';
+    globalPopup.className = 'hover-popup';
+    document.body.appendChild(globalPopup);
+
     function positionPopup(parentEl, popupEl) {
         var rect = parentEl.getBoundingClientRect();
+        // Force reflow to get accurate dimensions
+        popupEl.style.display = 'block';
         var popupW = popupEl.offsetWidth || 280;
         var popupH = popupEl.offsetHeight || 120;
 
@@ -7458,18 +7625,24 @@ function viewResident(userId) {
         popupEl.style.left = left + 'px';
     }
 
+    var currentParent = null;
+
     document.addEventListener('mouseenter', function(e) {
         var parent = e.target.closest('.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
         if (!parent) {
-            // Also check table rows
             parent = e.target.closest('.data-table tbody tr');
         }
         if (!parent) return;
-        var popup = parent.querySelector('.hover-popup');
-        if (!popup) return;
+        var localPopup = parent.querySelector('.hover-popup');
+        if (!localPopup) return;
 
-        popup.classList.add('visible');
-        positionPopup(parent, popup);
+        // Copy content into global popup
+        globalPopup.innerHTML = localPopup.innerHTML;
+        currentParent = parent;
+
+        // Force reflow then position
+        globalPopup.classList.add('visible');
+        positionPopup(parent, globalPopup);
     }, true);
 
     document.addEventListener('mouseleave', function(e) {
@@ -7478,14 +7651,13 @@ function viewResident(userId) {
             parent = e.target.closest('.data-table tbody tr');
         }
         if (!parent) return;
-        var popup = parent.querySelector('.hover-popup');
-        if (!popup) return;
 
-        // Check if we're moving to the popup itself or a child
+        // Check if we're moving to a child of the same parent
         var related = e.relatedTarget;
-        if (related && (parent.contains(related) || popup.contains(related))) return;
+        if (related && parent.contains(related)) return;
 
-        popup.classList.remove('visible');
+        globalPopup.classList.remove('visible');
+        currentParent = null;
     }, true);
 })();
 
