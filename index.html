@@ -5370,8 +5370,9 @@ function updateResidentsPage() {
 
         // Avatar — show photo if available, otherwise initials
         const initials = (p.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-        const avatarHtml = p.avatar_url
-            ? `<img src="${p.avatar_url}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
+        const avatarSrc = p.avatar_url ? (p.avatar_url.includes('?') ? p.avatar_url : p.avatar_url + '?t=' + Date.now()) : null;
+        const avatarHtml = avatarSrc
+            ? `<img src="${avatarSrc}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
             : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
 
         const hasDeletionReq = !!p.deletion_requested_at;
@@ -5961,11 +5962,12 @@ async function openReportDetail(idOrUuid) {
                 } catch(e) { /* fallback to dash */ }
             }
             // Build rich submitter card with avatar
+            const submitterAvatarSrc = submitterAvatar ? (submitterAvatar.includes('?') ? submitterAvatar : submitterAvatar + '?t=' + Date.now()) : null;
             const initials = submitterName !== '—' ? submitterName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) : '?';
             submittedByEl.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
-                    ${submitterAvatar
-                        ? `<img src="${submitterAvatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
+                    ${submitterAvatarSrc
+                        ? `<img src="${submitterAvatarSrc}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
                         : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;">${initials}</div>`
                     }
                     <div>
@@ -7713,8 +7715,9 @@ function openResidentDetail(userId) {
 
     // Avatar
     const initials = (resident.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const avatarHtml = resident.avatar_url
-        ? `<img src="${resident.avatar_url}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
+    const detailAvatarSrc = resident.avatar_url ? (resident.avatar_url.includes('?') ? resident.avatar_url : resident.avatar_url + '?t=' + Date.now()) : null;
+    const avatarHtml = detailAvatarSrc
+        ? `<img src="${detailAvatarSrc}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
         : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; border: 3px solid var(--accent);">${initials}</div>`;
 
     // Joined date
