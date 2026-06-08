@@ -4956,6 +4956,9 @@ let liveData = {
     businesses: null
 };
 
+// Track which resident detail panel is currently open (for auto-refresh)
+let currentDetailUserId = null;
+
 // Fetch all data from Supabase
 async function fetchAllData() {
     if (!sbClient) return;
@@ -5388,6 +5391,14 @@ function updateResidentsPage() {
             <td><span class="status ${statusClass}" style="font-size: 11px;"><span class="status-dot"></span>${statusLabel}</span></td>
         </tr>`;
     }).join('');
+
+    // Auto-refresh the detail panel if one is currently open
+    if (currentDetailUserId) {
+        const detailPanel = document.getElementById('residentDetail');
+        if (detailPanel && detailPanel.classList.contains('open')) {
+            openResidentDetail(currentDetailUserId);
+        }
+    }
 }
 
 // Fetch data on page load
@@ -7869,10 +7880,12 @@ function openResidentDetail(userId) {
     `;
 
     document.getElementById('residentDetail').classList.add('open');
+    currentDetailUserId = userId;
 }
 
 function closeResidentDetail() {
     document.getElementById('residentDetail').classList.remove('open');
+    currentDetailUserId = null;
 }
 
 // ── Account Deletion & Deactivation ──
