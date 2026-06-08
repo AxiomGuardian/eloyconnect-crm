@@ -5367,13 +5367,16 @@ function updateResidentsPage() {
         const reportCount = liveData.reports ? liveData.reports.filter(r => r.user_id === p.id).length : 0;
 
         // Active if updated in last 30 days
-        const isActive = p.updated_at && (Date.now() - new Date(p.updated_at).getTime()) < 30 * 86400000;
-        const statusClass = isActive ? 'status-resolved' : 'status-draft';
-        const statusLabel = isActive ? 'Active' : 'Inactive';
+        // Online/offline presence — check realtime + last_active_at fallback
+        const userOnline = typeof isUserOnline === 'function' ? isUserOnline(p) : false;
+        const presenceDot = userOnline
+            ? '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e80;"></span>'
+            : '<span style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block;opacity:0.5;"></span>';
+        const statusLabel = userOnline ? 'Online' : lastActive;
 
-        // Avatar — show photo if available, otherwise initials
+        // Avatar — unique URLs per upload, no cache busting needed
         const initials = (p.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-        const avatarSrc = p.avatar_url ? (p.avatar_url.split('?')[0] + '?t=' + Date.now()) : null;
+        const avatarSrc = p.avatar_url || null;
         const avatarHtml = avatarSrc
             ? `<img src="${avatarSrc}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
             : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
@@ -5381,14 +5384,14 @@ function updateResidentsPage() {
         const hasDeletionReq = !!p.deletion_requested_at;
         const deletionBadge = hasDeletionReq ? ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(255,152,0,0.15);color:#ff9800;font-weight:500;margin-left:6px;">⚠ Deletion</span>' : '';
 
-        return `<tr style="cursor:pointer" onclick="openResidentDetail('${p.id}')" data-status="${isActive ? 'active' : 'inactive'}">
+        return `<tr style="cursor:pointer" onclick="openResidentDetail('${p.id}')" data-status="${userOnline ? 'active' : 'inactive'}">
             <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}${deletionBadge}</div></div></div></td>
             <td style="color: var(--text-secondary); font-size: 12px;">${p.email || '—'}</td>
             <td style="color: var(--text-tertiary);">${joined}</td>
-            <td style="color: var(--text-secondary); font-size: 12px;">${lastActive}</td>
+            <td style="color: var(--text-secondary); font-size: 12px;">${presenceDot} ${statusLabel}</td>
             <td style="font-weight: 500;">${reportCount}</td>
             <td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">${flag}</span></td>
-            <td><span class="status ${statusClass}" style="font-size: 11px;"><span class="status-dot"></span>${statusLabel}</span></td>
+            <td><span class="status ${userOnline ? 'status-resolved' : 'status-draft'}" style="font-size: 11px;"><span class="status-dot"></span>${userOnline ? 'Online' : 'Offline'}</span></td>
         </tr>`;
     }).join('');
 
@@ -5404,8 +5407,92 @@ function updateResidentsPage() {
 // Fetch data on page load
 fetchAllData();
 
-// Auto-refresh every 30 seconds
-setInterval(fetchAllData, 30000);
+// ============================================
+// SUPABASE REALTIME — Live data + Presence
+// ============================================
+const onlineUsers = new Set(); // Track which user IDs are currently online
+
+function setupRealtime() {
+    if (!sbClient) return;
+
+    // Subscribe to table changes — any INSERT, UPDATE, or DELETE triggers a re-fetch + re-render
+    const tables = ['profiles', 'reports', 'news', 'alerts', 'events', 'leaders', 'notifications', 'businesses'];
+    tables.forEach(table => {
+        sbClient.channel(`realtime-${table}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table }, async (payload) => {
+                console.log(`Realtime: ${table} ${payload.eventType}`, payload.new?.id || payload.old?.id || '');
+                // Re-fetch just this table for efficiency
+                try {
+                    let query;
+                    switch(table) {
+                        case 'reports': query = sbClient.from('reports').select('*').order('created_at', { ascending: false }); break;
+                        case 'news': query = sbClient.from('news').select('*').eq('published', true).order('published_at', { ascending: false }); break;
+                        case 'alerts': query = sbClient.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }); break;
+                        case 'events': query = sbClient.from('events').select('*').eq('published', true).order('event_date', { ascending: true }); break;
+                        case 'leaders': query = sbClient.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }); break;
+                        case 'profiles': query = sbClient.from('profiles').select('*').order('created_at', { ascending: false }); break;
+                        case 'notifications': query = sbClient.from('notifications').select('*').order('created_at', { ascending: false }).limit(50); break;
+                        case 'businesses': query = sbClient.from('businesses').select('*').order('name', { ascending: true }); break;
+                    }
+                    const { data, error } = await query;
+                    if (!error && data) {
+                        liveData[table] = data;
+                        updateDashboardWithLiveData();
+                        // Re-render current page if it uses this table
+                        if (table === 'profiles') renderResidentsPage();
+                    }
+                } catch(e) { console.warn(`Realtime re-fetch ${table} failed:`, e); }
+            })
+            .subscribe();
+    });
+
+    // Presence channel — detect who is online in the app
+    const presenceChannel = sbClient.channel('app-presence');
+    presenceChannel.on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        onlineUsers.clear();
+        Object.values(state).forEach(presences => {
+            presences.forEach(p => { if (p.user_id) onlineUsers.add(p.user_id); });
+        });
+        // Re-render residents to show online/offline status
+        renderResidentsPage();
+        console.log('Online users:', onlineUsers.size);
+    });
+    presenceChannel.subscribe();
+
+    console.log('Supabase Realtime connected — live updates enabled');
+}
+
+// Helper: check if a user was active recently (within 5 minutes) based on last_active_at
+function isUserOnline(profile) {
+    if (onlineUsers.has(profile.id)) return true;
+    if (!profile.last_active_at) return false;
+    const lastActive = new Date(profile.last_active_at).getTime();
+    return (Date.now() - lastActive) < 5 * 60 * 1000; // 5 minutes
+}
+
+// Re-render the Residents page (called on realtime updates)
+function renderResidentsPage() {
+    const residentsBody = document.getElementById('residentsTableBody');
+    if (residentsBody && liveData.profiles) {
+        // Only re-render if we're on the Residents page
+        const residentsPage = document.getElementById('page-residents');
+        if (residentsPage && residentsPage.style.display !== 'none') {
+            // Trigger a re-render by updating the table
+            if (typeof showPage === 'function') {
+                const currentPage = document.querySelector('.nav-link.active');
+                if (currentPage && currentPage.dataset.page === 'residents') {
+                    showPage('residents');
+                }
+            }
+        }
+    }
+}
+
+setupRealtime();
+
+// Fallback: still poll every 60s in case realtime disconnects
+setInterval(fetchAllData, 60000);
 
 // ============================================
 // DOT MATRIX ANIMATION
@@ -7724,20 +7811,26 @@ function openResidentDetail(userId) {
     const reportCount = liveData.reports ? liveData.reports.filter(r => r.user_id === userId).length : 0;
     const userReports = liveData.reports ? liveData.reports.filter(r => r.user_id === userId) : [];
 
-    // Avatar
+    // Avatar — unique filenames per upload, no cache busting needed
     const initials = (resident.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const detailAvatarSrc = resident.avatar_url ? (resident.avatar_url.split('?')[0] + '?t=' + Date.now()) : null;
+    const detailAvatarSrc = resident.avatar_url || null;
     const avatarHtml = detailAvatarSrc
         ? `<img src="${detailAvatarSrc}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
         : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; border: 3px solid var(--accent);">${initials}</div>`;
 
+    // Online/offline presence
+    const residentOnline = typeof isUserOnline === 'function' ? isUserOnline(resident) : false;
+
     // Joined date
     const joined = resident.created_at ? new Date(resident.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown';
 
-    // Last active
+    // Last active — show "Online now" if presence is active
     let lastActive = 'Unknown';
-    if (resident.updated_at) {
-        const diff = Date.now() - new Date(resident.updated_at).getTime();
+    if (residentOnline) {
+        lastActive = 'Online now';
+    } else if (resident.last_active_at || resident.updated_at) {
+        const ts = resident.last_active_at || resident.updated_at;
+        const diff = Date.now() - new Date(ts).getTime();
         const mins = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
@@ -7779,9 +7872,15 @@ function openResidentDetail(userId) {
     document.getElementById('residentDetailBody').innerHTML = `
         <!-- Profile Card -->
         <div style="text-align: center; padding: 20px 0 24px;">
-            <div style="display: flex; justify-content: center; margin-bottom: 12px;">${avatarHtml}</div>
+            <div style="display: flex; justify-content: center; margin-bottom: 12px; position: relative; width: 86px; margin-left: auto; margin-right: auto;">
+                ${avatarHtml}
+                <span style="position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bg-primary); background: ${residentOnline ? '#22c55e' : '#6b7280'}; ${residentOnline ? 'box-shadow: 0 0 8px #22c55e80;' : 'opacity: 0.6;'}"></span>
+            </div>
             <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">${resident.display_name || 'Anonymous'}</div>
-            <div style="font-size: 13px; color: var(--accent); margin-top: 4px;">${(resident.role || 'resident').charAt(0).toUpperCase() + (resident.role || 'resident').slice(1)} · Joined ${joined}</div>
+            <div style="font-size: 13px; color: ${residentOnline ? '#22c55e' : 'var(--accent)'}; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                ${residentOnline ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Online now' : (resident.role || 'resident').charAt(0).toUpperCase() + (resident.role || 'resident').slice(1) + ' · Last active ' + lastActive}
+            </div>
+            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">Joined ${joined}</div>
         </div>
 
         <!-- Contact Info -->
