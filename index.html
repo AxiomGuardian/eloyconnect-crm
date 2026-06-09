@@ -4647,8 +4647,8 @@ textarea.form-input {
                 <div id="reportPhotos" style="font-size: 14px; font-weight: 500;">No photos</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">AI Description</div>
-                <div style="font-size: 12px; color: var(--accent);">Auto-generated</div>
+                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Description</div>
+                <div id="reportDescription" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">No description provided.</div>
             </div>
         </div>
 
@@ -4725,7 +4725,7 @@ textarea.form-input {
 
         <div style="margin-bottom: 14px;">
             <label class="form-label">Content Type</label>
-            <select class="form-input">
+            <select class="form-input" id="contentType">
                 <option>News Article</option>
                 <option>Community Event</option>
                 <option>Civic Alert</option>
@@ -4733,29 +4733,19 @@ textarea.form-input {
         </div>
 
         <div style="margin-bottom: 14px;">
-            <label class="form-label">Title (English)</label>
-            <input class="form-input" placeholder="Enter title...">
+            <label class="form-label">Title</label>
+            <input class="form-input" id="contentTitle" placeholder="Enter title...">
         </div>
 
         <div style="margin-bottom: 14px;">
-            <label class="form-label">Title (Spanish)</label>
-            <input class="form-input" placeholder="Ingrese el titulo...">
-        </div>
-
-        <div style="margin-bottom: 14px;">
-            <label class="form-label">Body (English)</label>
-            <textarea class="form-input" rows="4" placeholder="Write the content body..."></textarea>
-        </div>
-
-        <div style="margin-bottom: 14px;">
-            <label class="form-label">Body (Spanish)</label>
-            <textarea class="form-input" rows="4" placeholder="Escriba el contenido..."></textarea>
+            <label class="form-label">Body</label>
+            <textarea class="form-input" id="contentBody" rows="4" placeholder="Write the content body..."></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
             <div>
                 <label class="form-label">Category</label>
-                <select class="form-input">
+                <select class="form-input" id="contentCategory">
                     <option>General</option>
                     <option>Community Services</option>
                     <option>Public Safety</option>
@@ -4765,18 +4755,21 @@ textarea.form-input {
             </div>
             <div>
                 <label class="form-label">Severity (Alerts only)</label>
-                <select class="form-input">
-                    <option>Low — Informational</option>
-                    <option>Medium — Advisory</option>
-                    <option>High — Urgent</option>
+                <select class="form-input" id="contentSeverity">
+                    <option>Low - Informational</option>
+                    <option>Medium - Advisory</option>
+                    <option>High - Urgent</option>
                 </select>
             </div>
         </div>
 
         <div style="padding: 12px; background: rgba(0, 194, 212, 0.06); border: 1px solid rgba(0, 194, 212, 0.15); border-radius: var(--radius-sm); margin-bottom: 14px;">
-            <div style="font-size: 13px; color: var(--accent); font-weight: 500; margin-bottom: 4px;">AI Translation</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">Click "Auto-translate" to generate Chinese and German translations using AI.</div>
-            <button class="btn btn-secondary" style="margin-top: 8px; font-size: 12px;">Auto-translate to ZH & DE</button>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <div style="font-size: 13px; color: var(--accent); font-weight: 500;">Auto-translate</div>
+                <button class="btn btn-secondary" style="font-size: 12px; padding: 4px 12px;" onclick="autoTranslateContent()" id="translateBtn">Translate to ES, ZH, DE</button>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Generates Spanish, Chinese, and German translations from your title and body.</div>
+            <div id="translationPreview" style="display: none; margin-top: 10px; font-size: 12px; line-height: 1.5;"></div>
         </div>
 
         <div class="modal-actions">
@@ -5468,7 +5461,7 @@ function isUserOnline(profile) {
     if (onlineUsers.has(profile.id)) return true;
     if (!profile.last_active_at) return false;
     const lastActive = new Date(profile.last_active_at).getTime();
-    return (Date.now() - lastActive) < 5 * 60 * 1000; // 5 minutes
+    return (Date.now() - lastActive) < 2 * 60 * 1000; // 2 minutes
 }
 
 // Re-render the Residents page (called on realtime updates)
@@ -6022,6 +6015,10 @@ async function openReportDetail(idOrUuid) {
         const desc = body.querySelector('p');
         if (desc) desc.textContent = report.description || 'No description provided.';
 
+        // Update description in detail card
+        const descCard = document.getElementById('reportDescription');
+        if (descCard) descCard.textContent = report.description || 'No description provided.';
+
         // Update category
         const tag = body.querySelector('.tag');
         if (tag) tag.textContent = report.category || 'General';
@@ -6121,17 +6118,17 @@ async function openReportDetail(idOrUuid) {
             if (lat && lng) {
                 const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
                 const amapsUrl = `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(addr || 'Report Location')}`;
-                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">🗺️ Google Maps</a>`;
-                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">🍎 Apple Maps</a>`;
+                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Google Maps</a>`;
+                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Apple Maps</a>`;
             }
 
             if (addr) {
-                buttons += `<button onclick="navigator.clipboard.writeText('${addr.replace(/'/g, "\\'")}'); this.innerHTML='✅ Copied!'; setTimeout(() => this.innerHTML='📋 Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">📋 Copy Address</button>`;
+                buttons += `<button onclick="navigator.clipboard.writeText('${addr.replace(/'/g, "\\'")}'); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
             }
 
             if (lat && lng) {
                 const coordStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                buttons += `<button onclick="navigator.clipboard.writeText('${coordStr}'); this.innerHTML='✅ Copied!'; setTimeout(() => this.innerHTML='📌 Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">📌 Copy GPS</button>`;
+                buttons += `<button onclick="navigator.clipboard.writeText('${coordStr}'); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
             }
 
             actionsEl.innerHTML = buttons || '<span style="font-size:12px; color:var(--text-tertiary);">No location data available</span>';
@@ -6272,26 +6269,71 @@ async function resolveReport() {
 // ============================================
 
 // Create new content (news, event, or alert)
+// Store translations from auto-translate
+let contentTranslations = { title_es: null, title_zh: null, title_de: null, body_es: null, body_zh: null, body_de: null };
+
+async function autoTranslateContent() {
+    const title = document.getElementById('contentTitle')?.value?.trim();
+    const body = document.getElementById('contentBody')?.value?.trim();
+    if (!title) { showToast('Enter a title first', 'warning'); return; }
+
+    const btn = document.getElementById('translateBtn');
+    btn.textContent = 'Translating...';
+    btn.disabled = true;
+
+    try {
+        const textToTranslate = body ? `Title: ${title}\nBody: ${body}` : `Title: ${title}`;
+        const { data, error } = await sbClient.functions.invoke('grok-chat', {
+            body: {
+                messages: [
+                    { role: 'system', content: 'You are a translation assistant. Translate the given text into Spanish (ES), Chinese Simplified (ZH), and German (DE). Return ONLY valid JSON with keys: title_es, title_zh, title_de, body_es, body_zh, body_de. If there is no body, set body values to null. Keep translations concise and natural.' },
+                    { role: 'user', content: textToTranslate }
+                ]
+            }
+        });
+
+        if (error) throw error;
+        const responseText = data?.choices?.[0]?.message?.content || data?.reply || '';
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            contentTranslations = JSON.parse(jsonMatch[0]);
+            const preview = document.getElementById('translationPreview');
+            preview.style.display = 'block';
+            preview.innerHTML = `
+                <div style="color: var(--success); margin-bottom: 4px;">Translations ready:</div>
+                <div><strong>ES:</strong> ${contentTranslations.title_es || '—'}</div>
+                <div><strong>ZH:</strong> ${contentTranslations.title_zh || '—'}</div>
+                <div><strong>DE:</strong> ${contentTranslations.title_de || '—'}</div>
+            `;
+            showToast('Translations generated', 'success');
+        } else {
+            throw new Error('Could not parse translation response');
+        }
+    } catch(e) {
+        console.warn('Auto-translate failed:', e);
+        showToast('Translation failed — you can still publish in English', 'warning');
+    } finally {
+        btn.textContent = 'Translate to ES, ZH, DE';
+        btn.disabled = false;
+    }
+}
+
 async function publishContent() {
     if (!sbClient) {
         showToast('Supabase not connected', 'error');
         return;
     }
 
-    const modal = document.getElementById('contentModal');
-    const typeSelect = modal.querySelector('select');
-    const inputs = modal.querySelectorAll('.form-input');
-
-    const contentType = typeSelect?.value || 'News Article';
-    const titleEn = inputs[1]?.value?.trim();
-    const titleEs = inputs[2]?.value?.trim();
-    const bodyEn = inputs[3]?.value?.trim();
-    const bodyEs = inputs[4]?.value?.trim();
-    const category = inputs[5]?.value || 'General';
-    const severity = inputs[6]?.value?.split(' ')[0]?.toLowerCase() || 'low';
+    const contentType = document.getElementById('contentType')?.value || 'News Article';
+    const titleEn = document.getElementById('contentTitle')?.value?.trim();
+    const bodyEn = document.getElementById('contentBody')?.value?.trim();
+    const category = document.getElementById('contentCategory')?.value || 'General';
+    const severity = document.getElementById('contentSeverity')?.value?.split(' ')[0]?.toLowerCase() || 'low';
+    const titleEs = contentTranslations.title_es;
+    const bodyEs = contentTranslations.body_es;
 
     if (!titleEn) {
-        showToast('Title (English) is required', 'warning');
+        showToast('Title is required', 'warning');
         return;
     }
 
@@ -6303,7 +6345,7 @@ async function publishContent() {
                 title_en: titleEn,
                 title_es: titleEs || null,
                 excerpt_en: bodyEn?.substring(0, 200) || null,
-                excerpt_es: bodyEs?.substring(0, 200) || null,
+                excerpt_es: bodyEs ? bodyEs.substring(0, 200) : null,
                 body_en: bodyEn || null,
                 body_es: bodyEs || null,
                 category: category,
@@ -6361,10 +6403,10 @@ async function publishContent() {
         await fetchAllData();
 
         // Clear form
-        inputs.forEach(input => {
-            if (input.tagName === 'TEXTAREA') input.value = '';
-            else if (input.tagName === 'INPUT') input.value = '';
-        });
+        document.getElementById('contentTitle').value = '';
+        document.getElementById('contentBody').value = '';
+        document.getElementById('translationPreview').style.display = 'none';
+        contentTranslations = { title_es: null, title_zh: null, title_de: null, body_es: null, body_zh: null, body_de: null };
 
     } catch(e) {
         showToast('Failed to publish: ' + e.message, 'error');
@@ -6378,19 +6420,15 @@ async function saveDraft() {
         return;
     }
 
-    const modal = document.getElementById('contentModal');
-    const typeSelect = modal.querySelector('select');
-    const inputs = modal.querySelectorAll('.form-input');
-
-    const contentType = typeSelect?.value || 'News Article';
-    const titleEn = inputs[1]?.value?.trim();
-    const titleEs = inputs[2]?.value?.trim();
-    const bodyEn = inputs[3]?.value?.trim();
-    const bodyEs = inputs[4]?.value?.trim();
-    const category = inputs[5]?.value || 'General';
+    const contentType = document.getElementById('contentType')?.value || 'News Article';
+    const titleEn = document.getElementById('contentTitle')?.value?.trim();
+    const bodyEn = document.getElementById('contentBody')?.value?.trim();
+    const category = document.getElementById('contentCategory')?.value || 'General';
+    const titleEs = contentTranslations.title_es;
+    const bodyEs = contentTranslations.body_es;
 
     if (!titleEn) {
-        showToast('Title (English) is required', 'warning');
+        showToast('Title is required', 'warning');
         return;
     }
 
