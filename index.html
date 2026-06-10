@@ -2631,6 +2631,38 @@ textarea.form-input {
                 </div>
             </div>
 
+            <!-- RECENT SUBSCRIBERS WIDGET -->
+            <div class="charts-row">
+                <div class="chart-card" style="flex: 1.2;">
+                    <div class="chart-title">
+                        New Subscribers — Last 14 Days
+                        <span class="subtitle" id="subscriberTrendLabel">Signup trend</span>
+                    </div>
+                    <div style="height: 180px; position: relative;">
+                        <canvas id="chartSubscriberTrend"></canvas>
+                    </div>
+                    <div style="display: flex; gap: 16px; margin-top: 12px;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent);"></span>
+                            <span>This week: <strong id="subscriberThisWeek" style="color: var(--text-primary);">—</strong></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+                            <span style="width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+                            <span>Last week: <strong id="subscriberLastWeek" style="color: var(--text-primary);">—</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card" style="flex: 0.8;">
+                    <div class="chart-title">
+                        Recent Sign-ups
+                        <button class="btn btn-ghost" style="font-size: 12px;" onclick="navigateToPage('residents')">View All</button>
+                    </div>
+                    <div id="recentSubscribersContainer" style="display: flex; flex-direction: column; gap: 2px;">
+                        <div style="color: var(--text-tertiary); font-size: 13px; padding: 12px 0;">Loading subscribers...</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- AI ANALYTICS — DASHBOARD -->
             <div class="ai-panel">
                 <div class="ai-panel-header">
@@ -3237,6 +3269,7 @@ textarea.form-input {
                 <button class="filter-tab" onclick="filterResidentTab('active', this)">Active</button>
                 <button class="filter-tab" onclick="filterResidentTab('new', this)">New This Week</button>
                 <button class="filter-tab" onclick="filterResidentTab('inactive', this)">Inactive</button>
+                <button class="filter-tab" onclick="filterResidentTab('deactivated', this)">Deactivated</button>
             </div>
 
             <div class="metrics-grid anim-stagger" style="grid-template-columns: repeat(5, 1fr);">
@@ -5070,6 +5103,9 @@ function updateDashboardWithLiveData() {
 
     // Update Residents page with live data
     updateResidentsPage();
+
+    // Update subscriber trend widget on dashboard
+    updateSubscriberWidget();
 }
 
 // Update AI Briefing page report counts
@@ -5193,6 +5229,123 @@ function updateRecentActivity() {
             '<div class="activity-text">Report <strong>' + (r.title || 'Untitled') + '</strong> — ' + statusLabel + '</div>' +
             '<div class="activity-time">' + timeAgo + '</div>' +
             '</div></div>';
+    }).join('');
+}
+
+// Update subscriber trend chart and recent subscribers list
+function updateSubscriberWidget() {
+    if (!liveData.profiles || liveData.profiles.length === 0) return;
+
+    // Sort profiles by created_at descending
+    const sorted = [...liveData.profiles].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // Build daily counts for last 14 days
+    const now = new Date();
+    const days14 = [];
+    const labels14 = [];
+    for (let i = 13; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+        const nextD = new Date(d);
+        nextD.setDate(nextD.getDate() + 1);
+        const count = liveData.profiles.filter(p => {
+            const c = new Date(p.created_at);
+            return c >= d && c < nextD;
+        }).length;
+        days14.push(count);
+        labels14.push(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+    }
+
+    // This week vs last week counts
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(thisWeekStart.getDate() - 6);
+    thisWeekStart.setHours(0, 0, 0, 0);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    const thisWeekCount = days14.slice(7).reduce((a, b) => a + b, 0);
+    const lastWeekCount = days14.slice(0, 7).reduce((a, b) => a + b, 0);
+
+    const twEl = document.getElementById('subscriberThisWeek');
+    const lwEl = document.getElementById('subscriberLastWeek');
+    if (twEl) twEl.textContent = thisWeekCount;
+    if (lwEl) lwEl.textContent = lastWeekCount;
+
+    const trendLabel = document.getElementById('subscriberTrendLabel');
+    if (trendLabel) {
+        const totalNew = days14.reduce((a, b) => a + b, 0);
+        trendLabel.textContent = totalNew + ' new in 14 days';
+    }
+
+    // Draw the trend chart
+    const canvas = document.getElementById('chartSubscriberTrend');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (window.subscriberTrendChart) window.subscriberTrendChart.destroy();
+        window.subscriberTrendChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels14.map(l => l.split(', ')[0] || l.split(' ').slice(-1)[0]),
+                datasets: [{
+                    data: days14,
+                    backgroundColor: days14.map((_, i) => i >= 7 ? 'rgba(0, 194, 212, 0.7)' : 'rgba(255, 255, 255, 0.08)'),
+                    borderColor: days14.map((_, i) => i >= 7 ? 'rgba(0, 194, 212, 1)' : 'rgba(255, 255, 255, 0.15)'),
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.65
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: {
+                    backgroundColor: 'rgba(15, 20, 30, 0.95)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#b0bec5',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: function(items) { return labels14[items[0].dataIndex]; },
+                        label: function(item) { return item.raw + ' new sign-up' + (item.raw !== 1 ? 's' : ''); }
+                    }
+                }},
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 }, maxRotation: 0 }},
+                    y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Recent subscribers list (most recent 6)
+    const container = document.getElementById('recentSubscribersContainer');
+    if (!container) return;
+    const recent = sorted.slice(0, 6);
+
+    if (recent.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 32px 0; color: var(--text-tertiary); font-size: 13px;">No subscribers yet</div>';
+        return;
+    }
+
+    container.innerHTML = recent.map(p => {
+        const name = p.display_name || p.email || 'Anonymous';
+        const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const timeAgo = getTimeAgo(p.created_at);
+        const langBadge = p.language_pref ? ('<span style="font-size: 10px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--text-tertiary); margin-left: 6px;">' + (p.language_pref || 'en').toUpperCase() + '</span>') : '';
+        const avatarUrl = p.avatar_url;
+        const avatarHtml = avatarUrl
+            ? '<img src="' + avatarUrl + '" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.1);" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><div style="display:none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,194,212,0.2), rgba(59,158,245,0.2)); color: var(--accent); font-size: 11px; font-weight: 600; align-items: center; justify-content: center;">' + initials + '</div>'
+            : '<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,194,212,0.2), rgba(59,158,245,0.2)); color: var(--accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center;">' + initials + '</div>';
+
+        return '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-radius: 8px; transition: background 0.15s;" onmouseenter="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseleave="this.style.background=\'transparent\'">' +
+            '<div style="flex-shrink: 0;">' + avatarHtml + '</div>' +
+            '<div style="flex: 1; min-width: 0;">' +
+            '<div style="font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + name + langBadge + '</div>' +
+            '<div style="font-size: 11px; color: var(--text-tertiary);">' + timeAgo + '</div>' +
+            '</div>' +
+            '<div style="flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--success);"></div>' +
+            '</div>';
     }).join('');
 }
 
@@ -5375,16 +5528,23 @@ function updateResidentsPage() {
             : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
 
         const hasDeletionReq = !!p.deletion_requested_at;
+        const isDeactivated = !!p.deactivated_at;
         const deletionBadge = hasDeletionReq ? ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(255,152,0,0.15);color:#ff9800;font-weight:500;margin-left:6px;">⚠ Deletion</span>' : '';
+        const deactivatedBadge = isDeactivated ? ' <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(255,152,0,0.1);color:#ff9800;font-weight:500;margin-left:6px;">Deactivated</span>' : '';
 
-        return `<tr style="cursor:pointer" onclick="openResidentDetail('${p.id}')" data-status="${userOnline ? 'active' : 'inactive'}">
-            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}${deletionBadge}</div></div></div></td>
+        const rowStatus = isDeactivated ? 'deactivated' : (userOnline ? 'active' : 'inactive');
+        const statusBadge = isDeactivated
+            ? '<span class="status status-draft" style="font-size: 11px;"><span class="status-dot"></span>Deactivated</span>'
+            : `<span class="status ${userOnline ? 'status-resolved' : 'status-draft'}" style="font-size: 11px;"><span class="status-dot"></span>${userOnline ? 'Online' : 'Offline'}</span>`;
+
+        return `<tr style="cursor:pointer;${isDeactivated ? 'opacity:0.6;' : ''}" onclick="openResidentDetail('${p.id}')" data-status="${rowStatus}">
+            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}${deletionBadge}${deactivatedBadge}</div></div></div></td>
             <td style="color: var(--text-secondary); font-size: 12px;">${p.email || '—'}</td>
             <td style="color: var(--text-tertiary);">${joined}</td>
             <td style="color: var(--text-secondary); font-size: 12px;">${presenceDot} ${statusLabel}</td>
             <td style="font-weight: 500;">${reportCount}</td>
             <td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">${flag}</span></td>
-            <td><span class="status ${userOnline ? 'status-resolved' : 'status-draft'}" style="font-size: 11px;"><span class="status-dot"></span>${userOnline ? 'Online' : 'Offline'}</span></td>
+            <td>${statusBadge}</td>
         </tr>`;
     }).join('');
 
@@ -7836,6 +7996,7 @@ function filterResidentTable() {
         let matchesFilter = true;
         if (currentResidentFilter === 'active') matchesFilter = status === 'active';
         else if (currentResidentFilter === 'inactive') matchesFilter = status === 'inactive';
+        else if (currentResidentFilter === 'deactivated') matchesFilter = status === 'deactivated';
         else if (currentResidentFilter === 'new') matchesFilter = isNew;
 
         const matchesSearch = !query || name.includes(query) || email.includes(query);
@@ -8023,10 +8184,14 @@ function openResidentDetail(userId) {
                     <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
                 </select>
             </div>
+            ${resident.deactivated_at ? `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 10px 12px; background: rgba(255,152,0,0.1); border-radius: 8px; border: 1px solid rgba(255,152,0,0.2);">
+                <span style="font-size: 11px; color: #ff9800; font-weight: 600;">Account deactivated ${new Date(resident.deactivated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </div>` : ''}
             ${!resident.deletion_requested_at ? `
             <div style="display: flex; gap: 8px;">
                 <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #d32f2f; border-color: rgba(211,47,47,0.3);" onclick="processAccountDeletion('${userId}')">&#128465; Delete Account</button>
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #ff9800; border-color: rgba(255,152,0,0.3);" onclick="deactivateResident('${userId}')">Deactivate</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: ${resident.deactivated_at ? '#4caf50' : '#ff9800'}; border-color: ${resident.deactivated_at ? 'rgba(76,175,80,0.3)' : 'rgba(255,152,0,0.3)'};" onclick="deactivateResident('${userId}')">${resident.deactivated_at ? 'Reactivate' : 'Deactivate'}</button>
             </div>` : ''}
         </div>
     `;
@@ -8050,15 +8215,14 @@ async function processAccountDeletion(userId) {
     if (!confirm(`⚠️ PERMANENT ACTION\n\nAre you sure you want to delete ${name}'s account?\n\nThis will:\n• Remove their profile data\n• Clear their reports history\n• Revoke app access\n\nThis cannot be undone.`)) return;
 
     try {
-        // Delete the user's profile (cascade will handle related data if configured)
-        const { error } = await sbClient
-            .from('profiles')
-            .delete()
-            .eq('id', userId);
+        // Use admin RPC that handles all related data + auth.users deletion
+        const { error } = await sbClient.rpc('admin_delete_account', {
+            target_user_id: userId
+        });
 
         if (error) throw error;
 
-        showToast(`${name}'s account has been deleted`, 'success');
+        showToast(`${name}'s account has been permanently deleted`, 'success');
         closeResidentDetail();
         await fetchAllData();
     } catch(e) {
@@ -8090,24 +8254,26 @@ async function deactivateResident(userId) {
     if (!sbClient) return;
     const resident = liveData.profiles?.find(p => p.id === userId);
     const name = resident?.display_name || 'this resident';
+    const isCurrentlyDeactivated = !!resident?.deactivated_at;
+    const action = isCurrentlyDeactivated ? 'Reactivate' : 'Deactivate';
 
-    if (!confirm(`Deactivate ${name}'s account?\n\nTheir data will be preserved but they will not appear as active.`)) return;
+    if (!confirm(`${action} ${name}'s account?\n\n${isCurrentlyDeactivated
+        ? 'Their account will be restored to active status.'
+        : 'Their data will be preserved but they will be marked as inactive.'}`)) return;
 
     try {
-        // Set updated_at far in the past so they show as "inactive" (>30 days)
-        const pastDate = new Date(Date.now() - 90 * 86400000).toISOString();
-        const { error } = await sbClient
-            .from('profiles')
-            .update({ updated_at: pastDate })
-            .eq('id', userId);
+        const { error } = await sbClient.rpc('admin_toggle_deactivation', {
+            target_user_id: userId,
+            should_deactivate: !isCurrentlyDeactivated
+        });
 
         if (error) throw error;
 
-        showToast(`${name} has been deactivated`, 'success');
+        showToast(`${name} has been ${isCurrentlyDeactivated ? 'reactivated' : 'deactivated'}`, 'success');
         await fetchAllData();
         openResidentDetail(userId);
     } catch(e) {
-        showToast('Failed to deactivate: ' + e.message, 'error');
+        showToast(`Failed to ${action.toLowerCase()}: ` + e.message, 'error');
     }
 }
 
