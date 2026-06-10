@@ -4813,6 +4813,19 @@ textarea.form-input {
     </div>
 </div>
 
+<!-- CONFIRM DIALOG MODAL -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal" style="width: 440px; max-height: 60vh; padding: 32px;">
+        <div id="confirmModalIcon" style="width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 24px;"></div>
+        <h3 id="confirmModalTitle" style="font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 8px 0;"></h3>
+        <p id="confirmModalMessage" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 28px 0;"></p>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeConfirmModal(false)" style="padding: 10px 20px; font-size: 14px;">Cancel</button>
+            <button class="btn" id="confirmModalAction" onclick="closeConfirmModal(true)" style="padding: 10px 20px; font-size: 14px;"></button>
+        </div>
+    </div>
+</div>
+
 <!-- NAVIGATION SCRIPT — separate tag so it ALWAYS loads even if main script crashes -->
 <script>
 var pages = {
@@ -4887,6 +4900,74 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 4000);
 }
+
+// ============================================
+// CONFIRM DIALOG — styled replacement for native confirm()
+// ============================================
+
+let _confirmResolve = null;
+
+function showConfirmDialog({ title, message, confirmText = 'Confirm', confirmStyle = 'danger', icon = '' }) {
+    return new Promise((resolve) => {
+        _confirmResolve = resolve;
+        const modal = document.getElementById('confirmModal');
+        const iconEl = document.getElementById('confirmModalIcon');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const msgEl = document.getElementById('confirmModalMessage');
+        const actionBtn = document.getElementById('confirmModalAction');
+
+        titleEl.textContent = title;
+        msgEl.innerHTML = message;
+
+        // Icon background color based on style
+        const iconStyles = {
+            danger: { bg: 'rgba(244, 63, 94, 0.12)', border: 'rgba(244, 63, 94, 0.2)' },
+            warning: { bg: 'rgba(245, 148, 58, 0.12)', border: 'rgba(245, 148, 58, 0.2)' },
+            primary: { bg: 'rgba(0, 194, 212, 0.12)', border: 'rgba(0, 194, 212, 0.2)' }
+        };
+        const iconTheme = iconStyles[confirmStyle] || iconStyles.danger;
+        iconEl.style.background = iconTheme.bg;
+        iconEl.style.border = `1px solid ${iconTheme.border}`;
+        iconEl.innerHTML = icon || (confirmStyle === 'danger' ? '<svg width="24" height="24" fill="none" stroke="#F43F5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' : '<svg width="24" height="24" fill="none" stroke="#00C2D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>');
+
+        actionBtn.textContent = confirmText;
+        // Remove old style classes and apply new
+        actionBtn.className = 'btn';
+        if (confirmStyle === 'danger') {
+            actionBtn.style.background = 'rgba(244, 63, 94, 0.15)';
+            actionBtn.style.color = '#F43F5E';
+            actionBtn.style.border = '1px solid rgba(244, 63, 94, 0.25)';
+        } else if (confirmStyle === 'warning') {
+            actionBtn.style.background = 'rgba(245, 148, 58, 0.15)';
+            actionBtn.style.color = '#F5943A';
+            actionBtn.style.border = '1px solid rgba(245, 148, 58, 0.25)';
+        } else {
+            actionBtn.style.background = 'linear-gradient(135deg, #00C2D4, #0891B2)';
+            actionBtn.style.color = 'white';
+            actionBtn.style.border = 'none';
+        }
+
+        modal.classList.add('open');
+    });
+}
+
+function closeConfirmModal(confirmed) {
+    document.getElementById('confirmModal').classList.remove('open');
+    if (_confirmResolve) {
+        _confirmResolve(confirmed);
+        _confirmResolve = null;
+    }
+}
+
+// Close confirm modal on overlay click
+document.addEventListener('DOMContentLoaded', () => {
+    const confirmOverlay = document.getElementById('confirmModal');
+    if (confirmOverlay) {
+        confirmOverlay.addEventListener('click', (e) => {
+            if (e.target === confirmOverlay) closeConfirmModal(false);
+        });
+    }
+});
 
 // ============================================
 // AUTH — Login Gate
@@ -6649,7 +6730,13 @@ async function togglePublish(table, id, currentlyPublished) {
 async function deleteContent(table, id) {
     if (!sbClient) return;
 
-    if (!confirm('Are you sure you want to delete this item? This cannot be undone.')) return;
+    const confirmed = await showConfirmDialog({
+        title: 'Delete Content',
+        message: 'Are you sure you want to delete this item?<br><span style="color: var(--text-tertiary); font-size: 13px;">This action cannot be undone.</span>',
+        confirmText: 'Delete',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
 
     try {
         const { error } = await sbClient
@@ -7373,12 +7460,18 @@ function saveLeader() {
     renderLeaders();
 }
 
-function deleteLeader() {
+async function deleteLeader() {
     if (!editingLeaderId) return;
     const leader = cityLeaders.find(l => l.id === editingLeaderId);
     if (!leader) return;
 
-    if (!confirm(`Remove ${leader.name} from City Leaders? This cannot be undone.`)) return;
+    const confirmed = await showConfirmDialog({
+        title: 'Remove Leader',
+        message: `Remove <strong>${leader.name}</strong> from City Leaders?<br><span style="color: var(--text-tertiary); font-size: 13px;">This action cannot be undone.</span>`,
+        confirmText: 'Remove',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
 
     cityLeaders = cityLeaders.filter(l => l.id !== editingLeaderId);
     showToast(`${leader.name} removed`, 'info');
@@ -8212,7 +8305,16 @@ async function processAccountDeletion(userId) {
     const resident = liveData.profiles?.find(p => p.id === userId);
     const name = resident?.display_name || 'this resident';
 
-    if (!confirm(`⚠️ PERMANENT ACTION\n\nAre you sure you want to delete ${name}'s account?\n\nThis will:\n• Remove their profile data\n• Clear their reports history\n• Revoke app access\n\nThis cannot be undone.`)) return;
+    const confirmed = await showConfirmDialog({
+        title: 'Delete Account Permanently',
+        message: `Are you sure you want to delete <strong>${name}</strong>'s account?<br><br>
+            <span style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+            This will remove their profile data, clear their reports history, and revoke app access.<br>
+            <strong style="color: #F43F5E;">This action cannot be undone.</strong></span>`,
+        confirmText: 'Delete Account',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
 
     try {
         // Use admin RPC that handles all related data + auth.users deletion
@@ -8257,9 +8359,16 @@ async function deactivateResident(userId) {
     const isCurrentlyDeactivated = !!resident?.deactivated_at;
     const action = isCurrentlyDeactivated ? 'Reactivate' : 'Deactivate';
 
-    if (!confirm(`${action} ${name}'s account?\n\n${isCurrentlyDeactivated
-        ? 'Their account will be restored to active status.'
-        : 'Their data will be preserved but they will be marked as inactive.'}`)) return;
+    const confirmed = await showConfirmDialog({
+        title: `${action} Account`,
+        message: `${action} <strong>${name}</strong>'s account?<br><br>
+            <span style="color: var(--text-secondary); font-size: 13px;">${isCurrentlyDeactivated
+            ? 'Their account will be restored to active status.'
+            : 'Their data will be preserved but they will be marked as inactive.'}</span>`,
+        confirmText: action,
+        confirmStyle: isCurrentlyDeactivated ? 'primary' : 'warning'
+    });
+    if (!confirmed) return;
 
     try {
         const { error } = await sbClient.rpc('admin_toggle_deactivation', {
