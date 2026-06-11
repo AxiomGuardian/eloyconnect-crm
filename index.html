@@ -4690,7 +4690,8 @@ textarea.form-input {
                 <label class="form-label">Status</label>
                 <select class="form-input" id="reportStatusSelect" onchange="updateReportStatus(this.value)">
                     <option value="submitted">Open / Submitted</option>
-                    <option value="in_review">In Review</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="assigned">Assigned</option>
                     <option value="in_progress">In Progress</option>
                     <option value="resolved">Resolved</option>
                     <option value="closed">Closed</option>
@@ -5091,6 +5092,7 @@ async function fetchAllData() {
         if (notifications.status === 'fulfilled' && !notifications.value.error) liveData.notifications = notifications.value.data;
         if (businesses.status === 'fulfilled' && !businesses.value.error) liveData.businesses = businesses.value.data;
 
+        buildBusinessListings();
         updateDashboardWithLiveData();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -5104,8 +5106,8 @@ function updateDashboardWithLiveData() {
     const dashMetrics = document.querySelectorAll('#page-dashboard > .metrics-grid .metric-value');
 
     if (liveData.reports) {
-        const openReports = liveData.reports.filter(r => r.status === 'submitted' || r.status === 'in_review' || r.status === 'open').length;
-        const inProgress = liveData.reports.filter(r => r.status === 'in_progress' || r.status === 'in_review').length;
+        const openReports = liveData.reports.filter(r => r.status === 'submitted' || r.status === 'under_review' || r.status === 'open').length;
+        const inProgress = liveData.reports.filter(r => r.status === 'in_progress' || r.status === 'assigned' || r.status === 'under_review').length;
         const resolvedReports = liveData.reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
         const totalReports = liveData.reports.length;
 
@@ -5297,13 +5299,14 @@ function updateRecentActivity() {
         const timeAgo = getTimeAgo(r.created_at);
         const statusColors = {
             submitted: 'var(--warm-accent)',
-            in_review: 'var(--info)',
+            under_review: 'var(--info)',
+            assigned: 'var(--warm-accent)',
             in_progress: 'var(--accent)',
             resolved: 'var(--success)',
             closed: 'var(--text-tertiary)'
         };
         const dotColor = statusColors[r.status] || 'var(--accent)';
-        const statusLabel = r.status === 'resolved' ? 'resolved' : r.status === 'in_progress' ? 'is working on' : 'submitted';
+        const statusLabel = r.status === 'resolved' ? 'resolved' : r.status === 'in_progress' ? 'is working on' : r.status === 'assigned' ? 'assigned' : r.status === 'under_review' ? 'is under review' : 'submitted';
         return '<div class="activity-item">' +
             '<div class="activity-dot" style="background: ' + dotColor + ';"></div>' +
             '<div>' +
@@ -5460,7 +5463,8 @@ function updateReportsTable() {
     tbody.innerHTML = liveData.reports.slice(0, 30).map(r => {
         const statusMap = {
             submitted: { label: 'Open', color: 'var(--info)', class: 'status-open' },
-            in_review: { label: 'In Review', color: 'var(--warm-accent)', class: 'status-in-review' },
+            under_review: { label: 'Under Review', color: 'var(--warm-accent)', class: 'status-in-review' },
+            assigned: { label: 'Assigned', color: 'var(--info)', class: 'status-in-review' },
             in_progress: { label: 'In Progress', color: 'var(--accent)', class: 'status-progress' },
             resolved: { label: 'Resolved', color: 'var(--success)', class: 'status-resolved' },
             closed: { label: 'Closed', color: 'var(--text-tertiary)', class: 'status-resolved' }
@@ -5674,6 +5678,7 @@ function setupRealtime() {
                         updateDashboardWithLiveData();
                         // Re-render current page if it uses this table
                         if (table === 'profiles') renderResidentsPage();
+                        if (table === 'businesses' || table === 'profiles') buildBusinessListings();
                     }
                 } catch(e) { console.warn(`Realtime re-fetch ${table} failed:`, e); }
             })
@@ -7502,212 +7507,45 @@ renderLeaders();
 // BUSINESS DIRECTORY — DATA & MANAGEMENT
 // ============================================
 
-const businessListings = [
-    {
-        id: 'BIZ-001',
-        name: 'Casa de Eloy Restaurant',
-        category: 'Restaurant',
-        owner: 'Maria Fernandez',
-        status: 'approved',
-        aiScore: 95,
-        submitted: '2026-04-15',
-        description: 'Authentic Mexican cuisine serving Eloy families since 1998. Known for handmade tortillas, carne asada, and weekend menudo. Family-friendly atmosphere with outdoor patio seating.',
-        address: '320 N. Main St, Eloy, AZ 85131',
-        phone: '(520) 466-3450',
-        hours: 'Mon-Sat 7AM-9PM, Sun 8AM-3PM',
-        website: 'casadeeloy.com',
-        hasPhotos: true,
-        aiReview: 'Excellent listing quality. Complete information with photos. High search relevance for "Mexican food", "restaurant", "family dining". Recommended: add online menu link.',
-        chambersNotes: 'Long-standing community business. Active Chambers member since 2005.'
-    },
-    {
-        id: 'BIZ-002',
-        name: 'Eloy Family Pharmacy',
-        category: 'Health & Wellness',
-        owner: 'Dr. James Patel',
-        status: 'approved',
-        aiScore: 92,
-        submitted: '2026-04-20',
-        description: 'Independent pharmacy offering prescription services, flu shots, health screenings, and bilingual (EN/ES) staff. Free delivery for seniors within Eloy city limits.',
-        address: '415 W. Houser Rd, Eloy, AZ 85131',
-        phone: '(520) 466-2200',
-        hours: 'Mon-Fri 8AM-7PM, Sat 9AM-2PM',
-        website: 'eloyfamilyrx.com',
-        hasPhotos: true,
-        aiReview: 'Strong listing. Bilingual service mention is valuable for this community. Score high for health-related searches. Suggestion: add insurance accepted list.',
-        chambersNotes: 'Community health partner. Sponsors annual health fair.'
-    },
-    {
-        id: 'BIZ-003',
-        name: 'Toltec Auto Repair',
-        category: 'Auto Services',
-        owner: 'Roberto Delgado',
-        status: 'approved',
-        aiScore: 81,
-        submitted: '2026-04-22',
-        description: 'Full-service auto repair and maintenance. ASE certified mechanics. Specializing in domestic and import vehicles. Free estimates on all repairs.',
-        address: '780 S. Toltec Rd, Eloy, AZ 85131',
-        phone: '(520) 466-5500',
-        hours: 'Mon-Fri 7:30AM-5:30PM, Sat 8AM-12PM',
-        website: '',
-        hasPhotos: true,
-        aiReview: 'Good listing. Missing website is a minor gap. Strong category match. Consider adding accepted payment methods and warranty information.',
-        chambersNotes: 'Reliable local shop. No complaints on file.'
-    },
-    {
-        id: 'BIZ-004',
-        name: 'Sonoran Auto Glass',
-        category: 'Auto Services',
-        owner: 'Miguel Santos',
-        status: 'pending',
-        aiScore: 62,
-        submitted: '2026-05-26',
-        description: 'Windshield repair and replacement. Mobile service available — we come to you. Same-day appointments. Insurance claims handled.',
-        address: '190 E. Battaglia Dr, Eloy, AZ 85131',
-        phone: '(520) 466-8800',
-        hours: 'Mon-Sat 8AM-5PM',
-        website: 'sonoranautoglass.com',
-        hasPhotos: false,
-        aiReview: 'Moderate quality. Description is brief but adequate. Missing photos significantly reduces trust score. Mobile service mention is a strong differentiator. Needs: photos, more detailed description.',
-        chambersNotes: ''
-    },
-    {
-        id: 'BIZ-005',
-        name: 'Desert Sunrise Cafe',
-        category: 'Restaurant',
-        owner: 'Angela Reyes',
-        status: 'approved',
-        aiScore: 88,
-        submitted: '2026-04-10',
-        description: 'Breakfast and lunch cafe featuring locally sourced ingredients. Famous for our green chile breakfast burrito and fresh-squeezed OJ. Free WiFi and a community bulletin board.',
-        address: '550 N. Main St, Eloy, AZ 85131',
-        phone: '(520) 466-1122',
-        hours: 'Mon-Sun 6AM-2PM',
-        website: 'desertsunrisecafe.com',
-        hasPhotos: true,
-        aiReview: 'Very good listing. Strong local appeal with "locally sourced" messaging. High relevance for breakfast searches. Community bulletin board is a nice civic touch.',
-        chambersNotes: 'Angela is Chambers vice-chair. Always supports community events.'
-    },
-    {
-        id: 'BIZ-006',
-        name: 'Eloy Fitness Center',
-        category: 'Health & Wellness',
-        owner: 'Tony Mendoza',
-        status: 'pending',
-        aiScore: 55,
-        submitted: '2026-05-28',
-        description: 'Gym with weights, cardio machines, group fitness classes. Personal training available.',
-        address: '625 W. Houser Rd, Eloy, AZ 85131',
-        phone: '(520) 466-9900',
-        hours: 'Mon-Fri 5AM-10PM, Sat-Sun 7AM-8PM',
-        website: '',
-        hasPhotos: false,
-        aiReview: 'Below average quality. Description is too brief — lacks detail on equipment, classes offered, pricing, and membership options. No website or photos. Needs significant improvement before approval.',
-        chambersNotes: ''
-    },
-    {
-        id: 'BIZ-007',
-        name: 'Eloy Hardware & Supply',
-        category: 'Retail',
-        owner: 'Frank Morales',
-        status: 'approved',
-        aiScore: 79,
-        submitted: '2026-04-18',
-        description: 'Locally owned hardware store serving Eloy since 1985. Full line of tools, plumbing, electrical, paint, and garden supplies. Expert staff to help with any project.',
-        address: '200 E. 5th St, Eloy, AZ 85131',
-        phone: '(520) 466-3300',
-        hours: 'Mon-Sat 7AM-6PM, Sun 9AM-3PM',
-        website: '',
-        hasPhotos: true,
-        aiReview: 'Good listing with strong local history. Missing website is acceptable for a traditional business. Consider adding: delivery options, key-cutting, and propane services if offered.',
-        chambersNotes: 'Founding Chambers member. Annual sponsor of Independence Day celebration.'
-    },
-    {
-        id: 'BIZ-008',
-        name: 'Quick Stop Convenience',
-        category: 'Retail',
-        owner: 'Wei Liu',
-        status: 'rejected',
-        aiScore: 28,
-        submitted: '2026-05-10',
-        description: 'Store',
-        address: '900 S. Main St, Eloy, AZ 85131',
-        phone: '(520) 466-4400',
-        hours: '',
-        website: '',
-        hasPhotos: false,
-        aiReview: 'Rejected: Listing fails minimum quality standards. One-word description provides no useful information. Missing hours, website, and photos. Requires complete resubmission with full business details.',
-        chambersNotes: 'Contacted owner twice about completing listing. No response.'
-    },
-    {
-        id: 'BIZ-009',
-        name: 'Fiesta Taqueria',
-        category: 'Restaurant',
-        owner: 'Carlos Rodriguez',
-        status: 'approved',
-        aiScore: 85,
-        submitted: '2026-04-25',
-        description: 'Taqueria serving street-style tacos, burritos, tortas, and agua frescas. Drive-through window for quick pickup. Catering available for events of any size.',
-        address: '130 W. Battaglia Dr, Eloy, AZ 85131',
-        phone: '(520) 466-7777',
-        hours: 'Mon-Sun 10AM-10PM',
-        website: 'fiestataqueria.com',
-        hasPhotos: true,
-        aiReview: 'Strong listing. Drive-through and catering mentions add value. Good photos. Extended hours are a plus for the community. Suggestion: add menu prices or a link to an online menu.',
-        chambersNotes: 'New Chambers member. Very active on social media.'
-    },
-    {
-        id: 'BIZ-010',
-        name: 'Desert Bloom Floral',
-        category: 'Retail',
-        owner: 'Nancy Young',
-        status: 'pending',
-        aiScore: 71,
-        submitted: '2026-05-25',
-        description: 'Fresh flowers, arrangements, and gifts for all occasions. Delivery throughout Eloy and Casa Grande. Wedding and event specialists with free consultations.',
-        address: '445 N. Main St, Eloy, AZ 85131',
-        phone: '(520) 466-5050',
-        hours: 'Mon-Fri 9AM-5PM, Sat 9AM-2PM',
-        website: 'desertbloomfloral.com',
-        hasPhotos: false,
-        aiReview: 'Good description with strong service details. Delivery area mention is valuable. Missing photos is a significant gap for a visual business — flowers need to be seen. Photo upload would push score to 85+.',
-        chambersNotes: ''
-    },
-    {
-        id: 'BIZ-011',
-        name: 'Desert View Dentistry',
-        category: 'Health & Wellness',
-        owner: 'Dr. Sarah Kim',
-        status: 'pending',
-        aiScore: 68,
-        submitted: '2026-05-29',
-        description: 'General and cosmetic dentistry for the whole family. Accepting new patients. Most insurance plans accepted. Bilingual staff available.',
-        address: '310 W. Houser Rd, Suite B, Eloy, AZ 85131',
-        phone: '(520) 466-6600',
-        hours: 'Mon-Thu 8AM-5PM, Fri 8AM-12PM',
-        website: 'desertviewdental.com',
-        hasPhotos: false,
-        aiReview: 'Adequate listing. Bilingual staff mention is important for this market. Missing photos of the office/team reduces trust. Consider adding: specific services, new patient specials, and accepted insurance list.',
-        chambersNotes: ''
-    },
-    {
-        id: 'BIZ-012',
-        name: 'Valley Tax & Accounting',
-        category: 'Professional Services',
-        owner: 'Linda Morales',
-        status: 'rejected',
-        aiScore: 35,
-        submitted: '2026-05-05',
-        description: 'Tax prep and bookkeeping services.',
-        address: '700 E. 5th St, Eloy, AZ 85131',
-        phone: '(520) 466-8100',
-        hours: 'Mon-Fri 9AM-5PM (extended hours Jan-Apr)',
-        website: '',
-        hasPhotos: false,
-        aiReview: 'Rejected: Description is too vague for a professional services listing. No website, photos, or differentiating details. Needs: credentials, specializations (personal/business), pricing info, and client testimonials.',
-        chambersNotes: 'Owner notified of rejection with improvement suggestions on May 8.'
-    }
-];
+let businessListings = [];
+
+// Build businessListings from live Supabase data (liveData.businesses + liveData.profiles)
+function buildBusinessListings() {
+    if (!liveData.businesses) { businessListings = []; return; }
+
+    businessListings = liveData.businesses.map(b => {
+        // Look up owner name from profiles
+        let ownerName = 'Unknown Owner';
+        if (b.owner_id && liveData.profiles) {
+            const profile = liveData.profiles.find(p => p.id === b.owner_id);
+            if (profile) {
+                ownerName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Unknown Owner';
+            }
+        }
+
+        return {
+            id: b.id,
+            name: b.name || 'Untitled Business',
+            category: b.category || 'Uncategorized',
+            owner: ownerName,
+            status: b.status || 'pending',
+            aiScore: typeof b.ai_score === 'number' ? b.ai_score : 0,
+            submitted: b.created_at ? b.created_at.split('T')[0] : '',
+            description: b.description || '',
+            address: b.address || '',
+            phone: b.phone || '',
+            hours: b.hours || '',
+            website: b.website || '',
+            hasPhotos: Array.isArray(b.photos) && b.photos.length > 0,
+            photos: Array.isArray(b.photos) ? b.photos : [],
+            aiReview: b.ai_review || '',
+            chambersNotes: b.reviewer_notes || ''
+        };
+    });
+
+    updateBizCounts();
+    renderBusinessTable();
+}
 
 let currentBizFilter = 'all';
 let currentBizSearch = '';
@@ -7826,7 +7664,7 @@ function openBizDetail(bizId) {
     const body = document.getElementById('bizDetailBody');
 
     nameEl.textContent = biz.name;
-    catEl.textContent = biz.category + ' — ' + biz.id;
+    catEl.textContent = biz.category + ' — ' + (biz.id.length > 8 ? biz.id.substring(0, 8) + '...' : biz.id);
 
     const statusConfig = {
         pending:  { label: 'Pending Review', css: 'biz-status-pending' },
@@ -7874,16 +7712,14 @@ function openBizDetail(bizId) {
             </div>
         </div>
 
-        ${biz.hasPhotos ? `
+        ${biz.hasPhotos && biz.photos && biz.photos.length > 0 ? `
         <div class="biz-detail-section">
-            <h4>Photos</h4>
+            <h4>Photos (${biz.photos.length})</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div style="background: var(--surface); border-radius: var(--radius-sm); height: 100px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
-                    <span style="font-size: 13px; color: var(--text-tertiary);">Photo 1</span>
-                </div>
-                <div style="background: var(--surface); border-radius: var(--radius-sm); height: 100px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
-                    <span style="font-size: 13px; color: var(--text-tertiary);">Photo 2</span>
-                </div>
+                ${biz.photos.map((url, i) => `
+                <div style="background: var(--surface); border-radius: var(--radius-sm); height: 100px; overflow: hidden; border: 1px solid var(--border);">
+                    <img src="${url}" alt="Photo ${i + 1}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span style=\\'font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;height:100%\\'>Photo ${i + 1}</span>'">
+                </div>`).join('')}
             </div>
         </div>` : ''}
 
@@ -7926,11 +7762,45 @@ function closeBizDetail() {
     document.getElementById('bizDetail').classList.remove('open');
 }
 
-function updateBizStatus(bizId, newStatus) {
+async function updateBizStatus(bizId, newStatus) {
     const biz = businessListings.find(b => b.id === bizId);
     if (!biz) return;
 
+    // Get chambers notes from the detail panel textarea (if open)
+    const notesTextarea = document.querySelector('#bizDetailBody textarea');
+    const chambersNotes = notesTextarea ? notesTextarea.value : biz.chambersNotes;
+
+    // Persist to Supabase
+    if (sbClient) {
+        try {
+            const { error } = await sbClient.from('businesses').update({
+                status: newStatus,
+                reviewer_notes: chambersNotes
+            }).eq('id', bizId);
+            if (error) {
+                console.error('Failed to update business status in Supabase:', error);
+                showToast('Failed to save status change: ' + error.message, 'error');
+                return;
+            }
+        } catch(e) {
+            console.error('Supabase update error:', e);
+            showToast('Failed to save status change', 'error');
+            return;
+        }
+    }
+
+    // Update local data optimistically
     biz.status = newStatus;
+    biz.chambersNotes = chambersNotes;
+    // Also update the source liveData entry
+    if (liveData.businesses) {
+        const src = liveData.businesses.find(b => b.id === bizId);
+        if (src) {
+            src.status = newStatus;
+            src.reviewer_notes = chambersNotes;
+        }
+    }
+
     const labels = { approved: 'approved', rejected: 'rejected', changes: 'sent back for changes', pending: 'set to pending' };
     showToast(`${biz.name} has been ${labels[newStatus]}`, newStatus === 'approved' ? 'success' : newStatus === 'rejected' ? 'error' : 'info');
     renderBusinessTable();
