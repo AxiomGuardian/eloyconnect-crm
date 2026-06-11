@@ -7095,22 +7095,22 @@ function openEnforcementDetail(notice) {
     body.innerHTML = `
         <div style="margin-bottom: 20px;">
             <span class="status ${sc.css}" style="margin-bottom: 12px; display: inline-flex;"><span class="status-dot"></span>${sc.label}</span>
-            <h3 style="font-size: 18px; font-weight: 600; margin: 8px 0;">${notice.type}</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${notice.description}</p>
+            <h3 style="font-size: 18px; font-weight: 600; margin: 8px 0;">${escapeHtml(notice.type)}</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(notice.description)}</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Resident</div>
-                <div style="font-size: 14px; font-weight: 500;">${notice.resident}</div>
+                <div style="font-size: 14px; font-weight: 500;">${escapeHtml(notice.resident)}</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Address</div>
-                <div style="font-size: 14px; font-weight: 500;">${notice.address}</div>
+                <div style="font-size: 14px; font-weight: 500;">${escapeHtml(notice.address)}</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Severity</div>
-                <div style="font-size: 14px; font-weight: 600; color: ${notice.severity === 'High' || notice.severity === 'Critical' ? 'var(--warning)' : notice.severity === 'Medium' ? 'var(--warm-accent)' : 'var(--info)'};">${notice.severity}</div>
+                <div style="font-size: 14px; font-weight: 600; color: ${notice.severity === 'High' || notice.severity === 'Critical' ? 'var(--warning)' : notice.severity === 'Medium' ? 'var(--warm-accent)' : 'var(--info)'};">${escapeHtml(notice.severity)}</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Compliance Deadline</div>
@@ -7118,7 +7118,7 @@ function openEnforcementDetail(notice) {
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Inspector</div>
-                <div style="font-size: 14px; font-weight: 500;">${notice.inspector}</div>
+                <div style="font-size: 14px; font-weight: 500;">${escapeHtml(notice.inspector)}</div>
             </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Proof Photo</div>
@@ -7130,7 +7130,7 @@ function openEnforcementDetail(notice) {
         <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 8px;">Resident Response</div>
             <div style="background: rgba(0, 194, 212, 0.06); border: 1px solid rgba(0, 194, 212, 0.15); border-radius: var(--radius-sm); padding: 14px;">
-                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${notice.response}</p>
+                <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(notice.response)}</p>
             </div>
         </div>` : `
         <div style="margin-bottom: 20px;">
