@@ -5507,8 +5507,8 @@ function updateContentPage() {
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${date}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" onclick="togglePublish('news', '${item.id}', ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" onclick="deleteContent('news', '${item.id}')">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="togglePublish('news', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('news', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -5524,8 +5524,8 @@ function updateContentPage() {
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.event_date || '—'}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" onclick="togglePublish('events', '${item.id}', ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" onclick="deleteContent('events', '${item.id}')">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="togglePublish('events', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('events', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -5542,8 +5542,8 @@ function updateContentPage() {
                 <td><span class="status ${item.active ? 'status-open' : 'status-resolved'}"><span class="status-dot"></span>${item.active ? 'Active' : 'Inactive'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" onclick="deactivateAlert('${item.id}')">${item.active ? 'Deactivate' : '—'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" onclick="deleteContent('alerts', '${item.id}')">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="deactivateAlert(this.dataset.id)">${item.active ? 'Deactivate' : '—'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('alerts', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -6196,7 +6196,7 @@ function handleGrokQuickChat() {
     textEl.innerHTML = '<span style="color: var(--accent);">Thinking...</span>';
 
     setTimeout(() => {
-        textEl.innerHTML = `Based on current Eloy Connect data: "${text}"<br><br>In production, this query would be routed through your Supabase Edge Function to Grok with full admin context — including all report data, resident analytics, content performance, and staff assignments. The response would be personalized to your role and recent activity patterns.`;
+        textEl.innerHTML = `Based on current Eloy Connect data: "${escapeHtml(text)}"<br><br>In production, this query would be routed through your Supabase Edge Function to Grok with full admin context — including all report data, resident analytics, content performance, and staff assignments. The response would be personalized to your role and recent activity patterns.`;
     }, 800);
 
     input.value = '';
@@ -6715,9 +6715,9 @@ async function autoTranslateContent() {
             preview.style.display = 'block';
             preview.innerHTML = `
                 <div style="color: var(--success); margin-bottom: 4px;">Translations ready:</div>
-                <div><strong>ES:</strong> ${contentTranslations.title_es || '—'}</div>
-                <div><strong>ZH:</strong> ${contentTranslations.title_zh || '—'}</div>
-                <div><strong>DE:</strong> ${contentTranslations.title_de || '—'}</div>
+                <div><strong>ES:</strong> ${escapeHtml(contentTranslations.title_es || '—')}</div>
+                <div><strong>ZH:</strong> ${escapeHtml(contentTranslations.title_zh || '—')}</div>
+                <div><strong>DE:</strong> ${escapeHtml(contentTranslations.title_de || '—')}</div>
             `;
             showToast('Translations generated', 'success');
         } else {
@@ -7490,8 +7490,8 @@ function renderLeaders() {
             <div class="leader-title">${escapeHtml(leader.title)}</div>
             <div class="leader-dept">${escapeHtml(leader.department)}</div>
             <div class="leader-contact">
-                ${leader.email ? `<span>${leader.email}</span>` : ''}
-                ${leader.phone ? `<span>${leader.phone}</span>` : ''}
+                ${leader.email ? `<span>${escapeHtml(leader.email)}</span>` : ''}
+                ${leader.phone ? `<span>${escapeHtml(leader.phone)}</span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -7589,10 +7589,10 @@ function updateLeaderPhotoPreview() {
 
     if (url) {
         preview.style.background = 'none';
-        preview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.style.background='linear-gradient(135deg, var(--accent), var(--primary))'; this.parentElement.innerHTML='<span id=leaderPhotoInitials>${initials}</span>';">`;
+        preview.innerHTML = `<img src="${escapeHtml(url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.style.background='linear-gradient(135deg, var(--accent), var(--primary))'; this.parentElement.innerHTML='<span id=leaderPhotoInitials>${escapeHtml(initials)}</span>';">`;
     } else {
         preview.style.background = 'linear-gradient(135deg, var(--accent), var(--primary))';
-        preview.innerHTML = `<span id="leaderPhotoInitials">${initials}</span>`;
+        preview.innerHTML = `<span id="leaderPhotoInitials">${escapeHtml(initials)}</span>`;
     }
 }
 
@@ -7852,8 +7852,8 @@ function openBizDetail(bizId) {
     body.innerHTML = `
         <div class="biz-detail-section">
             <span class="status ${sc.css}" style="display: inline-flex; margin-bottom: 12px;"><span class="status-dot"></span>${sc.label}</span>
-            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">${biz.name}</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${biz.description}</p>
+            <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 6px;">${escapeHtml(biz.name)}</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(biz.description)}</p>
         </div>
 
         <div class="biz-detail-section">
@@ -7861,23 +7861,23 @@ function openBizDetail(bizId) {
             <div class="biz-info-grid">
                 <div class="biz-info-item">
                     <div class="label">Address</div>
-                    <div class="value">${biz.address}</div>
+                    <div class="value">${escapeHtml(biz.address)}</div>
                 </div>
                 <div class="biz-info-item">
                     <div class="label">Phone</div>
-                    <div class="value">${biz.phone}</div>
+                    <div class="value">${escapeHtml(biz.phone)}</div>
                 </div>
                 <div class="biz-info-item">
                     <div class="label">Hours</div>
-                    <div class="value">${biz.hours || 'Not provided'}</div>
+                    <div class="value">${escapeHtml(biz.hours || 'Not provided')}</div>
                 </div>
                 <div class="biz-info-item">
                     <div class="label">Website</div>
-                    <div class="value">${biz.website || 'Not provided'}</div>
+                    <div class="value">${escapeHtml(biz.website || 'Not provided')}</div>
                 </div>
                 <div class="biz-info-item">
                     <div class="label">Owner</div>
-                    <div class="value">${biz.owner}</div>
+                    <div class="value">${escapeHtml(biz.owner)}</div>
                 </div>
                 <div class="biz-info-item">
                     <div class="label">Photos</div>
@@ -7892,7 +7892,7 @@ function openBizDetail(bizId) {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 ${biz.photos.map((url, i) => `
                 <div style="background: var(--surface); border-radius: var(--radius-sm); height: 100px; overflow: hidden; border: 1px solid var(--border);">
-                    <img src="${url}" alt="Photo ${i + 1}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span style=\\'font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;height:100%\\'>Photo ${i + 1}</span>'">
+                    <img src="${escapeHtml(url)}" alt="Photo ${i + 1}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span style=\\'font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;justify-content:center;height:100%\\'>Photo ${i + 1}</span>'">
                 </div>`).join('')}
             </div>
         </div>` : ''}
@@ -7913,19 +7913,19 @@ function openBizDetail(bizId) {
                         <div style="font-size: 11px; color: var(--text-tertiary);">AI Quality Assessment</div>
                     </div>
                 </div>
-                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">${biz.aiReview}</p>
+                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(biz.aiReview)}</p>
             </div>
         </div>
 
         <div class="biz-detail-section">
             <h4>Chambers Notes</h4>
-            <textarea class="form-input" rows="3" placeholder="Add reviewer feedback or notes..." style="margin-bottom: 0;">${biz.chambersNotes || ''}</textarea>
+            <textarea class="form-input" rows="3" placeholder="Add reviewer feedback or notes..." style="margin-bottom: 0;">${escapeHtml(biz.chambersNotes || '')}</textarea>
         </div>
 
         <div class="biz-actions">
-            ${biz.status !== 'approved' ? `<button class="btn btn-approve" onclick="updateBizStatus('${biz.id}', 'approved')">Approve</button>` : ''}
-            ${biz.status !== 'rejected' ? `<button class="btn btn-reject" onclick="updateBizStatus('${biz.id}', 'rejected')">Reject</button>` : ''}
-            <button class="btn btn-changes" onclick="updateBizStatus('${biz.id}', 'changes')">Request Changes</button>
+            ${biz.status !== 'approved' ? `<button class="btn btn-approve" data-bizid="${escapeHtml(biz.id)}" onclick="updateBizStatus(this.dataset.bizid, 'approved')">Approve</button>` : ''}
+            ${biz.status !== 'rejected' ? `<button class="btn btn-reject" data-bizid="${escapeHtml(biz.id)}" onclick="updateBizStatus(this.dataset.bizid, 'rejected')">Reject</button>` : ''}
+            <button class="btn btn-changes" data-bizid="${escapeHtml(biz.id)}" onclick="updateBizStatus(this.dataset.bizid, 'changes')">Request Changes</button>
         </div>
     `;
 
@@ -8173,8 +8173,8 @@ function openResidentDetail(userId) {
     const initials = (resident.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
     const detailAvatarSrc = resident.avatar_url || null;
     const avatarHtml = detailAvatarSrc
-        ? `<img src="${detailAvatarSrc}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
-        : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; border: 3px solid var(--accent);">${initials}</div>`;
+        ? `<img src="${escapeHtml(detailAvatarSrc)}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent);">`
+        : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; border: 3px solid var(--accent);">${escapeHtml(initials)}</div>`;
 
     // Online/offline presence
     const residentOnline = typeof isUserOnline === 'function' ? isUserOnline(resident) : false;
@@ -8213,7 +8213,7 @@ function openResidentDetail(userId) {
             const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
             return `<div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
                 <div>
-                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">${r.category || 'Report'}</div>
+                    <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">${escapeHtml(r.category || 'Report')}</div>
                     <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">${date}</div>
                 </div>
                 <span class="status ${statusClass}" style="font-size: 11px;"><span class="status-dot"></span>${statusLabel}</span>
@@ -8263,7 +8263,7 @@ function openResidentDetail(userId) {
                     <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#128205;</div>
                     <div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Address</div>
-                        <div style="font-size: 13px; color: var(--text-primary);">${resident.address || 'Not provided'}</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.address || 'Not provided')}</div>
                     </div>
                 </div>
             </div>
@@ -8313,8 +8313,8 @@ function openResidentDetail(userId) {
                 </div>
             </div>
             <div style="display: flex; gap: 8px;">
-                <button class="btn btn-primary" style="flex: 1; background: #d32f2f; border-color: #d32f2f; font-size: 12px; padding: 8px 12px;" onclick="processAccountDeletion('${userId}')">&#128465; Delete Account</button>
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="dismissDeletionRequest('${userId}')">Dismiss Request</button>
+                <button class="btn btn-primary" style="flex: 1; background: #d32f2f; border-color: #d32f2f; font-size: 12px; padding: 8px 12px;" data-uid="${escapeHtml(userId)}" onclick="processAccountDeletion(this.dataset.uid)">&#128465; Delete Account</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px;" data-uid="${escapeHtml(userId)}" onclick="dismissDeletionRequest(this.dataset.uid)">Dismiss Request</button>
             </div>
         </div>` : ''}
 
@@ -8322,7 +8322,7 @@ function openResidentDetail(userId) {
         <div style="margin-top: 20px;">
             <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Account Management</div>
             <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" onchange="updateResidentRole('${userId}', this.value)">
+                <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" data-uid="${escapeHtml(userId)}" onchange="updateResidentRole(this.dataset.uid, this.value)">
                     <option value="resident" ${resident.role === 'resident' ? 'selected' : ''}>Resident</option>
                     <option value="staff" ${resident.role === 'staff' ? 'selected' : ''}>Staff</option>
                     <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
@@ -8334,8 +8334,8 @@ function openResidentDetail(userId) {
             </div>` : ''}
             ${!resident.deletion_requested_at ? `
             <div style="display: flex; gap: 8px;">
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #d32f2f; border-color: rgba(211,47,47,0.3);" onclick="processAccountDeletion('${userId}')">&#128465; Delete Account</button>
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: ${resident.deactivated_at ? '#4caf50' : '#ff9800'}; border-color: ${resident.deactivated_at ? 'rgba(76,175,80,0.3)' : 'rgba(255,152,0,0.3)'};" onclick="deactivateResident('${userId}')">${resident.deactivated_at ? 'Reactivate' : 'Deactivate'}</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #d32f2f; border-color: rgba(211,47,47,0.3);" data-uid="${escapeHtml(userId)}" onclick="processAccountDeletion(this.dataset.uid)">&#128465; Delete Account</button>
+                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: ${resident.deactivated_at ? '#4caf50' : '#ff9800'}; border-color: ${resident.deactivated_at ? 'rgba(76,175,80,0.3)' : 'rgba(255,152,0,0.3)'};" data-uid="${escapeHtml(userId)}" onclick="deactivateResident(this.dataset.uid)">${resident.deactivated_at ? 'Reactivate' : 'Deactivate'}</button>
             </div>` : ''}
         </div>
     `;
