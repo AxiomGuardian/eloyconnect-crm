@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Eloy Connect CRM — City Administration</title>
+<title>Eloy Connect — Civic Relationship Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -2408,7 +2408,7 @@ textarea.form-input {
 <!-- TOP NAVIGATION BAR -->
 <nav class="topnav">
     <div class="topnav-brand">
-        <h1>Eloy Connect <span>CRM</span></h1>
+        <h1>Eloy Connect <span>Civic Relationship Management</span></h1>
     </div>
 
     <div class="topnav-tabs">
@@ -2611,7 +2611,7 @@ textarea.form-input {
                 <div class="chart-card">
                     <div class="chart-title">
                         Recent Activity
-                        <button class="btn btn-ghost" style="font-size: 12px;">View All</button>
+                        <button class="btn btn-ghost" style="font-size: 12px;" onclick="navigateToPage('reports')">View All</button>
                     </div>
                     <div id="recentActivityContainer">
                         <div class="activity-item">
@@ -2717,7 +2717,7 @@ textarea.form-input {
                     <p id="reportsPageSubtitle" style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Loading report data...</p>
                 </div>
                 <div class="flex gap-8">
-                    <button class="btn btn-secondary">Export CSV</button>
+                    <button class="btn btn-secondary" onclick="exportReportsCSV()">Export CSV</button>
                     <button class="btn btn-primary" onclick="openModal('report')">+ New Report</button>
                 </div>
             </div>
@@ -3098,7 +3098,7 @@ textarea.form-input {
                         <h4 style="font-size: 15px; font-weight: 600;">Recent Posts</h4>
                         <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">Cross-platform publishing activity</p>
                     </div>
-                    <button class="btn btn-secondary" style="font-size:12px;">View All Posts</button>
+                    <button class="btn btn-secondary" style="font-size:12px;" onclick="navigateToPage('content')">View All Posts</button>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <div class="social-post">
@@ -3260,7 +3260,7 @@ textarea.form-input {
                 </div>
                 <div class="flex gap-8">
                     <input class="form-input" id="residentSearchInput" placeholder="Search by name or email..." style="width: 300px;" oninput="filterResidentTable()">
-                    <button class="btn btn-secondary">Export CSV</button>
+                    <button class="btn btn-secondary" onclick="exportResidentsCSV()">Export CSV</button>
                 </div>
             </div>
 
@@ -3713,7 +3713,7 @@ textarea.form-input {
                         </div>
 
                         <div class="flex gap-8" style="justify-content: flex-end; padding-top: 14px; border-top: 1px solid rgba(0,194,212,0.15);">
-                            <button class="btn btn-secondary">Save Draft</button>
+                            <button class="btn btn-secondary" onclick="saveNotifDraft()">Save Draft</button>
                             <button class="btn btn-create-content" id="sendNotifBtn" onclick="sendPushNotification()">Send Notification</button>
                         </div>
                     </div>
@@ -3803,7 +3803,7 @@ textarea.form-input {
                     <h3>Staff & Settings</h3>
                     <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Manage team members, roles, and app configuration</p>
                 </div>
-                <button class="btn btn-primary">+ Add Staff Member</button>
+                <button class="btn btn-primary" onclick="showToast('Staff management coming in Phase 5', 'info')">+ Add Staff Member</button>
             </div>
 
             <div class="staff-grid anim-stagger" style="margin-bottom: 24px;">
@@ -4203,7 +4203,6 @@ textarea.form-input {
         <div class="page" id="page-directory">
 
             <!-- STATS BAR -->
-            <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;"><span style="padding: 2px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; font-size: 10px; letter-spacing: 0.5px;">DEMO DATA</span> Business listings shown below are sample data for presentation</div>
             <div class="metrics-grid anim-stagger">
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-header">
@@ -4297,8 +4296,8 @@ textarea.form-input {
                 </div>
                 <div class="flex gap-8">
                     <input class="form-input" id="bizSearchInput" placeholder="Search businesses..." style="width: 260px;" oninput="searchBusinessDirectory(this.value)">
-                    <button class="btn btn-secondary">Export CSV</button>
-                    <button class="btn btn-primary">+ Add Listing</button>
+                    <button class="btn btn-secondary" onclick="exportBusinessCSV()">Export CSV</button>
+                    <button class="btn btn-primary" onclick="showAddBusinessForm()">+ Add Listing</button>
                 </div>
             </div>
 
@@ -4841,20 +4840,7 @@ var pages = {
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
     staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' }
 };
-function navigateTo(page) {
-    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
-    var pageEl = document.getElementById('page-' + page);
-    if (pageEl) { pageEl.classList.add('active'); } else { var fb = document.getElementById('page-dashboard'); if (fb) fb.classList.add('active'); page = 'dashboard'; }
-    var navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
-    if (navItem) {
-        navItem.classList.add('active');
-        navItem.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-    if (pages[page]) { var pt = document.getElementById('page-title'); var ps = document.getElementById('page-subtitle'); if (pt) pt.textContent = pages[page].title; if (ps) ps.textContent = pages[page].subtitle; }
-    try { var c = document.querySelector('.content'); if (c) c.scrollTop = 0; } catch(e) {}
-}
-function navigateToPage(page) { navigateTo(page); }
+// navigateTo and navigateToPage defined in main script block below
 </script>
 
 <script>
@@ -5310,7 +5296,7 @@ function updateRecentActivity() {
         return '<div class="activity-item">' +
             '<div class="activity-dot" style="background: ' + dotColor + ';"></div>' +
             '<div>' +
-            '<div class="activity-text">Report <strong>' + (r.title || 'Untitled') + '</strong> — ' + statusLabel + '</div>' +
+            '<div class="activity-text">Report <strong>' + escapeHtml(r.title || 'Untitled') + '</strong> — ' + statusLabel + '</div>' +
             '<div class="activity-time">' + timeAgo + '</div>' +
             '</div></div>';
     }).join('');
@@ -5414,18 +5400,19 @@ function updateSubscriberWidget() {
 
     container.innerHTML = recent.map(p => {
         const name = p.display_name || p.email || 'Anonymous';
-        const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        const safeName = escapeHtml(name);
+        const initials = escapeHtml(name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase());
         const timeAgo = getTimeAgo(p.created_at);
-        const langBadge = p.language_pref ? ('<span style="font-size: 10px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--text-tertiary); margin-left: 6px;">' + (p.language_pref || 'en').toUpperCase() + '</span>') : '';
+        const langBadge = p.language_pref ? ('<span style="font-size: 10px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--text-tertiary); margin-left: 6px;">' + escapeHtml((p.language_pref || 'en').toUpperCase()) + '</span>') : '';
         const avatarUrl = p.avatar_url;
         const avatarHtml = avatarUrl
-            ? '<img src="' + avatarUrl + '" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.1);" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><div style="display:none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,194,212,0.2), rgba(59,158,245,0.2)); color: var(--accent); font-size: 11px; font-weight: 600; align-items: center; justify-content: center;">' + initials + '</div>'
+            ? '<img src="' + escapeHtml(avatarUrl) + '" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.1);" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" /><div style="display:none; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,194,212,0.2), rgba(59,158,245,0.2)); color: var(--accent); font-size: 11px; font-weight: 600; align-items: center; justify-content: center;">' + initials + '</div>'
             : '<div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,194,212,0.2), rgba(59,158,245,0.2)); color: var(--accent); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center;">' + initials + '</div>';
 
         return '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-radius: 8px; transition: background 0.15s;" onmouseenter="this.style.background=\'rgba(255,255,255,0.03)\'" onmouseleave="this.style.background=\'transparent\'">' +
             '<div style="flex-shrink: 0;">' + avatarHtml + '</div>' +
             '<div style="flex: 1; min-width: 0;">' +
-            '<div style="font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + name + langBadge + '</div>' +
+            '<div style="font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safeName + langBadge + '</div>' +
             '<div style="font-size: 11px; color: var(--text-tertiary);">' + timeAgo + '</div>' +
             '</div>' +
             '<div style="flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--success);"></div>' +
@@ -5474,13 +5461,13 @@ function updateReportsTable() {
         const assignee = r.ai_summary?.match(/Assigned to: ([^.]+)/)?.[1] || 'Unassigned';
         const resident = r.user_id && profileMap[r.user_id] ? profileMap[r.user_id] : (r.address ? r.address.split(',')[0] : 'Anonymous');
 
-        return `<tr onclick="openReportDetail('${r.id}')" style="cursor:pointer">
-            <td style="font-weight: 500; color: var(--accent);">RPT-${r.id.substring(0,4).toUpperCase()}</td>
-            <td>${r.title || 'Untitled'}</td>
-            <td><span class="tag">${r.category || 'General'}</span></td>
+        return `<tr onclick="openReportDetail('${escapeHtml(r.id)}')" style="cursor:pointer">
+            <td style="font-weight: 500; color: var(--accent);">RPT-${escapeHtml(r.id.substring(0,4).toUpperCase())}</td>
+            <td>${escapeHtml(r.title || 'Untitled')}</td>
+            <td><span class="tag">${escapeHtml(r.category || 'General')}</span></td>
             <td><span class="status ${st.class}"><span class="status-dot"></span>${st.label}</span></td>
-            <td>${resident}</td>
-            <td style="color: ${assignee === 'Unassigned' ? 'var(--text-tertiary)' : 'var(--text-primary)'}">${assignee}</td>
+            <td>${escapeHtml(resident)}</td>
+            <td style="color: ${assignee === 'Unassigned' ? 'var(--text-tertiary)' : 'var(--text-primary)'}">${escapeHtml(assignee)}</td>
             <td style="color: var(--text-tertiary);">${date}</td>
         </tr>`;
     }).join('');
@@ -5515,8 +5502,8 @@ function updateContentPage() {
             const date = item.published_at ? new Date(item.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
             rows.push(`<tr data-type="news">
                 <td><span class="tag" style="background: rgba(59,158,245,0.15); color: var(--info);">News</span></td>
-                <td style="font-weight: 500;">${item.title_en || 'Untitled'}</td>
-                <td>${item.category || 'General'}</td>
+                <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
+                <td>${escapeHtml(item.category || 'General')}</td>
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${date}</td>
                 <td>
@@ -5532,8 +5519,8 @@ function updateContentPage() {
         liveData.events.forEach(item => {
             rows.push(`<tr data-type="event">
                 <td><span class="tag" style="background: rgba(34,212,126,0.15); color: var(--success);">Event</span></td>
-                <td style="font-weight: 500;">${item.title_en || 'Untitled'}</td>
-                <td>${item.category || 'Community'}</td>
+                <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
+                <td>${escapeHtml(item.category || 'Community')}</td>
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.event_date || '—'}</td>
                 <td>
@@ -5550,8 +5537,8 @@ function updateContentPage() {
             const sevColors = { high: 'var(--warning)', medium: 'var(--warm-accent)', low: 'var(--info)' };
             rows.push(`<tr data-type="alert">
                 <td><span class="tag" style="background: rgba(240,72,72,0.15); color: var(--warning);">Alert</span></td>
-                <td style="font-weight: 500;">${item.title_en || 'Untitled'}</td>
-                <td><span style="color: ${sevColors[item.severity] || 'var(--text-secondary)'}; font-weight: 600; text-transform: uppercase; font-size: 11px;">${item.severity || 'low'}</span></td>
+                <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
+                <td><span style="color: ${sevColors[item.severity] || 'var(--text-secondary)'}; font-weight: 600; text-transform: uppercase; font-size: 11px;">${escapeHtml(item.severity || 'low')}</span></td>
                 <td><span class="status ${item.active ? 'status-open' : 'status-resolved'}"><span class="status-dot"></span>${item.active ? 'Active' : 'Inactive'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
                 <td>
@@ -5609,8 +5596,8 @@ function updateResidentsPage() {
         const initials = (p.display_name || 'A').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
         const avatarSrc = p.avatar_url || null;
         const avatarHtml = avatarSrc
-            ? `<img src="${avatarSrc}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
-            : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${initials}</div>`;
+            ? `<img src="${escapeHtml(avatarSrc)}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">`
+            : `<div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">${escapeHtml(initials)}</div>`;
 
         const hasDeletionReq = !!p.deletion_requested_at;
         const isDeactivated = !!p.deactivated_at;
@@ -5622,9 +5609,9 @@ function updateResidentsPage() {
             ? '<span class="status status-draft" style="font-size: 11px;"><span class="status-dot"></span>Deactivated</span>'
             : `<span class="status ${userOnline ? 'status-resolved' : 'status-draft'}" style="font-size: 11px;"><span class="status-dot"></span>${userOnline ? 'Online' : 'Offline'}</span>`;
 
-        return `<tr style="cursor:pointer;${isDeactivated ? 'opacity:0.6;' : ''}" onclick="openResidentDetail('${p.id}')" data-status="${rowStatus}">
-            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${p.display_name || 'Anonymous'}${deletionBadge}${deactivatedBadge}</div></div></div></td>
-            <td style="color: var(--text-secondary); font-size: 12px;">${p.email || '—'}</td>
+        return `<tr style="cursor:pointer;${isDeactivated ? 'opacity:0.6;' : ''}" onclick="openResidentDetail('${escapeHtml(p.id)}')" data-status="${rowStatus}">
+            <td><div class="flex items-center gap-12">${avatarHtml}<div><div class="resident-name">${escapeHtml(p.display_name || 'Anonymous')}${deletionBadge}${deactivatedBadge}</div></div></div></td>
+            <td style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(p.email || '—')}</td>
             <td style="color: var(--text-tertiary);">${joined}</td>
             <td style="color: var(--text-secondary); font-size: 12px;">${presenceDot} ${statusLabel}</td>
             <td style="font-weight: 500;">${reportCount}</td>
@@ -5712,19 +5699,9 @@ function isUserOnline(profile) {
 
 // Re-render the Residents page (called on realtime updates)
 function renderResidentsPage() {
-    const residentsBody = document.getElementById('residentsTableBody');
-    if (residentsBody && liveData.profiles) {
-        // Only re-render if we're on the Residents page
-        const residentsPage = document.getElementById('page-residents');
-        if (residentsPage && residentsPage.style.display !== 'none') {
-            // Trigger a re-render by updating the table
-            if (typeof showPage === 'function') {
-                const currentPage = document.querySelector('.nav-link.active');
-                if (currentPage && currentPage.dataset.page === 'residents') {
-                    showPage('residents');
-                }
-            }
-        }
+    const residentsPage = document.getElementById('page-residents');
+    if (residentsPage && residentsPage.style.display !== 'none') {
+        updateResidentsPage();
     }
 }
 
@@ -5989,6 +5966,195 @@ async function sendPushNotification() {
 }
 
 // ============================================
+// NOTIFICATION DRAFT SAVE
+// ============================================
+function saveNotifDraft() {
+    const title = document.querySelector('#notifTitle')?.value?.trim();
+    const body = document.querySelector('#notifBody')?.value?.trim();
+    if (!title && !body) {
+        showToast('Nothing to save — enter a title or message first', 'error');
+        return;
+    }
+    try {
+        const drafts = JSON.parse(localStorage.getItem('notifDrafts') || '[]');
+        drafts.unshift({ title: title || '', body: body || '', savedAt: new Date().toISOString() });
+        localStorage.setItem('notifDrafts', JSON.stringify(drafts.slice(0, 10)));
+        showToast('Draft saved', 'success');
+    } catch(e) {
+        showToast('Could not save draft', 'error');
+    }
+}
+
+// ============================================
+// CSV EXPORT FUNCTIONS
+// ============================================
+
+function csvEscape(value) {
+    if (value == null) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+}
+
+function downloadCSV(filename, csvContent) {
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportReportsCSV() {
+    if (!liveData.reports || liveData.reports.length === 0) {
+        showToast('No reports to export', 'error');
+        return;
+    }
+    const profileMap = {};
+    if (liveData.profiles) {
+        liveData.profiles.forEach(p => { profileMap[p.id] = p.display_name || p.email || 'Unknown'; });
+    }
+    const headers = ['ID', 'Title', 'Category', 'Status', 'Priority', 'Submitter', 'Address', 'Description', 'Created', 'Updated'];
+    const rows = liveData.reports.map(r => [
+        r.id,
+        r.title || '',
+        r.category || '',
+        r.status || 'submitted',
+        r.priority || 'medium',
+        r.user_id && profileMap[r.user_id] ? profileMap[r.user_id] : 'Anonymous',
+        r.address || '',
+        r.description || '',
+        r.created_at ? new Date(r.created_at).toLocaleString() : '',
+        r.updated_at ? new Date(r.updated_at).toLocaleString() : ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(row => row.map(csvEscape).join(','))].join('\n');
+    downloadCSV(`eloy-reports-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    showToast(`Exported ${liveData.reports.length} reports`, 'success');
+}
+
+function exportResidentsCSV() {
+    if (!liveData.profiles || liveData.profiles.length === 0) {
+        showToast('No residents to export', 'error');
+        return;
+    }
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Language', 'Address', 'Signed Up'];
+    const rows = liveData.profiles.map(p => [
+        p.id,
+        p.display_name || '',
+        p.email || '',
+        p.phone || '',
+        p.language || 'en',
+        p.address || '',
+        p.created_at ? new Date(p.created_at).toLocaleString() : ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(row => row.map(csvEscape).join(','))].join('\n');
+    downloadCSV(`eloy-residents-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    showToast(`Exported ${liveData.profiles.length} residents`, 'success');
+}
+
+function exportBusinessCSV() {
+    if (!liveData.businesses || liveData.businesses.length === 0) {
+        showToast('No businesses to export', 'error');
+        return;
+    }
+    const headers = ['ID', 'Name', 'Category', 'Owner', 'Phone', 'Email', 'Address', 'Description', 'Status', 'Created'];
+    const rows = liveData.businesses.map(b => [
+        b.id,
+        b.name || '',
+        b.category || '',
+        b.owner || '',
+        b.phone || '',
+        b.email || '',
+        b.address || '',
+        b.description || '',
+        b.status || 'pending',
+        b.created_at ? new Date(b.created_at).toLocaleString() : ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(row => row.map(csvEscape).join(','))].join('\n');
+    downloadCSV(`eloy-businesses-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    showToast(`Exported ${liveData.businesses.length} businesses`, 'success');
+}
+
+function showAddBusinessForm() {
+    // Scroll to or open the add-business section if it exists, otherwise show a form modal
+    const existingForm = document.getElementById('addBusinessSection');
+    if (existingForm) {
+        existingForm.style.display = existingForm.style.display === 'none' ? 'block' : 'none';
+        existingForm.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+    // Create inline form
+    const container = document.querySelector('#page-business .section-header');
+    if (!container) return;
+    const formHtml = `
+        <div id="addBusinessSection" class="glass-card" style="margin-top:20px; padding:24px;">
+            <h4 style="margin-bottom:16px;">Add New Business</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                <input class="form-input" id="newBizName" placeholder="Business Name *">
+                <input class="form-input" id="newBizOwner" placeholder="Owner Name">
+                <select class="form-input" id="newBizCategory">
+                    <option value="">Select Category *</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Retail">Retail</option>
+                    <option value="Services">Services</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="Government">Government</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input class="form-input" id="newBizPhone" placeholder="Phone">
+                <input class="form-input" id="newBizEmail" placeholder="Email">
+                <input class="form-input" id="newBizAddress" placeholder="Address">
+            </div>
+            <textarea class="form-input" id="newBizDesc" placeholder="Description..." rows="3" style="width:100%; margin-bottom:12px;"></textarea>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="document.getElementById('addBusinessSection').style.display='none'">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewBusiness()">Add Business</button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('afterend', formHtml);
+}
+
+async function submitNewBusiness() {
+    const name = document.getElementById('newBizName')?.value?.trim();
+    const category = document.getElementById('newBizCategory')?.value;
+    if (!name || !category) {
+        showToast('Name and category are required', 'error');
+        return;
+    }
+    if (!sbClient) {
+        showToast('Database not connected', 'error');
+        return;
+    }
+    try {
+        const { error } = await sbClient.from('businesses').insert({
+            name: name,
+            category: category,
+            owner: document.getElementById('newBizOwner')?.value?.trim() || null,
+            phone: document.getElementById('newBizPhone')?.value?.trim() || null,
+            email: document.getElementById('newBizEmail')?.value?.trim() || null,
+            address: document.getElementById('newBizAddress')?.value?.trim() || null,
+            description: document.getElementById('newBizDesc')?.value?.trim() || null,
+            status: 'approved'
+        });
+        if (error) throw error;
+        showToast('Business added successfully', 'success');
+        document.getElementById('addBusinessSection').style.display = 'none';
+        // Refresh data
+        const { data } = await sbClient.from('businesses').select('*').order('name', { ascending: true });
+        if (data) { liveData.businesses = data; renderBusinessTable(); }
+    } catch (e) {
+        showToast('Failed to add business: ' + e.message, 'error');
+    }
+}
+
+// ============================================
 // GROK AI — COMMAND CENTER
 // ============================================
 const grokActionResponses = {
@@ -6206,6 +6372,8 @@ document.addEventListener('keydown', (e) => {
         closeEnforcementDetail();
         closeLeaderModal();
         closeResidentDetail();
+        const searchOverlay = document.getElementById('searchOverlay');
+        if (searchOverlay) searchOverlay.style.display = 'none';
     }
 });
 
@@ -6241,7 +6409,7 @@ async function openReportDetail(idOrUuid) {
         const body = panel.querySelector('.detail-body');
         const statusMap = {
             submitted: { label: 'Open', class: 'status-open' },
-            in_review: { label: 'In Review', class: 'status-in-review' },
+            under_review: { label: 'In Review', class: 'status-under-review' },
             in_progress: { label: 'In Progress', class: 'status-progress' },
             resolved: { label: 'Resolved', class: 'status-resolved' },
             closed: { label: 'Closed', class: 'status-resolved' }
@@ -6308,12 +6476,12 @@ async function openReportDetail(idOrUuid) {
             submittedByEl.innerHTML = `
                 <div style="display:flex; align-items:center; gap:10px;">
                     ${submitterAvatarSrc
-                        ? `<img src="${submitterAvatarSrc}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
-                        : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;">${initials}</div>`
+                        ? `<img src="${escapeHtml(submitterAvatarSrc)}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
+                        : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;">${escapeHtml(initials)}</div>`
                     }
                     <div>
-                        <div style="font-weight:500;">${submitterName}</div>
-                        ${submitterEmail ? `<div style="font-size:11px; color:var(--text-tertiary);">${submitterEmail}</div>` : ''}
+                        <div style="font-weight:500;">${escapeHtml(submitterName)}</div>
+                        ${submitterEmail ? `<div style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(submitterEmail)}</div>` : ''}
                     </div>
                 </div>`;
         } else if (submittedByEl) {
@@ -6329,8 +6497,8 @@ async function openReportDetail(idOrUuid) {
                     <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">${photoUrls.length} attached</div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         ${photoUrls.map(url => `
-                            <a href="${url}" target="_blank" style="display:block; width:80px; height:80px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
-                                <img src="${url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
+                            <a href="${escapeHtml(url)}" target="_blank" style="display:block; width:80px; height:80px; border-radius:8px; overflow:hidden; border:1px solid var(--border);">
+                                <img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
                             </a>
                         `).join('')}
                     </div>`;
@@ -6369,12 +6537,12 @@ async function openReportDetail(idOrUuid) {
             }
 
             if (addr) {
-                buttons += `<button onclick="navigator.clipboard.writeText('${addr.replace(/'/g, "\\'")}'); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
+                buttons += `<button data-copy="${escapeHtml(addr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
             }
 
             if (lat && lng) {
                 const coordStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                buttons += `<button onclick="navigator.clipboard.writeText('${coordStr}'); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
+                buttons += `<button data-copy="${escapeHtml(coordStr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
             }
 
             actionsEl.innerHTML = buttons || '<span style="font-size:12px; color:var(--text-tertiary);">No location data available</span>';
@@ -6383,7 +6551,7 @@ async function openReportDetail(idOrUuid) {
         // Update submission time
         const timeEl = document.getElementById('reportSubmittedTime');
         if (timeEl && report.created_at) {
-            timeEl.textContent = 'Submitted ' + timeAgo(new Date(report.created_at));
+            timeEl.textContent = 'Submitted ' + getTimeAgo(report.created_at);
         }
 
     } else {
@@ -6415,7 +6583,7 @@ async function updateReportStatus(newStatus) {
 
         // Update the detail panel status badge
         const statusLabels = {
-            submitted: 'Open', in_review: 'In Review',
+            submitted: 'Open', under_review: 'In Review',
             in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed'
         };
         const badge = document.querySelector('#reportDetail .status');
@@ -7254,6 +7422,13 @@ let editingLeaderId = null;
 let leaderActiveState = true;
 let currentLeaderFilter = 'all';
 
+// Utility: escape HTML special characters to prevent XSS in dynamic content
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function getLeaderInitials(name) {
     return name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
@@ -7300,17 +7475,20 @@ function renderLeaders() {
     grid.innerHTML = filtered.map(leader => {
         const initials = getLeaderInitials(leader.name);
         const gradient = getLeaderGradient(leader.name);
+        const safeName = escapeHtml(leader.name);
+        const safeInitials = escapeHtml(initials);
+        const safeId = escapeHtml(leader.id);
         const photoHtml = leader.photo_url
-            ? `<img src="${leader.photo_url}" alt="${leader.name}" onerror="this.parentElement.innerHTML='<span>${initials}</span>'; this.parentElement.style.background='${gradient}';">`
-            : `<span>${initials}</span>`;
+            ? `<img src="${escapeHtml(leader.photo_url)}" alt="${safeName}" onerror="this.parentElement.innerHTML='<span>${safeInitials}</span>'; this.parentElement.style.background='${gradient}';">`
+            : `<span>${safeInitials}</span>`;
         const photoStyle = leader.photo_url ? '' : `style="background: ${gradient};"`;
 
-        return `<div class="leader-card ${leader.active ? '' : 'inactive'}" onclick="openLeaderEditor('${leader.id}')">
+        return `<div class="leader-card ${leader.active ? '' : 'inactive'}" onclick="openLeaderEditor('${safeId}')">
             <span class="leader-type-badge ${leader.type === 'elected' ? 'leader-type-elected' : 'leader-type-staff'}">${leader.type === 'elected' ? 'Elected' : 'Staff'}</span>
             <div class="leader-photo" ${photoStyle}>${photoHtml}</div>
-            <div class="leader-name">${leader.name}</div>
-            <div class="leader-title">${leader.title}</div>
-            <div class="leader-dept">${leader.department}</div>
+            <div class="leader-name">${safeName}</div>
+            <div class="leader-title">${escapeHtml(leader.title)}</div>
+            <div class="leader-dept">${escapeHtml(leader.department)}</div>
             <div class="leader-contact">
                 ${leader.email ? `<span>${leader.email}</span>` : ''}
                 ${leader.phone ? `<span>${leader.phone}</span>` : ''}
@@ -7494,11 +7672,7 @@ try {
 } catch(e) { console.warn('leaderModal listener failed:', e); }
 
 // Add Escape key handler for leader modal
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.getElementById('leaderModal').classList.contains('open')) {
-        closeLeaderModal();
-    }
-});
+// Escape key handled by consolidated listener above
 
 // Render leaders on load
 renderLeaders();
@@ -7585,10 +7759,10 @@ function renderBusinessTable() {
         const scoreWidth = b.aiScore + '%';
         const date = new Date(b.submitted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-        return `<tr onclick="openBizDetail('${b.id}')" style="cursor: pointer; position: relative;">
-            <td style="font-weight: 500;">${b.name}</td>
-            <td><span class="biz-category-tag">${b.category}</span></td>
-            <td style="color: var(--text-secondary);">${b.owner}</td>
+        return `<tr onclick="openBizDetail('${escapeHtml(b.id)}')" style="cursor: pointer; position: relative;">
+            <td style="font-weight: 500;">${escapeHtml(b.name)}</td>
+            <td><span class="biz-category-tag">${escapeHtml(b.category)}</span></td>
+            <td style="color: var(--text-secondary);">${escapeHtml(b.owner)}</td>
             <td><span class="status ${sc.css}"><span class="status-dot"></span>${sc.label}</span></td>
             <td>
                 <div class="biz-score" style="color: ${scoreColor};">
@@ -7598,11 +7772,11 @@ function renderBusinessTable() {
             </td>
             <td style="color: var(--text-tertiary); font-size: 12px;">${date}</td>
             <div class="hover-popup" style="left:80px; min-width:300px;">
-                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">${b.name}</div>
-                <div style="font-size:12px; line-height:1.5; margin-bottom:8px;">${b.description.substring(0, 120)}${b.description.length > 120 ? '...' : ''}</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">${escapeHtml(b.name)}</div>
+                <div style="font-size:12px; line-height:1.5; margin-bottom:8px;">${escapeHtml(b.description.substring(0, 120))}${b.description.length > 120 ? '...' : ''}</div>
                 <div class="popup-line"><span>AI Quality Score</span><span class="popup-val" style="color:${scoreColor};">${b.aiScore}/100</span></div>
-                <div class="popup-line"><span>Owner</span><span class="popup-val">${b.owner}</span></div>
-                <div class="popup-line"><span>Phone</span><span class="popup-val">${b.phone}</span></div>
+                <div class="popup-line"><span>Owner</span><span class="popup-val">${escapeHtml(b.owner)}</span></div>
+                <div class="popup-line"><span>Phone</span><span class="popup-val">${escapeHtml(b.phone)}</span></div>
             </div>
         </tr>`;
     }).join('');
@@ -7813,9 +7987,20 @@ renderBusinessTable();
 updateBizCounts();
 
 // Close biz detail on escape
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeBizDetail();
-});
+// Escape key handled by consolidated listener above
+
+// ============================================
+// PILOT FEATURE FLAGS
+// Set a flag to true to show the page, false to hide it.
+// Hidden pages are removed from the nav bar entirely.
+// ============================================
+
+const pilotFlags = {
+    directory: false,      // Business Directory — hidden for pilot
+    enforcement: false,    // Code Enforcement — hidden for pilot
+    // Chambers role is hidden implicitly (its only page is 'directory')
+    // All other pages are active by default
+};
 
 // ============================================
 // ROLE-BASED ACCESS CONTROL
@@ -7869,15 +8054,16 @@ function switchRole(role) {
     if (roleEl) roleEl.textContent = config.title;
     if (badgeEl) badgeEl.textContent = config.label;
 
-    // Gray out nav items based on role (instead of hiding)
+    // Gray out nav items based on role AND pilot flags
     const navItems = document.querySelectorAll('.nav-item[data-page]');
     navItems.forEach(item => {
         const page = item.dataset.page;
-        if (config.pages.includes(page)) {
-            item.classList.remove('role-hidden', 'role-disabled');
-        } else {
+        // Hide if pilot flag is explicitly false, OR if role doesn't include this page
+        if (pilotFlags[page] === false || !config.pages.includes(page)) {
             item.classList.add('role-hidden');
             item.classList.remove('role-disabled');
+        } else {
+            item.classList.remove('role-hidden', 'role-disabled');
         }
     });
 
@@ -7927,12 +8113,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Close search overlay on Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const searchOverlay = document.getElementById('searchOverlay');
-        if (searchOverlay) searchOverlay.style.display = 'none';
-    }
-});
+// Escape key for search overlay handled by consolidated listener above
 
 
 // ============================================
@@ -8051,9 +8232,9 @@ function openResidentDetail(userId) {
         <div style="text-align: center; padding: 20px 0 24px;">
             <div style="display: flex; justify-content: center; margin-bottom: 12px; position: relative; width: 86px; margin-left: auto; margin-right: auto;">
                 ${avatarHtml}
-                <span style="position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bg-primary); background: ${residentOnline ? '#22c55e' : '#6b7280'}; ${residentOnline ? 'box-shadow: 0 0 8px #22c55e80;' : 'opacity: 0.6;'}"></span>
+                <span style="position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--bg); background: ${residentOnline ? '#22c55e' : '#6b7280'}; ${residentOnline ? 'box-shadow: 0 0 8px #22c55e80;' : 'opacity: 0.6;'}"></span>
             </div>
-            <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">${resident.display_name || 'Anonymous'}</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">${escapeHtml(resident.display_name || 'Anonymous')}</div>
             <div style="font-size: 13px; color: ${residentOnline ? '#22c55e' : 'var(--accent)'}; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;">
                 ${residentOnline ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block;"></span> Online now' : (resident.role || 'resident').charAt(0).toUpperCase() + (resident.role || 'resident').slice(1) + ' · Last active ' + lastActive}
             </div>
@@ -8068,14 +8249,14 @@ function openResidentDetail(userId) {
                     <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9993;</div>
                     <div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Email</div>
-                        <div style="font-size: 13px; color: var(--text-primary);">${resident.email || 'Not provided'}</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.email || 'Not provided')}</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0,194,212,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9742;</div>
                     <div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Phone</div>
-                        <div style="font-size: 13px; color: var(--text-primary);">${resident.phone || 'Not provided'}</div>
+                        <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.phone || 'Not provided')}</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -8292,6 +8473,25 @@ async function deactivateResident(userId) {
             if (e.target === enfModal) closeEnforcementModal();
         });
     }
+
+    // Apply pilot flags on initial load — hide nav items and role options for disabled features
+    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+        const page = item.dataset.page;
+        if (pilotFlags[page] === false) {
+            item.classList.add('role-hidden');
+        }
+    });
+
+    // Hide role picker options whose primary pages are all disabled by pilot flags
+    // Chambers only accesses 'directory'; Code Enforcement primarily accesses 'enforcement'
+    const roleToPages = { chambers: ['directory'], code_enforcement: ['enforcement'] };
+    Object.entries(roleToPages).forEach(([role, requiredPages]) => {
+        const allDisabled = requiredPages.every(p => pilotFlags[p] === false);
+        if (allDisabled) {
+            const opt = document.querySelector(`.role-option[data-role="${role}"]`);
+            if (opt) opt.style.display = 'none';
+        }
+    });
 
     console.log('Navigation initialized: ' + document.querySelectorAll('.nav-item[data-page]').length + ' nav items found');
 })();
