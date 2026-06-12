@@ -1660,6 +1660,16 @@ textarea.form-input {
     50% { opacity: 0.6; }
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
 .ai-insight {
     display: flex;
     gap: 12px;
@@ -3401,6 +3411,141 @@ textarea.form-input {
                     </div>
                 </div>
             </div>
+
+            <!-- ========== NEIGHBORHOOD MAP — COMING SOON ========== -->
+            <div class="glass-card" style="margin-top: 24px; padding: 0; overflow: hidden; border: 1px solid rgba(59,130,246,0.15);">
+                <!-- Header bar -->
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(16,185,129,0.2)); display: flex; align-items: center; justify-content: center;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                <line x1="8" y1="2" x2="8" y2="18"/>
+                                <line x1="16" y1="6" x2="16" y2="22"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 600; color: var(--text-primary);">Neighborhood Map</div>
+                            <div style="font-size: 12px; color: var(--text-tertiary);">Resident distribution overlay</div>
+                        </div>
+                    </div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(16,185,129,0.12)); border: 1px solid rgba(59,130,246,0.2);">
+                        <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite;"></div>
+                        <span style="font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1px;">Coming Soon</span>
+                    </div>
+                </div>
+
+                <!-- Translucent grid map mockup -->
+                <div style="position: relative; height: 320px; background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(15,23,42,0.8)); overflow: hidden;">
+                    <!-- SVG Grid overlay — translucent city blocks -->
+                    <svg width="100%" height="100%" viewBox="0 0 800 320" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; opacity: 0.6;">
+                        <!-- Grid lines -->
+                        <defs>
+                            <pattern id="mapGrid" width="60" height="60" patternUnits="userSpaceOnUse">
+                                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(59,130,246,0.15)" stroke-width="0.5"/>
+                            </pattern>
+                            <radialGradient id="mapGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="rgba(59,130,246,0.2)"/>
+                                <stop offset="100%" stop-color="rgba(59,130,246,0)"/>
+                            </radialGradient>
+                        </defs>
+                        <rect width="800" height="320" fill="url(#mapGrid)"/>
+                        <ellipse cx="400" cy="160" rx="250" ry="120" fill="url(#mapGlow)"/>
+
+                        <!-- Major roads -->
+                        <line x1="0" y1="160" x2="800" y2="160" stroke="rgba(148,163,184,0.2)" stroke-width="3"/>
+                        <line x1="400" y1="0" x2="400" y2="320" stroke="rgba(148,163,184,0.2)" stroke-width="3"/>
+                        <line x1="100" y1="0" x2="700" y2="320" stroke="rgba(148,163,184,0.1)" stroke-width="1.5"/>
+
+                        <!-- Road labels -->
+                        <text x="600" y="152" fill="rgba(148,163,184,0.3)" font-size="9" font-family="system-ui">FRONTIER ST</text>
+                        <text x="408" y="80" fill="rgba(148,163,184,0.3)" font-size="9" font-family="system-ui">MAIN ST</text>
+
+                        <!-- Resident density dots — different colors for density -->
+                        <!-- High density cluster (downtown) -->
+                        <circle cx="380" cy="140" r="5" fill="rgba(59,130,246,0.7)" opacity="0.9"/>
+                        <circle cx="395" cy="155" r="4" fill="rgba(59,130,246,0.6)" opacity="0.8"/>
+                        <circle cx="410" cy="145" r="6" fill="rgba(59,130,246,0.8)" opacity="0.9"/>
+                        <circle cx="370" cy="165" r="4" fill="rgba(59,130,246,0.5)" opacity="0.7"/>
+                        <circle cx="420" cy="170" r="5" fill="rgba(59,130,246,0.6)" opacity="0.8"/>
+                        <circle cx="385" cy="175" r="3" fill="rgba(59,130,246,0.5)" opacity="0.7"/>
+                        <circle cx="405" cy="130" r="4" fill="rgba(59,130,246,0.6)" opacity="0.8"/>
+
+                        <!-- Medium density (east side) -->
+                        <circle cx="520" cy="120" r="4" fill="rgba(16,185,129,0.6)" opacity="0.7"/>
+                        <circle cx="550" cy="145" r="3" fill="rgba(16,185,129,0.5)" opacity="0.6"/>
+                        <circle cx="535" cy="170" r="5" fill="rgba(16,185,129,0.7)" opacity="0.8"/>
+                        <circle cx="570" cy="160" r="3" fill="rgba(16,185,129,0.4)" opacity="0.6"/>
+
+                        <!-- Sparse areas (west/south) -->
+                        <circle cx="250" cy="130" r="3" fill="rgba(245,158,11,0.5)" opacity="0.6"/>
+                        <circle cx="280" cy="190" r="4" fill="rgba(245,158,11,0.6)" opacity="0.7"/>
+                        <circle cx="230" cy="200" r="3" fill="rgba(245,158,11,0.4)" opacity="0.5"/>
+                        <circle cx="310" cy="220" r="3" fill="rgba(245,158,11,0.5)" opacity="0.6"/>
+
+                        <!-- North residential -->
+                        <circle cx="350" cy="80" r="3" fill="rgba(139,92,246,0.5)" opacity="0.6"/>
+                        <circle cx="420" cy="70" r="4" fill="rgba(139,92,246,0.6)" opacity="0.7"/>
+                        <circle cx="460" cy="90" r="3" fill="rgba(139,92,246,0.4)" opacity="0.5"/>
+
+                        <!-- South -->
+                        <circle cx="380" cy="250" r="4" fill="rgba(236,72,153,0.5)" opacity="0.6"/>
+                        <circle cx="430" cy="260" r="3" fill="rgba(236,72,153,0.4)" opacity="0.5"/>
+                        <circle cx="350" cy="270" r="3" fill="rgba(236,72,153,0.5)" opacity="0.6"/>
+
+                        <!-- Animated pulse rings on clusters -->
+                        <circle cx="400" cy="155" r="30" fill="none" stroke="rgba(59,130,246,0.2)" stroke-width="1">
+                            <animate attributeName="r" values="20;40;20" dur="4s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.3;0;0.3" dur="4s" repeatCount="indefinite"/>
+                        </circle>
+                        <circle cx="540" cy="150" r="20" fill="none" stroke="rgba(16,185,129,0.2)" stroke-width="1">
+                            <animate attributeName="r" values="15;30;15" dur="5s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.3;0;0.3" dur="5s" repeatCount="indefinite"/>
+                        </circle>
+                    </svg>
+
+                    <!-- Center label overlay -->
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2;">
+                        <div style="padding: 12px 24px; border-radius: 16px; background: rgba(15,23,42,0.85); border: 1px solid rgba(59,130,246,0.2); backdrop-filter: blur(12px); text-align: center;">
+                            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">City of Eloy, AZ</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary);">Interactive resident density map</div>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div style="position: absolute; bottom: 12px; left: 16px; display: flex; gap: 16px; z-index: 2;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(59,130,246,0.7);"></div>
+                            <span style="font-size: 10px; color: var(--text-tertiary);">High density</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(16,185,129,0.6);"></div>
+                            <span style="font-size: 10px; color: var(--text-tertiary);">Medium</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: rgba(245,158,11,0.6);"></div>
+                            <span style="font-size: 10px; color: var(--text-tertiary);">Sparse</span>
+                        </div>
+                    </div>
+
+                    <!-- Feature list on right -->
+                    <div style="position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 2;">
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span style="font-size: 11px; color: var(--text-secondary);">Address-based pins</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                            <span style="font-size: 11px; color: var(--text-secondary);">Neighborhood zones</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px);">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            <span style="font-size: 11px; color: var(--text-secondary);">Engagement heatmap</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- ========== GROK AI — COMMAND CENTER ========== -->
@@ -3981,219 +4126,45 @@ textarea.form-input {
         <!-- ========== CODE ENFORCEMENT ========== -->
         <div class="page" id="page-enforcement">
 
-            <!-- AI SUMMARY STATS -->
-            <div class="ai-panel" style="margin-bottom: 24px;">
-                <div class="ai-panel-header">
-                    <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">CE</div>
-                    <div>
-                        <div class="ai-panel-title">Code Enforcement Overview</div>
-                        <div class="ai-panel-subtitle">AI-generated summary of current enforcement activity <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 6px;">Demo Data</span></div>
-                    </div>
-                    <span class="ai-badge">Live AI</span>
-                </div>
-                <div class="metrics-grid anim-stagger" style="margin-bottom: 0; grid-template-columns: repeat(5, 1fr);">
-                    <div class="metric-card" data-accent="teal" style="margin-bottom: 0;">
-                        <div class="metric-header">
-                            <div class="metric-icon teal" style="font-size:14px; font-weight:700;">N</div>
-                        </div>
-                        <div class="metric-value" id="ce-total-count">24</div>
-                        <div class="metric-label">Total Notices</div>
-                        <div class="hover-popup">
-                            <div class="popup-title">Notice Breakdown</div>
-                            <div class="popup-line"><span>Weeds / Vegetation</span><span class="popup-val">10</span></div>
-                            <div class="popup-line"><span>Property Maintenance</span><span class="popup-val">6</span></div>
-                            <div class="popup-line"><span>Junk Vehicles</span><span class="popup-val">3</span></div>
-                            <div class="popup-line"><span>Other types</span><span class="popup-val">5</span></div>
-                        </div>
-                    </div>
-                    <div class="metric-card" data-accent="orange" style="margin-bottom: 0;">
-                        <div class="metric-header">
-                            <div class="metric-icon orange" style="font-size:14px; font-weight:700;">P</div>
-                        </div>
-                        <div class="metric-value" id="ce-pending-count" style="color: var(--warm-accent);">8</div>
-                        <div class="metric-label">Pending</div>
-                        <div class="hover-popup">
-                            <div class="popup-title">Pending Notices</div>
-                            <div class="popup-line"><span>Awaiting response</span><span class="popup-val">5</span></div>
-                            <div class="popup-line"><span>Recently issued</span><span class="popup-val">3</span></div>
-                            <div class="popup-highlight">Oldest pending: 12 days</div>
-                        </div>
-                    </div>
-                    <div class="metric-card" style="margin-bottom: 0;">
-                        <div class="metric-header">
-                            <div class="metric-icon red" style="font-size:14px; font-weight:700;">!</div>
-                        </div>
-                        <div class="metric-value" id="ce-overdue-count" style="color: var(--warning);">5</div>
-                        <div class="metric-label">Overdue</div>
-                        <div class="hover-popup">
-                            <div class="popup-title">Overdue Notices</div>
-                            <div class="popup-line"><span>Weed violations</span><span class="popup-val" style="color:var(--warning);">3</span></div>
-                            <div class="popup-line"><span>Junk vehicles</span><span class="popup-val" style="color:var(--warning);">1</span></div>
-                            <div class="popup-line"><span>Illegal dumping</span><span class="popup-val" style="color:var(--warning);">1</span></div>
-                            <div class="popup-highlight">Consider batch follow-up letters</div>
-                        </div>
-                    </div>
-                    <div class="metric-card" data-accent="green" style="margin-bottom: 0;">
-                        <div class="metric-header">
-                            <div class="metric-icon green" style="font-size:14px; font-weight:700;">R</div>
-                        </div>
-                        <div class="metric-value" id="ce-resolved-month" style="color: var(--success);">7</div>
-                        <div class="metric-label">Resolved This Month</div>
-                        <div class="hover-popup">
-                            <div class="popup-title">Resolutions</div>
-                            <div class="popup-line"><span>With proof photos</span><span class="popup-val" style="color:var(--success);">5</span></div>
-                            <div class="popup-line"><span>Verbal confirmation</span><span class="popup-val">2</span></div>
-                            <div class="popup-highlight">Avg resolution time: 11 days</div>
-                        </div>
-                    </div>
-                    <div class="metric-card" data-accent="blue" style="margin-bottom: 0;">
-                        <div class="metric-header">
-                            <div class="metric-icon blue" style="font-size:14px; font-weight:700;">%</div>
-                        </div>
-                        <div class="metric-value" id="ce-compliance-rate" style="color: var(--info);">68%</div>
-                        <div class="metric-label">Compliance Rate</div>
-                        <div class="hover-popup">
-                            <div class="popup-title">Compliance Details</div>
-                            <div class="popup-line"><span>14-day deadline</span><span class="popup-val" style="color:var(--success);">72%</span></div>
-                            <div class="popup-line"><span>7-day deadline</span><span class="popup-val" style="color:var(--warm-accent);">48%</span></div>
-                            <div class="popup-highlight">Longer deadlines improve compliance</div>
-                        </div>
-                    </div>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>5 overdue notices</strong> have passed their compliance deadline. 3 are weed/vegetation violations on the east side — consider sending a batch follow-up letter before escalating to fines.</div>
-                            <button class="ai-action-btn" onclick="filterEnforcement('overdue')">View overdue →</button>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon trend" style="color:var(--accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Property maintenance violations up 35%</strong> this month vs. last. The seasonal pattern matches — warm weather increases weed growth. Consider a proactive community reminder about yard maintenance.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-header">
-                <div>
-                    <h3>Code Enforcement Notices</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Track violation notices, deadlines, and resident compliance</p>
-                </div>
-                <div class="flex gap-8">
-                    <button class="btn btn-secondary" onclick="exportEnforcementCSV()">Export CSV</button>
-                    <button class="btn btn-primary" onclick="openEnforcementModal()">+ New Notice</button>
-                </div>
-            </div>
-
-            <!-- STATUS FILTER TABS -->
-            <div class="filter-tabs" id="ce-filter-tabs">
-                <button class="filter-tab active" onclick="filterEnforcement('all', this)">All (24)</button>
-                <button class="filter-tab" onclick="filterEnforcement('pending', this)">Pending (8)</button>
-                <button class="filter-tab" onclick="filterEnforcement('acknowledged', this)">Acknowledged (3)</button>
-                <button class="filter-tab" onclick="filterEnforcement('in-progress', this)">In Progress (1)</button>
-                <button class="filter-tab" onclick="filterEnforcement('overdue', this)">Overdue (5)</button>
-                <button class="filter-tab" onclick="filterEnforcement('resolved', this)">Resolved (7)</button>
-            </div>
-
-            <!-- NOTICES TABLE -->
-            <div class="glass-card" style="padding: 0; overflow: hidden;">
-                <table class="data-table" id="enforcement-table">
-                    <thead>
-                        <tr>
-                            <th>Resident</th>
-                            <th>Address</th>
-                            <th>Type</th>
-                            <th>Severity</th>
-                            <th>Status</th>
-                            <th>Deadline</th>
-                            <th>Issued Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="enforcementTableBody">
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- AI ANALYTICS — CODE ENFORCEMENT -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">T</div>
-                        <div>
-                            <div class="ai-panel-title">Enforcement Intelligence</div>
-                            <div class="ai-panel-subtitle">Patterns and recommendations</div>
-                        </div>
-                        <span class="ai-badge">AI</span>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon fire" style="color:var(--warm-accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Violation hotspot:</strong> 6 of 24 active notices are within a 3-block radius on E. 4th St and E. 5th St. This cluster suggests a neighborhood-level issue — a community cleanup day could be more effective than individual enforcement.</div>
-                            <button class="ai-action-btn" onclick="navigateToPage('content')">Draft cleanup event →</button>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Compliance timing:</strong> Residents who receive notices with 14-day deadlines comply 72% of the time vs. 48% for 7-day deadlines. Consider extending default deadlines for first-time violations.</div>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon info" style="color:var(--info);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Repeat offender alert:</strong> Property at 420 E. 4th St has had 4 weed violations in 6 months. This property may qualify for accelerated enforcement under Eloy Municipal Code 15-204.</div>
-                            <button class="ai-action-btn" onclick="openEnforcementDetail(enforcementNotices.find(n => n.address === '420 E. 4th St'))">View history →</button>
-                        </div>
-                    </div>
+            <!-- COMING SOON PLACEHOLDER -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 20px;">
+                <!-- Animated icon -->
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); animation: spin 3s linear infinite;"></div>
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
                 </div>
 
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">A</div>
-                        <div>
-                            <div class="ai-panel-title">Violation Breakdown</div>
-                            <div class="ai-panel-subtitle">Distribution by type this quarter</div>
-                        </div>
+                <!-- Badge -->
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(59,130,246,0.2); margin-bottom: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite;"></div>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px;">Coming Soon</span>
+                </div>
+
+                <!-- Title -->
+                <h2 style="font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Code Enforcement</h2>
+                <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; line-height: 1.6; margin-bottom: 32px;">
+                    Track violation notices, deadlines, and resident compliance. Issue notices, monitor resolution progress, and generate enforcement reports — all from one dashboard.
+                </p>
+
+                <!-- Feature preview cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#128203;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Notice Tracking</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Issue and track violations</div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Weeds / Vegetation</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 42%; height: 100%; background: var(--success); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--success); width: 32px; text-align: right;">42%</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Property Maintenance</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 25%; height: 100%; background: var(--info); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--info); width: 32px; text-align: right;">25%</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Junk Vehicles</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 15%; height: 100%; background: var(--warm-accent); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--warm-accent); width: 32px; text-align: right;">15%</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Illegal Dumping</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 10%; height: 100%; background: var(--warning); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--warning); width: 32px; text-align: right;">10%</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Signage / Permits</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 8%; height: 100%; background: var(--accent); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--accent); width: 32px; text-align: right;">8%</span>
-                        </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#9200;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Deadline Alerts</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Automated reminders</div>
+                    </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#128202;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Compliance Reports</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Analytics and trends</div>
                     </div>
                 </div>
             </div>
@@ -4202,199 +4173,45 @@ textarea.form-input {
         <!-- ========== BUSINESS DIRECTORY ========== -->
         <div class="page" id="page-directory">
 
-            <!-- STATS BAR -->
-            <div class="metrics-grid anim-stagger">
-                <div class="metric-card" data-accent="teal">
-                    <div class="metric-header">
-                        <div class="metric-icon teal" style="font-size:14px; font-weight:700;">B</div>
-                        <span class="metric-change up">+3 this week</span>
-                    </div>
-                    <div class="metric-value" id="biz-total">12</div>
-                    <div class="metric-label">Total Listings</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Listing Overview</div>
-                        <div class="popup-line"><span>Restaurants</span><span class="popup-val">4</span></div>
-                        <div class="popup-line"><span>Auto Services</span><span class="popup-val">2</span></div>
-                        <div class="popup-line"><span>Health & Wellness</span><span class="popup-val">2</span></div>
-                        <div class="popup-line"><span>Retail / Services</span><span class="popup-val">3</span></div>
-                        <div class="popup-line"><span>Professional</span><span class="popup-val">1</span></div>
-                    </div>
+            <!-- COMING SOON PLACEHOLDER -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 20px;">
+                <!-- Animated icon -->
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.12)); display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--warm-accent); animation: spin 3s linear infinite;"></div>
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
                 </div>
-                <div class="metric-card" data-accent="orange">
-                    <div class="metric-header">
-                        <div class="metric-icon orange" style="font-size:14px; font-weight:700;">P</div>
-                    </div>
-                    <div class="metric-value" id="biz-pending" style="color: var(--warm-accent);">4</div>
-                    <div class="metric-label">Pending Review</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Awaiting Review</div>
-                        <div class="popup-line"><span>Sonoran Auto Glass</span><span class="popup-val" style="color:var(--warm-accent);">New</span></div>
-                        <div class="popup-line"><span>Eloy Fitness Center</span><span class="popup-val" style="color:var(--warm-accent);">New</span></div>
-                        <div class="popup-highlight">2 ready for review, 1 needs photos</div>
-                    </div>
-                </div>
-                <div class="metric-card" data-accent="green">
-                    <div class="metric-header">
-                        <div class="metric-icon green" style="font-size:14px; font-weight:700;">R</div>
-                    </div>
-                    <div class="metric-value" id="biz-approved" style="color: var(--success);">6</div>
-                    <div class="metric-label">Approved</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Top Approved</div>
-                        <div class="popup-line"><span>Casa de Eloy Restaurant</span><span class="popup-val" style="color:var(--success);">95</span></div>
-                        <div class="popup-line"><span>Eloy Family Pharmacy</span><span class="popup-val" style="color:var(--success);">92</span></div>
-                        <div class="popup-highlight">Average AI score: 84/100</div>
-                    </div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon red" style="font-size:14px; font-weight:700;">X</div>
-                    </div>
-                    <div class="metric-value" id="biz-rejected" style="color: var(--warning);">2</div>
-                    <div class="metric-label">Rejected</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Rejection Reasons</div>
-                        <div class="popup-line"><span>Incomplete info</span><span class="popup-val">1</span></div>
-                        <div class="popup-line"><span>Duplicate listing</span><span class="popup-val">1</span></div>
-                        <div class="popup-highlight">Can resubmit after corrections</div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- AI INSIGHTS -->
-            <div class="ai-panel" style="margin-bottom: 24px;">
-                <div class="ai-panel-header">
-                    <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">AI</div>
-                    <div>
-                        <div class="ai-panel-title">Business Directory Insights</div>
-                        <div class="ai-panel-subtitle">AI-generated from search and submission trends</div>
-                    </div>
-                    <span class="ai-badge">AI</span>
+                <!-- Badge -->
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.15)); border: 1px solid rgba(245,158,11,0.2); margin-bottom: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--warm-accent); animation: pulse 2s ease-in-out infinite;"></div>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--warm-accent); text-transform: uppercase; letter-spacing: 1.5px;">Coming Soon</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon trend" style="color:var(--accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Most searched categories this month:</strong> Restaurants (34%), Auto Services (22%), Home Services (18%), Retail (14%), Professional Services (12%). Mexican restaurants are the #1 individual search term.</div>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>New submissions this week:</strong> 3 businesses submitted for listing — Sonoran Auto Glass, Eloy Fitness Center, and Desert View Dentistry. 1 needs photo uploads, 2 are ready for review.</div>
-                            <button class="ai-action-btn" onclick="filterBusinessDirectory('pending')">Review pending →</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- HEADER + SEARCH -->
-            <div class="section-header">
-                <div>
-                    <h3>Business Listings</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Managed by Andrew Sutton & Angela Reyes — Chambers of Commerce</p>
-                </div>
-                <div class="flex gap-8">
-                    <input class="form-input" id="bizSearchInput" placeholder="Search businesses..." style="width: 260px;" oninput="searchBusinessDirectory(this.value)">
-                    <button class="btn btn-secondary" onclick="exportBusinessCSV()">Export CSV</button>
-                    <button class="btn btn-primary" onclick="showAddBusinessForm()">+ Add Listing</button>
-                </div>
-            </div>
+                <!-- Title -->
+                <h2 style="font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Business Directory</h2>
+                <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; line-height: 1.6; margin-bottom: 32px;">
+                    Manage local business listings, review submissions from the Chambers of Commerce, and maintain a verified directory of Eloy businesses for residents to discover.
+                </p>
 
-            <!-- FILTER TABS -->
-            <div class="filter-tabs" id="biz-filter-tabs">
-                <button class="filter-tab active" onclick="filterBusinessDirectory('all', this)">All (12)</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('pending', this)">Pending Review (4)</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('approved', this)">Approved (6)</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('rejected', this)">Rejected (2)</button>
-            </div>
-
-            <!-- BUSINESS TABLE -->
-            <div class="glass-card" style="padding: 0; overflow: hidden;">
-                <table class="data-table" id="biz-table">
-                    <thead>
-                        <tr>
-                            <th>Business Name</th>
-                            <th>Category</th>
-                            <th>Owner</th>
-                            <th>Status</th>
-                            <th>AI Score</th>
-                            <th>Submitted</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bizTableBody">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- AI ANALYTICS — BUSINESS DIRECTORY -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">A</div>
-                        <div>
-                            <div class="ai-panel-title">Listing Quality Analysis</div>
-                            <div class="ai-panel-subtitle">AI review of submission completeness</div>
-                        </div>
+                <!-- Feature preview cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#127978;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Listing Management</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Review and approve businesses</div>
                     </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>3 listings missing photos.</strong> Businesses with photos get 4.2x more views in the app. Consider requesting photo uploads from Sonoran Auto Glass, Eloy Fitness Center, and Desert Bloom Floral.</div>
-                        </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#129302;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">AI Quality Scores</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Auto-review completeness</div>
                     </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Average AI Quality Score: 78/100.</strong> Top performers: Casa de Eloy Restaurant (95) and Eloy Family Pharmacy (92). Scores below 60 typically need description and hours updates.</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">B</div>
-                        <div>
-                            <div class="ai-panel-title">Category Distribution</div>
-                            <div class="ai-panel-subtitle">Listings by business type</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Restaurant</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 33%; height: 100%; background: var(--warm-accent); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--warm-accent); width: 24px; text-align: right;">4</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Auto Services</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 17%; height: 100%; background: var(--info); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--info); width: 24px; text-align: right;">2</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Health & Wellness</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 17%; height: 100%; background: var(--success); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--success); width: 24px; text-align: right;">2</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Retail / Services</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 25%; height: 100%; background: var(--accent); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--accent); width: 24px; text-align: right;">3</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 13px; color: var(--text-secondary); width: 140px;">Professional</div>
-                            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden;">
-                                <div style="width: 8%; height: 100%; background: var(--text-tertiary); border-radius: 4px;"></div>
-                            </div>
-                            <span style="font-size: 13px; font-weight: 600; color: var(--text-tertiary); width: 24px; text-align: right;">1</span>
-                        </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="font-size: 28px; margin-bottom: 8px;">&#128200;</div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Search Analytics</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">What residents search for</div>
                     </div>
                 </div>
             </div>
@@ -7996,8 +7813,8 @@ updateBizCounts();
 // ============================================
 
 const pilotFlags = {
-    directory: false,      // Business Directory — hidden for pilot
-    enforcement: false,    // Code Enforcement — hidden for pilot
+    directory: true,       // Business Directory — Coming Soon placeholder
+    enforcement: true,     // Code Enforcement — Coming Soon placeholder
     // Chambers role is hidden implicitly (its only page is 'directory')
     // All other pages are active by default
 };
