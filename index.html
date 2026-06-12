@@ -208,12 +208,14 @@ body {
     align-items: center;
     gap: 5px;
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     color: var(--text-tertiary);
     font-size: 13px;
-    font-weight: 450;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     position: relative;
     user-select: none;
     white-space: nowrap;
@@ -221,13 +223,18 @@ body {
 }
 
 .nav-item:hover {
-    color: #D4D4D8;
-    background: none;
+    color: #F0F0F5;
+    background: rgba(255,255,255,0.06);
+    transform: translateY(-1px);
+    text-shadow: 0 0 12px rgba(139,92,246,0.5), 0 0 24px rgba(59,130,246,0.25);
+    box-shadow: 0 0 16px rgba(139,92,246,0.12), inset 0 0 12px rgba(255,255,255,0.03);
 }
 
 .nav-item.active {
     color: var(--text-primary);
-    background: none;
+    background: rgba(255,255,255,0.04);
+    text-shadow: 0 0 16px rgba(139,92,246,0.6), 0 0 30px rgba(59,130,246,0.3);
+    font-weight: 600;
 }
 
 .nav-item.active::after {
@@ -4152,17 +4159,17 @@ textarea.form-input {
                 <!-- Feature preview cards -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#128203;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Notice Tracking</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Issue and track violations</div>
                     </div>
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#9200;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Deadline Alerts</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Automated reminders</div>
                     </div>
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#128202;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H4a1 1 0 01-1-1V3"/><path d="M7 17l4-8 4 4 5-9"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Compliance Reports</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Analytics and trends</div>
                     </div>
@@ -4199,17 +4206,17 @@ textarea.form-input {
                 <!-- Feature preview cards -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#127978;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="12.01"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Listing Management</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Review and approve businesses</div>
                     </div>
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#129302;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 1.95-2 4-4 8-2-4-4-6.05-4-8a4 4 0 014-4z"/><path d="M4.93 13.5a8 8 0 0014.14 0"/><path d="M12 18v4"/><path d="M7 22h10"/><circle cx="12" cy="6" r="1"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">AI Quality Scores</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">Auto-review completeness</div>
                     </div>
                     <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="font-size: 28px; margin-bottom: 8px;">&#128200;</div>
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg></div>
                         <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Search Analytics</div>
                         <div style="font-size: 11px; color: var(--text-tertiary);">What residents search for</div>
                     </div>
