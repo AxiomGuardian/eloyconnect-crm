@@ -1217,13 +1217,14 @@ textarea.form-input {
     border-radius: 28px;
     padding: 16px;
     border: 2px solid rgba(255,255,255,0.08);
-    max-width: 300px;
+    width: 280px;
+    height: 500px;
     margin: 0 auto;
-    aspect-ratio: 9/16;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .phone-notch {
@@ -1263,6 +1264,11 @@ textarea.form-input {
     font-size: 12px;
     color: var(--text-secondary);
     line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ============================================
@@ -3848,19 +3854,32 @@ textarea.form-input {
                             </div>
                             <div>
                                 <label class="form-label">Priority</label>
-                                <select class="form-input">
-                                    <option>Normal</option>
-                                    <option>High — Sound + Badge</option>
-                                    <option>Critical — Override DND</option>
+                                <select class="form-input" id="notifPriority">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High — Sound + Badge</option>
+                                    <option value="critical">Critical — Override DND</option>
                                 </select>
                             </div>
                         </div>
 
                         <div style="margin-bottom: 14px;">
                             <label class="form-label">Schedule</label>
-                            <div class="flex gap-8">
-                                <button class="filter-tab active" onclick="this.classList.add('active'); this.nextElementSibling.classList.remove('active');">Send Now</button>
-                                <button class="filter-tab" onclick="this.classList.add('active'); this.previousElementSibling.classList.remove('active');">Schedule</button>
+                            <div class="flex gap-8" style="margin-bottom:10px;">
+                                <button class="filter-tab active" id="schedNowBtn" onclick="toggleScheduleMode('now')">Send Now</button>
+                                <button class="filter-tab" id="schedLaterBtn" onclick="toggleScheduleMode('later')">Schedule</button>
+                            </div>
+                            <div id="schedulePickerWrap" style="display:none; background:rgba(0,194,212,0.04); border:1px solid rgba(0,194,212,0.12); border-radius:var(--radius-sm); padding:12px; animation:fadeIn 0.2s ease;">
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                    <div>
+                                        <label class="form-label" style="font-size:11px;">Date</label>
+                                        <input type="date" class="form-input" id="schedDate" style="font-size:13px; padding:8px 12px;">
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:11px;">Time</label>
+                                        <input type="time" class="form-input" id="schedTime" style="font-size:13px; padding:8px 12px;">
+                                    </div>
+                                </div>
+                                <div style="font-size:11px; color:var(--text-tertiary); margin-top:8px;">Notification will be queued and sent at the scheduled time (MST).</div>
                             </div>
                         </div>
 
@@ -3935,12 +3954,52 @@ textarea.form-input {
                 <div>
                     <div class="glass-card" style="display: flex; flex-direction: column; align-items: center;">
                         <div style="font-size: 12px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Live Preview</div>
-                        <div class="phone-preview">
-                            <div class="phone-notch"></div>
-                            <div class="phone-notif">
-                                <div class="phone-notif-app">Eloy Connect</div>
-                                <div class="phone-notif-title" id="previewTitle">Notification title</div>
-                                <div class="phone-notif-body" id="previewBody">Your message will appear here as residents will see it.</div>
+                        <!-- Dual platform toggle -->
+                        <div style="display:flex; gap:6px; margin-bottom:16px;">
+                            <button class="filter-tab active" id="previewToggleBoth" onclick="setPreviewMode('both')" style="font-size:11px; padding:5px 12px;">Both</button>
+                            <button class="filter-tab" id="previewToggleIOS" onclick="setPreviewMode('ios')" style="font-size:11px; padding:5px 12px;">iOS</button>
+                            <button class="filter-tab" id="previewToggleAndroid" onclick="setPreviewMode('android')" style="font-size:11px; padding:5px 12px;">Android</button>
+                        </div>
+                        <div id="dualPreviewContainer" style="display:flex; gap:16px; align-items:flex-start; justify-content:center;">
+                            <!-- iPhone preview -->
+                            <div id="iosPreviewWrap" style="text-align:center;">
+                                <div style="font-size:10px; color:var(--text-tertiary); margin-bottom:8px; font-weight:600; letter-spacing:0.5px;">iPHONE</div>
+                                <div class="phone-preview" style="width:240px; height:440px;">
+                                    <div class="phone-notch"></div>
+                                    <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:40px;">
+                                        <div class="phone-notif">
+                                            <div class="phone-notif-app">Eloy Connect</div>
+                                            <div class="phone-notif-title" id="previewTitle">Notification title</div>
+                                            <div class="phone-notif-body" id="previewBody">Your message will appear here as residents will see it.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Android preview -->
+                            <div id="androidPreviewWrap" style="text-align:center;">
+                                <div style="font-size:10px; color:var(--text-tertiary); margin-bottom:8px; font-weight:600; letter-spacing:0.5px;">ANDROID</div>
+                                <div style="background:#1A1A2E; border-radius:22px; padding:14px; border:2px solid rgba(255,255,255,0.06); width:240px; height:440px; display:flex; flex-direction:column; position:relative; overflow:hidden; flex-shrink:0;">
+                                    <!-- Android status bar -->
+                                    <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 6px 12px; font-size:10px; color:rgba(255,255,255,0.5);">
+                                        <span>12:00</span>
+                                        <div style="display:flex; gap:4px; align-items:center;">
+                                            <svg width="12" height="12" fill="rgba(255,255,255,0.5)"><rect x="1" y="5" width="2" height="7" rx="0.5"/><rect x="4" y="3" width="2" height="9" rx="0.5"/><rect x="7" y="1" width="2" height="11" rx="0.5"/><rect x="10" y="0" width="2" height="12" rx="0.5"/></svg>
+                                            <svg width="16" height="10" viewBox="0 0 16 10" fill="rgba(255,255,255,0.5)"><rect x="0" y="0" width="14" height="10" rx="1.5" stroke="rgba(255,255,255,0.5)" stroke-width="1" fill="none"/><rect x="1.5" y="1.5" width="8" height="7" rx="0.5"/><rect x="14.5" y="3" width="1.5" height="4" rx="0.5"/></svg>
+                                        </div>
+                                    </div>
+                                    <!-- Android notification card -->
+                                    <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-start; padding-top:20px;">
+                                        <div style="background:rgba(30,30,50,0.95); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; backdrop-filter:blur(8px);">
+                                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                                <div style="width:18px; height:18px; border-radius:4px; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:white;">E</div>
+                                                <span style="font-size:10px; color:var(--text-tertiary); font-weight:500;">Eloy Connect</span>
+                                                <span style="font-size:9px; color:var(--text-tertiary); margin-left:auto;">now</span>
+                                            </div>
+                                            <div style="font-size:13px; font-weight:600; margin-bottom:4px;" id="previewTitleAndroid">Notification title</div>
+                                            <div style="font-size:11px; color:var(--text-secondary); line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;" id="previewBodyAndroid">Your message will appear here as residents will see it.</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -5308,7 +5367,9 @@ function updateContentPage() {
     }
     if (liveData.events) {
         const eventsCount = document.querySelector('#eventsCount');
-        if (eventsCount) eventsCount.textContent = liveData.events.length;
+        const today = new Date().toISOString().split('T')[0];
+        const upcomingCount = liveData.events.filter(e => (e.event_date || '') >= today).length;
+        if (eventsCount) eventsCount.textContent = upcomingCount;
     }
     if (liveData.alerts) {
         const alertsCount = document.querySelector('#alertsCount');
@@ -5338,11 +5399,24 @@ function updateContentPage() {
         });
     }
 
-    // Events
+    // Events — mark past events and sort upcoming first
     if (liveData.events) {
-        liveData.events.forEach(item => {
-            rows.push(`<tr data-type="event">
-                <td><span class="tag" style="background: rgba(34,212,126,0.15); color: var(--success);">Event</span></td>
+        const today = new Date().toISOString().split('T')[0];
+        // Sort: upcoming first (ascending), then past (descending)
+        const sortedEvents = [...liveData.events].sort((a, b) => {
+            const aIsPast = (a.event_date || '') < today;
+            const bIsPast = (b.event_date || '') < today;
+            if (aIsPast !== bIsPast) return aIsPast ? 1 : -1; // upcoming first
+            return aIsPast ? (b.event_date || '').localeCompare(a.event_date || '') : (a.event_date || '').localeCompare(b.event_date || '');
+        });
+        sortedEvents.forEach(item => {
+            const isPast = (item.event_date || '') < today;
+            const tagStyle = isPast
+                ? 'background: rgba(255,255,255,0.06); color: var(--text-tertiary);'
+                : 'background: rgba(34,212,126,0.15); color: var(--success);';
+            const rowOpacity = isPast ? 'opacity: 0.5;' : '';
+            rows.push(`<tr data-type="event" style="${rowOpacity}">
+                <td><span class="tag" style="${tagStyle}">${isPast ? 'Past Event' : 'Event'}</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'Community')}</td>
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
@@ -5393,14 +5467,17 @@ function updateResidentsPage() {
         const langFlags = { en: 'EN', es: 'ES', zh: 'ZH', de: 'DE' };
         const flag = langFlags[p.language_pref] || '--';
 
-        // Calculate last active relative time
+        // Calculate last active relative time — use last_active_at (presence-specific),
+        // NOT updated_at which changes on any profile column edit
         let lastActive = '—';
-        if (p.updated_at) {
-            const diff = Date.now() - new Date(p.updated_at).getTime();
+        const activeTs = p.last_active_at || p.updated_at;
+        if (activeTs) {
+            const diff = Date.now() - new Date(activeTs).getTime();
             const mins = Math.floor(diff / 60000);
             const hours = Math.floor(diff / 3600000);
             const days = Math.floor(diff / 86400000);
-            if (mins < 60) lastActive = mins + ' min ago';
+            if (mins < 2) lastActive = 'Just now';
+            else if (mins < 60) lastActive = mins + ' min ago';
             else if (hours < 24) lastActive = hours + 'h ago';
             else lastActive = days + 'd ago';
         }
@@ -5698,6 +5775,52 @@ function updatePreview() {
     const body = document.getElementById('notifBody').value || 'Your message will appear here as residents will see it.';
     document.getElementById('previewTitle').textContent = title;
     document.getElementById('previewBody').textContent = body;
+    // Sync Android preview
+    const at = document.getElementById('previewTitleAndroid');
+    const ab = document.getElementById('previewBodyAndroid');
+    if (at) at.textContent = title;
+    if (ab) ab.textContent = body;
+}
+
+function setPreviewMode(mode) {
+    const ios = document.getElementById('iosPreviewWrap');
+    const android = document.getElementById('androidPreviewWrap');
+    const btnBoth = document.getElementById('previewToggleBoth');
+    const btnIOS = document.getElementById('previewToggleIOS');
+    const btnAndroid = document.getElementById('previewToggleAndroid');
+    [btnBoth, btnIOS, btnAndroid].forEach(b => b?.classList.remove('active'));
+    if (mode === 'both') {
+        ios.style.display = ''; android.style.display = '';
+        btnBoth?.classList.add('active');
+    } else if (mode === 'ios') {
+        ios.style.display = ''; android.style.display = 'none';
+        btnIOS?.classList.add('active');
+    } else {
+        ios.style.display = 'none'; android.style.display = '';
+        btnAndroid?.classList.add('active');
+    }
+}
+
+function toggleScheduleMode(mode) {
+    const nowBtn = document.getElementById('schedNowBtn');
+    const laterBtn = document.getElementById('schedLaterBtn');
+    const picker = document.getElementById('schedulePickerWrap');
+    const sendBtn = document.getElementById('sendNotifBtn');
+    if (mode === 'now') {
+        nowBtn.classList.add('active'); laterBtn.classList.remove('active');
+        picker.style.display = 'none';
+        sendBtn.textContent = 'Send Notification';
+    } else {
+        laterBtn.classList.add('active'); nowBtn.classList.remove('active');
+        picker.style.display = 'block';
+        sendBtn.textContent = 'Schedule Notification';
+        // Default to tomorrow 9 AM
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dateStr = tomorrow.toISOString().split('T')[0];
+        document.getElementById('schedDate').value = dateStr;
+        document.getElementById('schedTime').value = '09:00';
+    }
 }
 
 // ============================================
@@ -5724,9 +5847,30 @@ async function sendPushNotification() {
     const isBroadcast = audienceValue.startsWith('All Users');
 
     // Build metadata
-    const data = { type: 'alert' };
+    const prioritySelect = document.querySelector('#notifPriority');
+    const priority = prioritySelect?.value || 'normal';
+    const data = { type: 'alert', priority: priority };
     if (!isBroadcast) {
         data.audience_filter = audienceValue;
+    }
+
+    // Check if scheduled
+    const isScheduled = document.getElementById('schedLaterBtn')?.classList.contains('active');
+    if (isScheduled) {
+        const schedDate = document.getElementById('schedDate')?.value;
+        const schedTime = document.getElementById('schedTime')?.value;
+        if (!schedDate || !schedTime) {
+            showToast('Please select a date and time for scheduling', 'error');
+            btn.disabled = false; btn.textContent = originalText; btn.style.opacity = '1';
+            return;
+        }
+        const scheduledAt = new Date(`${schedDate}T${schedTime}`);
+        if (scheduledAt <= new Date()) {
+            showToast('Scheduled time must be in the future', 'error');
+            btn.disabled = false; btn.textContent = originalText; btn.style.opacity = '1';
+            return;
+        }
+        data.scheduled_at = scheduledAt.toISOString();
     }
 
     try {
@@ -5749,6 +5893,8 @@ async function sendPushNotification() {
                     title: title,
                     body: body,
                     broadcast: isBroadcast,
+                    priority: priority,
+                    scheduled_at: data.scheduled_at || null,
                     data: data
                 })
             }
@@ -5757,7 +5903,13 @@ async function sendPushNotification() {
         const result = await response.json();
 
         if (response.ok) {
-            showToast(`Notification sent! ${result.sent || 0} delivered, ${result.failed || 0} failed.`, 'success');
+            if (isScheduled) {
+                const schedDate = document.getElementById('schedDate')?.value;
+                const schedTime = document.getElementById('schedTime')?.value;
+                showToast(`Notification scheduled for ${schedDate} at ${schedTime}`, 'success');
+            } else {
+                showToast(`Notification sent! ${result.sent || 0} delivered, ${result.failed || 0} failed.`, 'success');
+            }
 
             // Save to notifications table for audit trail
             if (sbClient) {
@@ -5766,8 +5918,9 @@ async function sendPushNotification() {
                     message: body,
                     type: isBroadcast ? 'broadcast' : 'targeted',
                     audience: audienceValue,
+                    priority: priority,
                     read: false,
-                    sent_at: new Date().toISOString()
+                    sent_at: isScheduled ? data.scheduled_at : new Date().toISOString()
                 });
             }
 
@@ -5775,6 +5928,8 @@ async function sendPushNotification() {
             document.querySelector('#notifTitle').value = '';
             document.querySelector('#notifBody').value = '';
             audienceSelect.selectedIndex = 0;
+            if (prioritySelect) prioritySelect.selectedIndex = 0;
+            toggleScheduleMode('now');
             updatePreview();
         } else {
             showToast('Failed to send: ' + (result.error || 'Unknown error'), 'error');
@@ -6294,11 +6449,11 @@ async function openReportDetail(idOrUuid) {
                     }
                 } catch(e) { /* fallback to dash */ }
             }
-            // Build rich submitter card with avatar
+            // Build rich submitter card with avatar — clickable to show profile popup
             const submitterAvatarSrc = submitterAvatar ? (submitterAvatar.split('?')[0] + '?t=' + Date.now()) : null;
             const initials = submitterName !== '—' ? submitterName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) : '?';
             submittedByEl.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:4px; border-radius:8px; transition:background 0.15s;" onclick="showSubmitterPopup('${escapeHtml(report.user_id)}')" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
                     ${submitterAvatarSrc
                         ? `<img src="${escapeHtml(submitterAvatarSrc)}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
                         : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;">${escapeHtml(initials)}</div>`
@@ -6307,6 +6462,7 @@ async function openReportDetail(idOrUuid) {
                         <div style="font-weight:500;">${escapeHtml(submitterName)}</div>
                         ${submitterEmail ? `<div style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(submitterEmail)}</div>` : ''}
                     </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" style="margin-left:auto;"><path d="M9 18l6-6-6-6"/></svg>
                 </div>`;
         } else if (submittedByEl) {
             submittedByEl.textContent = 'Anonymous';
@@ -6382,6 +6538,79 @@ async function openReportDetail(idOrUuid) {
         currentReportId = idOrUuid;
         document.getElementById('detailId').textContent = idOrUuid;
     }
+}
+
+// Show submitter profile popup when clicking their name in report detail
+function showSubmitterPopup(userId) {
+    if (!userId) return;
+    const profile = liveData.profiles ? liveData.profiles.find(p => p.id === userId) : null;
+    if (!profile) { showToast('Profile not found', 'error'); return; }
+
+    const name = escapeHtml(profile.display_name || 'Unknown');
+    const email = escapeHtml(profile.email || '—');
+    const phone = escapeHtml(profile.phone || '—');
+    const address = escapeHtml(profile.address || '—');
+    const lang = { en: 'English', es: 'Spanish', zh: 'Chinese', de: 'German' }[profile.language_pref] || profile.language_pref || '—';
+    const joined = profile.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+    const reportCount = liveData.reports ? liveData.reports.filter(r => r.user_id === userId).length : 0;
+    const online = typeof isUserOnline === 'function' ? isUserOnline(profile) : false;
+    const statusDot = online
+        ? '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e80;"></span> Online'
+        : '<span style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block;opacity:0.5;"></span> Offline';
+    const initials = name !== 'Unknown' ? name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) : '?';
+    const avatarSrc = profile.avatar_url || null;
+    const avatarHtml = avatarSrc
+        ? `<img src="${escapeHtml(avatarSrc)}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);">`
+        : `<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--primary));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:#fff;">${initials}</div>`;
+
+    // Remove existing popup if any
+    const existing = document.getElementById('submitterPopup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'submitterPopup';
+    popup.style.cssText = 'position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);animation:fadeIn 0.15s ease;';
+    popup.onclick = function(e) { if (e.target === popup) popup.remove(); };
+    popup.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:slideUp 0.2s ease;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div style="display:flex;align-items:center;gap:14px;">
+                    ${avatarHtml}
+                    <div>
+                        <div style="font-size:18px;font-weight:600;color:var(--text-primary);">${name}</div>
+                        <div style="font-size:12px;color:var(--text-tertiary);margin-top:2px;">${statusDot}</div>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('submitterPopup').remove()" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;font-size:20px;padding:4px;">×</button>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Email</div>
+                    <div style="font-size:13px;color:var(--text-primary);word-break:break-all;">${email}</div>
+                </div>
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Phone</div>
+                    <div style="font-size:13px;color:var(--text-primary);">${phone}</div>
+                </div>
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Address</div>
+                    <div style="font-size:13px;color:var(--text-primary);">${address}</div>
+                </div>
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Language</div>
+                    <div style="font-size:13px;color:var(--text-primary);">${lang}</div>
+                </div>
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Joined</div>
+                    <div style="font-size:13px;color:var(--text-primary);">${joined}</div>
+                </div>
+                <div style="padding:10px;background:var(--surface-hover);border-radius:8px;">
+                    <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Reports Filed</div>
+                    <div style="font-size:13px;color:var(--text-primary);">${reportCount}</div>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(popup);
 }
 
 // Update report status
