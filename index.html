@@ -4570,7 +4570,7 @@ textarea.form-input {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
             <div>
                 <label class="form-label">Status</label>
-                <select class="form-input" id="reportStatusSelect" onchange="updateReportStatus(this.value)">
+                <select class="form-input" id="reportStatusSelect" onchange="updateReportStatus(this.value); updateAssignBtnLabel();">
                     <option value="submitted">Open / Submitted</option>
                     <option value="under_review">Under Review</option>
                     <option value="assigned">Assigned</option>
@@ -4614,8 +4614,8 @@ textarea.form-input {
         </div>
 
         <div class="flex gap-8">
-            <button class="btn btn-primary" style="flex: 1;" onclick="assignReport()">Assign & Set In Progress</button>
-            <button class="btn btn-danger" onclick="resolveReport()">Resolve</button>
+            <button class="btn btn-primary" style="flex: 1;" id="assignBtn" onclick="assignReport()">Assign & Set In Progress</button>
+            <button class="btn btn-success" onclick="resolveReport()">Quick Resolve</button>
         </div>
     </div>
 </div>
@@ -6419,6 +6419,7 @@ async function openReportDetail(idOrUuid) {
         // Set current status in dropdown
         const statusSelect = document.getElementById('reportStatusSelect');
         if (statusSelect) statusSelect.value = report.status || 'submitted';
+        updateAssignBtnLabel();
 
         // Set priority
         const prioritySelect = document.getElementById('reportPrioritySelect');
@@ -6636,7 +6637,7 @@ async function updateReportStatus(newStatus) {
 
         // Update the detail panel status badge
         const statusLabels = {
-            submitted: 'Open', under_review: 'In Review',
+            submitted: 'Open', under_review: 'In Review', assigned: 'Assigned',
             in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed'
         };
         const badge = document.querySelector('#reportDetail .status');
@@ -6669,23 +6670,43 @@ async function updateReportPriority(priority) {
     }
 }
 
+// Update the assign button label to match the selected status
+function updateAssignBtnLabel() {
+    const statusSelect = document.getElementById('reportStatusSelect');
+    const btn = document.getElementById('assignBtn');
+    if (!statusSelect || !btn) return;
+    const labels = {
+        submitted: 'Open / Submitted', under_review: 'Under Review', assigned: 'Assigned',
+        in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed'
+    };
+    const statusLabel = labels[statusSelect.value] || statusSelect.value;
+    btn.textContent = `Assign & Set ${statusLabel}`;
+}
+
 // Assign report to staff member
 async function assignReport() {
     if (!currentReportId || !sbClient) return;
 
     const assignSelect = document.getElementById('reportAssignSelect');
+    const statusSelect = document.getElementById('reportStatusSelect');
     const notesField = document.getElementById('reportNotes');
     const assignee = assignSelect?.value;
     const notes = notesField?.value;
+    const selectedStatus = statusSelect?.value || 'in_progress';
 
     if (!assignee || assignee === '— Select —') {
         showToast('Please select a staff member', 'warning');
         return;
     }
 
+    const statusLabels = {
+        submitted: 'Open', under_review: 'Under Review', assigned: 'Assigned',
+        in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed'
+    };
+
     try {
         const updateData = {
-            status: 'in_progress',
+            status: selectedStatus,
             updated_at: new Date().toISOString()
         };
         // Note: assigned_to expects a UUID — in production you'd look up the staff UUID
@@ -6700,7 +6721,7 @@ async function assignReport() {
 
         if (error) throw error;
 
-        showToast(`Report assigned to ${assignee} and set to In Progress`, 'success');
+        showToast(`Report assigned to ${assignee} and set to ${statusLabels[selectedStatus] || selectedStatus}`, 'success');
         await fetchAllData();
         closeDetail();
     } catch(e) {
