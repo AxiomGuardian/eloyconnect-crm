@@ -4192,168 +4192,94 @@ textarea.form-input {
         <!-- ========== CODE ENFORCEMENT ========== -->
         <div class="page" id="page-enforcement">
 
-            <!-- SECTION HEADER -->
-            <div class="section-header">
-                <div>
-                    <h3>Code Enforcement</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Track violation notices, deadlines, and resident compliance across the city</p>
+            <!-- COMING SOON PLACEHOLDER -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 20px;">
+                <!-- Animated icon -->
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); animation: spin 3s linear infinite;"></div>
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-primary" onclick="openEnforcementModal()">+ Issue Notice</button>
-                    <button class="btn btn-secondary" onclick="exportEnforcementCSV()">Export CSV</button>
-                </div>
-            </div>
 
-            <!-- STAT CARDS -->
-            <div class="metrics-grid anim-stagger" style="margin-bottom: 24px;">
-                <div class="metric-card" data-accent="teal">
-                    <div class="metric-header">
-                        <div class="metric-icon teal" style="font-size:15px; font-weight:700;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="ce-total-count">0</div>
-                    <div class="metric-label">Total Notices</div>
+                <!-- Badge -->
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(59,130,246,0.2); margin-bottom: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite;"></div>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px;">Coming Soon</span>
                 </div>
-                <div class="metric-card" data-accent="orange">
-                    <div class="metric-header">
-                        <div class="metric-icon orange" style="font-size:15px; font-weight:700;">!</div>
-                    </div>
-                    <div class="metric-value" id="ce-pending-count">0</div>
-                    <div class="metric-label">Pending</div>
-                </div>
-                <div class="metric-card" data-accent="red">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="font-size:15px; font-weight:700; color: var(--warning);">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="ce-overdue-count">0</div>
-                    <div class="metric-label">Overdue</div>
-                </div>
-                <div class="metric-card" data-accent="purple">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="font-size:15px; font-weight:700; color: var(--stat-purple);">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                        </div>
-                    </div>
-                    <div class="metric-value" id="ce-resolved-month">0</div>
-                    <div class="metric-label">Resolved</div>
-                </div>
-                <div class="metric-card" data-accent="green">
-                    <div class="metric-header">
-                        <div class="metric-icon green" style="font-size:15px; font-weight:700;">%</div>
-                    </div>
-                    <div class="metric-value" id="ce-compliance-rate">0%</div>
-                    <div class="metric-label">Compliance Rate</div>
-                </div>
-            </div>
 
-            <!-- FILTER TABS -->
-            <div class="filter-tabs" id="ce-filter-tabs" style="margin-bottom: 16px;">
-                <button class="filter-tab active" onclick="filterEnforcement('all', this)">All</button>
-                <button class="filter-tab" onclick="filterEnforcement('pending', this)">Pending</button>
-                <button class="filter-tab" onclick="filterEnforcement('acknowledged', this)">Acknowledged</button>
-                <button class="filter-tab" onclick="filterEnforcement('in-progress', this)">In Progress</button>
-                <button class="filter-tab" onclick="filterEnforcement('overdue', this)">Overdue</button>
-                <button class="filter-tab" onclick="filterEnforcement('resolved', this)">Resolved</button>
-            </div>
+                <!-- Title -->
+                <h2 style="font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Code Enforcement</h2>
+                <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; line-height: 1.6; margin-bottom: 32px;">
+                    Track violation notices, deadlines, and resident compliance. Issue notices, monitor resolution progress, and generate enforcement reports — all from one dashboard.
+                </p>
 
-            <!-- ENFORCEMENT TABLE -->
-            <div class="glass-card" style="padding: 0; overflow: hidden;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Resident</th>
-                            <th>Address</th>
-                            <th>Violation Type</th>
-                            <th>Severity</th>
-                            <th>Status</th>
-                            <th>Deadline</th>
-                            <th>Issued</th>
-                        </tr>
-                    </thead>
-                    <tbody id="enforcementTableBody">
-                        <!-- Populated by renderEnforcementTable() -->
-                    </tbody>
-                </table>
+                <!-- Feature preview cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Notice Tracking</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Issue and track violations</div>
+                    </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Deadline Alerts</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Automated reminders</div>
+                    </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H4a1 1 0 01-1-1V3"/><path d="M7 17l4-8 4 4 5-9"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Compliance Reports</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Analytics and trends</div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- ========== BUSINESS DIRECTORY ========== -->
         <div class="page" id="page-directory">
 
-            <!-- SECTION HEADER -->
-            <div class="section-header">
-                <div>
-                    <h3>Business Directory</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Manage local business listings, review submissions, and maintain a verified directory for residents</p>
+            <!-- COMING SOON PLACEHOLDER -->
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 20px;">
+                <!-- Animated icon -->
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(245,148,58,0.12), rgba(255,107,53,0.12)); display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative;">
+                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--warm-accent); animation: spin 3s linear infinite;"></div>
+                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
                 </div>
-                <button class="btn btn-secondary" onclick="exportBusinessCSV()">Export CSV</button>
-            </div>
 
-            <!-- STAT CARDS -->
-            <div class="metrics-grid anim-stagger" style="margin-bottom: 24px;">
-                <div class="metric-card" data-accent="teal">
-                    <div class="metric-header">
-                        <div class="metric-icon teal" style="font-size:15px; font-weight:700;">B</div>
-                    </div>
-                    <div class="metric-value" id="biz-total">0</div>
-                    <div class="metric-label">Total Listings</div>
+                <!-- Badge -->
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(245,148,58,0.15), rgba(255,107,53,0.15)); border: 1px solid rgba(245,148,58,0.2); margin-bottom: 20px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--warm-accent); animation: pulse 2s ease-in-out infinite;"></div>
+                    <span style="font-size: 13px; font-weight: 600; color: var(--warm-accent); text-transform: uppercase; letter-spacing: 1.5px;">Coming Soon</span>
                 </div>
-                <div class="metric-card" data-accent="orange">
-                    <div class="metric-header">
-                        <div class="metric-icon orange" style="font-size:15px; font-weight:700;">!</div>
-                    </div>
-                    <div class="metric-value" id="biz-pending">0</div>
-                    <div class="metric-label">Pending Review</div>
-                </div>
-                <div class="metric-card" data-accent="green">
-                    <div class="metric-header">
-                        <div class="metric-icon green" style="font-size:14px; font-weight:700;">&#10003;</div>
-                    </div>
-                    <div class="metric-value" id="biz-approved">0</div>
-                    <div class="metric-label">Approved</div>
-                </div>
-                <div class="metric-card" data-accent="purple">
-                    <div class="metric-header">
-                        <div class="metric-icon" style="font-size:15px; font-weight:700; color: var(--stat-purple);">&#10007;</div>
-                    </div>
-                    <div class="metric-value" id="biz-rejected">0</div>
-                    <div class="metric-label">Rejected</div>
-                </div>
-            </div>
 
-            <!-- FILTER TABS -->
-            <div class="filter-tabs" id="biz-filter-tabs" style="margin-bottom: 16px;">
-                <button class="filter-tab active" onclick="filterBusinessDirectory('all', this)">All</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('pending', this)">Pending Review</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('approved', this)">Approved</button>
-                <button class="filter-tab" onclick="filterBusinessDirectory('rejected', this)">Rejected</button>
-            </div>
+                <!-- Title -->
+                <h2 style="font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Business Directory</h2>
+                <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; line-height: 1.6; margin-bottom: 32px;">
+                    Manage local business listings, review submissions, and maintain a verified directory for residents. AI-powered quality scoring keeps your directory professional and up to date.
+                </p>
 
-            <!-- SEARCH BAR -->
-            <div class="flex gap-8 mb-16">
-                <input class="form-input" placeholder="Search by name, category, or owner..." style="max-width: 400px;" oninput="searchBusinessDirectory(this.value)">
-            </div>
-
-            <!-- BUSINESS TABLE -->
-            <div class="glass-card" style="padding: 0; overflow: hidden;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Business Name</th>
-                            <th>Category</th>
-                            <th>Owner</th>
-                            <th>Status</th>
-                            <th>AI Score</th>
-                            <th>Submitted</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bizTableBody">
-                        <!-- Populated by renderBusinessTable() -->
-                    </tbody>
-                </table>
+                <!-- Feature preview cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Listing Management</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Add and review businesses</div>
+                    </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">AI Quality Scores</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Automated listing reviews</div>
+                    </div>
+                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
+                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Search Analytics</div>
+                        <div style="font-size: 11px; color: var(--text-tertiary);">Resident search insights</div>
+                    </div>
+                </div>
             </div>
         </div>
 
