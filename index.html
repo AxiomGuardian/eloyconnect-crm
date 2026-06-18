@@ -1673,6 +1673,105 @@ textarea.form-input {
     50% { opacity: 0.6; }
 }
 
+/* AI Typing Indicator Dots */
+.ai-typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.ai-typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: aiDotBounce 1.2s ease-in-out infinite;
+}
+.ai-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes aiDotBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* AI Assist Collapsible Panels */
+.ai-assist-panel {
+    background: rgba(0, 194, 212, 0.03);
+    border: 1px solid rgba(0, 194, 212, 0.1);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.ai-assist-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+.ai-assist-toggle:hover {
+    background: rgba(0, 194, 212, 0.05);
+}
+.ai-assist-toggle .ai-assist-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(0, 194, 212, 0.12);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.ai-assist-toggle .ai-assist-chevron {
+    margin-left: auto;
+    transition: transform 0.3s;
+    color: var(--text-tertiary);
+    font-size: 14px;
+}
+.ai-assist-panel.open .ai-assist-chevron {
+    transform: rotate(180deg);
+}
+.ai-assist-body {
+    padding: 0 16px 16px;
+    display: none;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.ai-assist-panel.open .ai-assist-body {
+    display: block;
+}
+.ai-assist-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(0, 194, 212, 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0, 194, 212, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+.ai-assist-btn:hover {
+    background: rgba(0, 194, 212, 0.18);
+    border-color: rgba(0, 194, 212, 0.35);
+}
+
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -2686,7 +2785,7 @@ textarea.form-input {
                 </div>
             </div>
 
-            <!-- AI ANALYTICS — DASHBOARD -->
+            <!-- AI ANALYTICS — DASHBOARD (live) -->
             <div class="ai-panel">
                 <div class="ai-panel-header">
                     <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">AI</div>
@@ -2695,38 +2794,14 @@ textarea.form-input {
                         <div class="ai-panel-subtitle">Auto-generated from your city data</div>
                     </div>
                     <span class="ai-badge">Live AI</span>
+                    <button class="ai-assist-btn" style="margin-left:8px;font-size:11px;padding:5px 10px;" onclick="loadDashboardAIInsights()">Refresh</button>
                 </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Report cluster detected:</strong> 3 water-related reports within 0.4 miles of W. Houser Rd in the last 48 hours. This pattern suggests a possible distribution line issue — not isolated incidents.</div>
-                        <button class="ai-action-btn" onclick="navigateToPage('reports')">View cluster on map →</button>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon trend" style="color:var(--accent);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Road reports up 42% this week</strong> vs. 30-day average. Monday's rain likely caused new potholes — consider scheduling a bulk inspection for the N. Main St corridor.</div>
-                        <button class="ai-action-btn">Draft work order →</button>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Resolution time improved</strong> from 4.0d to 3.2d this month. R. Gomez leads with 22 resolutions. J. Martinez has 4 active — may need rebalancing with T. Nguyen (2 active).</div>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon fire" style="color:var(--warm-accent);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Ask Eloy usage surging:</strong> 156 sessions today, up 34% from last Tuesday. Top question: "When will water pressure be fixed?" — consider publishing a status update to reduce repeat inquiries.</div>
-                        <button class="ai-action-btn" onclick="navigateToPage('content')">Draft status update →</button>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon info" style="color:var(--info);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Heat advisory engagement:</strong> 66% open rate on the push notification (1,892 of 2,847). Spanish speakers opened at 78% vs. English at 61% — ES audience is more responsive to emergency alerts.</div>
+                <div id="dashboardAIInsights">
+                    <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <span class="ai-typing-dots"><span></span><span></span><span></span></span>
+                            Generating insights from live data...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2741,7 +2816,24 @@ textarea.form-input {
                 </div>
                 <div class="flex gap-8">
                     <button class="btn btn-secondary" onclick="exportReportsCSV()">Export CSV</button>
+                    <button class="ai-assist-btn" onclick="toggleReportsAITriage()">AI Triage</button>
                     <button class="btn btn-primary" onclick="openModal('report')">+ New Report</button>
+                </div>
+            </div>
+
+            <!-- AI Triage Panel -->
+            <div id="reportsAITriagePanel" class="ai-assist-panel" style="display:none; margin-bottom:16px;">
+                <button class="ai-assist-toggle" onclick="toggleReportsAITriage()">
+                    <div class="ai-assist-icon">AI</div>
+                    <span>AI Report Triage</span>
+                    <span style="font-size:11px; color:var(--text-tertiary); font-weight:400;">Analyze open reports and suggest priority/assignment</span>
+                    <span class="ai-assist-chevron">&#9660;</span>
+                </button>
+                <div class="ai-assist-body" id="reportsAITriageContent">
+                    <div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);">
+                        <span class="ai-typing-dots"><span></span><span></span><span></span></span>
+                        Analyzing reports...
+                    </div>
                 </div>
             </div>
 
@@ -2993,7 +3085,30 @@ textarea.form-input {
                     <h3>Content Management</h3>
                     <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Manage news, events, and alerts published to the Eloy Connect app</p>
                 </div>
-                <button class="btn btn-create-content" onclick="openModal('content')">+ Create Content</button>
+                <div class="flex gap-8">
+                    <button class="ai-assist-btn" onclick="toggleContentAIHelper()">AI Content Helper</button>
+                    <button class="btn btn-create-content" onclick="openModal('content')">+ Create Content</button>
+                </div>
+            </div>
+
+            <!-- AI Content Helper Panel -->
+            <div id="contentAIHelperPanel" class="ai-assist-panel" style="display:none; margin-bottom:16px;">
+                <button class="ai-assist-toggle" onclick="toggleContentAIHelper()">
+                    <div class="ai-assist-icon">AI</div>
+                    <span>AI Content Helper</span>
+                    <span style="font-size:11px; color:var(--text-tertiary); font-weight:400;">Suggest topics, draft headlines, or find keywords</span>
+                    <span class="ai-assist-chevron">&#9660;</span>
+                </button>
+                <div class="ai-assist-body">
+                    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                        <button class="ai-assist-btn" onclick="runContentAI('topics')">Suggest Topics</button>
+                        <button class="ai-assist-btn" onclick="runContentAI('headlines')">Draft Headlines</button>
+                        <button class="ai-assist-btn" onclick="runContentAI('keywords')">Suggest Keywords</button>
+                    </div>
+                    <div id="contentAIHelperResult" style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
+                        <span style="color:var(--text-tertiary);">Choose an option above to get AI-powered content suggestions based on current city data and recent reports.</span>
+                    </div>
+                </div>
             </div>
 
             <div class="filter-tabs">
@@ -3568,7 +3683,7 @@ textarea.form-input {
             <div class="briefing-card" style="margin-bottom: 20px;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between;">
                     <div>
-                        <div style="font-size: 12px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Good morning, Andrew</div>
+                        <div id="briefingGreeting" style="font-size: 12px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Good morning, Andrew</div>
                         <div style="font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px;">Your daily briefing</div>
                         <div id="briefingSummaryText" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 600px;">
                             Loading live data...
@@ -3585,73 +3700,23 @@ textarea.form-input {
             <div class="command-grid">
                 <!-- LEFT: ACTION CARDS + CHAT -->
                 <div>
-                    <!-- URGENT ITEMS -->
+                    <!-- URGENT ITEMS (dynamically populated) -->
                     <div style="margin-bottom: 20px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                             Requires your attention
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <div class="action-card" onclick="navigateToPage('reports')">
-                                <div class="action-card-icon" style="background: rgba(240, 72, 72, 0.12); color: var(--warning); font-weight: 700; font-size: 14px;">!</div>
-                                <div style="flex: 1;">
-                                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">Critical: Fire hydrant leak — W. Shedd Rd</div>
-                                    <div style="font-size: 12px; color: var(--text-tertiary);">RPT-1046 · Assigned to J. Martinez · 3 hours ago</div>
-                                </div>
-                                <span style="font-size: 18px; color: var(--text-tertiary);">→</span>
-                            </div>
-                            <div class="action-card" onclick="navigateToPage('reports')">
-                                <div class="action-card-icon" style="background: rgba(245, 148, 58, 0.12); color: var(--warm-accent); font-weight: 700; font-size: 14px;">T</div>
-                                <div style="flex: 1;">
-                                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">3 unassigned reports need triage</div>
-                                    <div style="font-size: 12px; color: var(--text-tertiary);">RPT-1047 (pothole), RPT-1044 (vegetation), RPT-1042 (streetlight)</div>
-                                </div>
-                                <span style="font-size: 18px; color: var(--text-tertiary);">→</span>
-                            </div>
-                            <div class="action-card" onclick="navigateToPage('content')">
-                                <div class="action-card-icon" style="background: rgba(0, 194, 212, 0.12); color: var(--accent); font-weight: 700; font-size: 14px;">D</div>
-                                <div style="flex: 1;">
-                                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">2 content drafts pending review</div>
-                                    <div style="font-size: 12px; color: var(--text-tertiary);">Community cleanup day + Playground equipment article</div>
-                                </div>
-                                <span style="font-size: 18px; color: var(--text-tertiary);">→</span>
-                            </div>
+                        <div id="briefingAttentionCards" style="display: flex; flex-direction: column; gap: 10px;">
+                            <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">Loading attention items...</div>
                         </div>
                     </div>
 
-                    <!-- SMART SUGGESTIONS -->
+                    <!-- SMART SUGGESTIONS (dynamically populated) -->
                     <div style="margin-bottom: 20px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                             AI suggestions based on your workflow
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="action-card" onclick="handleGrokAction('draft_update')">
-                                <div class="action-card-icon" style="background: rgba(59, 158, 245, 0.12); color: var(--info); font-weight: 700; font-size: 14px;">W</div>
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">Draft water pressure update</div>
-                                    <div style="font-size: 11px; color: var(--text-tertiary);">Top Ask Eloy question today</div>
-                                </div>
-                            </div>
-                            <div class="action-card" onclick="handleGrokAction('schedule_inspection')">
-                                <div class="action-card-icon" style="background: rgba(34, 212, 126, 0.12); color: var(--success); font-weight: 700; font-size: 14px;">S</div>
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">Schedule N. Main St inspection</div>
-                                    <div style="font-size: 11px; color: var(--text-tertiary);">8 pothole reports in 90 days</div>
-                                </div>
-                            </div>
-                            <div class="action-card" onclick="handleGrokAction('translate_content')">
-                                <div class="action-card-icon" style="background: rgba(0, 194, 212, 0.12); color: var(--accent); font-weight: 700; font-size: 14px;">L</div>
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">Translate 3 items to ZH/DE</div>
-                                    <div style="font-size: 11px; color: var(--text-tertiary);">Missing language coverage</div>
-                                </div>
-                            </div>
-                            <div class="action-card" onclick="handleGrokAction('reengage_users')">
-                                <div class="action-card-icon" style="background: rgba(245, 148, 58, 0.12); color: var(--warm-accent); font-weight: 700; font-size: 14px;">R</div>
-                                <div>
-                                    <div style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">Re-engage 23 lapsed ES users</div>
-                                    <div style="font-size: 11px; color: var(--text-tertiary);">No activity in 12+ days</div>
-                                </div>
-                            </div>
+                        <div id="briefingSuggestionCards" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="grid-column: 1/-1; text-align:center; padding:16px; color:var(--text-tertiary); font-size:13px;">Generating suggestions...</div>
                         </div>
                     </div>
 
@@ -3681,64 +3746,37 @@ textarea.form-input {
 
                 <!-- RIGHT: YOUR STATS + RECENT ACTIVITY -->
                 <div>
-                    <!-- YOUR METRICS -->
+                    <!-- YOUR METRICS (dynamically populated) -->
                     <div class="glass-card" style="margin-bottom: 16px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Your activity this week</div>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div id="briefingActivityStats" style="display: flex; flex-direction: column; gap: 12px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 13px; color: var(--text-secondary);">Reports reviewed</span>
-                                <span style="font-size: 16px; font-weight: 600;">14</span>
+                                <span style="font-size: 13px; color: var(--text-secondary);">Reports resolved</span>
+                                <span id="statReportsResolved" style="font-size: 16px; font-weight: 600;">--</span>
                             </div>
                             <div style="height: 1px; background: rgba(255,255,255,0.04);"></div>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 13px; color: var(--text-secondary);">Content published</span>
-                                <span style="font-size: 16px; font-weight: 600;">3</span>
+                                <span id="statContentPublished" style="font-size: 16px; font-weight: 600;">--</span>
                             </div>
                             <div style="height: 1px; background: rgba(255,255,255,0.04);"></div>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 13px; color: var(--text-secondary);">Notifications sent</span>
-                                <span style="font-size: 16px; font-weight: 600;">2</span>
+                                <span id="statNotifsSent" style="font-size: 16px; font-weight: 600;">--</span>
                             </div>
                             <div style="height: 1px; background: rgba(255,255,255,0.04);"></div>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 13px; color: var(--text-secondary);">AI Briefing queries</span>
-                                <span style="font-size: 16px; font-weight: 600; color: var(--accent);">28</span>
+                                <span style="font-size: 13px; color: var(--text-secondary);">AI queries this session</span>
+                                <span id="statAIQueries" style="font-size: 16px; font-weight: 600; color: var(--accent);">0</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- AI HEALTH SCORES -->
+                    <!-- CITY PULSE (dynamically calculated) -->
                     <div class="glass-card" style="margin-bottom: 16px;">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">City pulse</div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div style="text-align: center;">
-                                <div class="ai-score-ring" style="margin: 0 auto 6px;">
-                                    <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--success)" stroke-dasharray="163" stroke-dashoffset="10"/></svg>
-                                    <div class="ai-score-value" style="color: var(--success); font-size: 14px;">94%</div>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-secondary);">Resident<br>satisfaction</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div class="ai-score-ring" style="margin: 0 auto 6px;">
-                                    <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--accent)" stroke-dasharray="163" stroke-dashoffset="33"/></svg>
-                                    <div class="ai-score-value" style="color: var(--accent); font-size: 14px;">80%</div>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-secondary);">Response<br>efficiency</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div class="ai-score-ring" style="margin: 0 auto 6px;">
-                                    <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--warm-accent)" stroke-dasharray="163" stroke-dashoffset="49"/></svg>
-                                    <div class="ai-score-value" style="color: var(--warm-accent); font-size: 14px;">70%</div>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-secondary);">Content<br>coverage</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div class="ai-score-ring" style="margin: 0 auto 6px;">
-                                    <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--info)" stroke-dasharray="163" stroke-dashoffset="20"/></svg>
-                                    <div class="ai-score-value" style="color: var(--info); font-size: 14px;">88%</div>
-                                </div>
-                                <div style="font-size: 11px; color: var(--text-secondary);">App<br>adoption</div>
-                            </div>
+                        <div id="briefingCityPulse" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="grid-column:1/-1; text-align:center; padding:8px; color:var(--text-tertiary); font-size:12px;">Calculating...</div>
                         </div>
                     </div>
 
@@ -3749,29 +3787,30 @@ textarea.form-input {
                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--warm-accent); width: 24px;">1</div>
                                 <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"When will water pressure be fixed?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">23x</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">2</div>
                                 <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"Where are the cooling centers?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">18x</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">3</div>
                                 <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"How do I pay my water bill?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">14x</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">4</div>
                                 <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"What time does the library close?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">11x</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
                                 <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">5</div>
                                 <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"Is there a community cleanup this week?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">9x</div>
+                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
                             </div>
                         </div>
+                        <div style="font-size: 11px; color: var(--text-tertiary); text-align: center; margin-top: 10px; font-style: italic;">Sample questions shown. Live query tracking coming in a future update.</div>
                     </div>
                 </div>
             </div>
@@ -5058,6 +5097,14 @@ function updateDashboardWithLiveData() {
 
     // Update subscriber trend widget on dashboard
     updateSubscriberWidget();
+
+    // Refresh AI Briefing page with live data
+    refreshBriefingPage();
+
+    // Load Dashboard AI Insights (only once on first data load)
+    if (!dashboardInsightsLoaded && liveData.reports && liveData.reports.length > 0) {
+        loadDashboardAIInsights();
+    }
 }
 
 // Update AI Briefing page report counts
@@ -6136,35 +6183,211 @@ async function submitNewBusiness() {
 // ============================================
 // GROK AI — COMMAND CENTER
 // ============================================
-const grokActionResponses = {
-    draft_update: "Here's a draft status update for the water pressure issue:\n\n\"Water Service Update — W. Houser Rd Area\n\nOur Public Works team is aware of reduced water pressure affecting the W. Houser Rd area. Crews are on-site investigating the cause. We expect service to return to normal within 24 hours.\n\nIf you're still experiencing issues after that, call 520-466-3082 or submit a report through the Eloy Connect app.\"\n\nReady to publish this as a Medium-severity alert in all 4 languages?",
+// Track AI query count for this session
+let aiQueryCount = 0;
 
-    schedule_inspection: "Recommended inspection plan for N. Main St corridor:\n\nScope: N. Main St from W. Houser Rd to E. 7th St (1.2 miles)\nReason: 8 pothole reports in 90 days, 3 this week alone\nEstimated time: 2 hours for visual assessment\n\nSuggested crew: R. Gomez (1 active job, most available)\nSuggested date: Wednesday, May 28 (clear weather forecast)\n\nShall I create a work order and notify R. Gomez?",
+// ---- CORE AI ENGINE ----
+function gatherCRMContext() {
+    const reports = liveData.reports || [];
+    const news = liveData.news || [];
+    const alerts = liveData.alerts || [];
+    const events = liveData.events || [];
+    const profiles = liveData.profiles || [];
+    const notifications = liveData.notifications || [];
+    const businesses = liveData.businesses || [];
 
-    translate_content: "Found 3 items missing ZH/DE translations:\n\n1. \"New community pool hours for summer 2026\" — News\n2. \"Skydive Arizona hosts international championship\" — News\n3. \"Library summer reading program registration open\" — Alert\n\nI can generate all 6 translations (3 items x 2 languages) right now. Each will be reviewed before publishing. Proceed?",
+    const openReports = reports.filter(r => r.status === 'submitted' || r.status === 'under_review' || r.status === 'open');
+    const inProgressReports = reports.filter(r => r.status === 'in_progress' || r.status === 'assigned' || r.status === 'under_review');
+    const resolvedReports = reports.filter(r => r.status === 'resolved' || r.status === 'closed');
+    const unassignedReports = reports.filter(r => !r.assigned_to && r.status !== 'resolved' && r.status !== 'closed');
 
-    reengage_users: "Re-engagement campaign for 23 lapsed Spanish-speaking users:\n\nSegment: ES-primary users, last active 12-21 days ago\nPrimary usage: Events tab (78%), Home feed (65%)\nLast content they engaged with: Mother's Day celebration event\n\nRecommended push notification:\n\"Hola! La Ciudad de Eloy tiene nuevos eventos comunitarios este mes. Abre Eloy Connect para ver que hay planeado.\"\n\nOptimal send time: Thursday 6:30 PM (highest historical ES open rate)\n\nSend this Thursday, or schedule for another time?",
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    weekly_summary: "Weekly Summary — May 19-25, 2026:\n\nReports: 57 submitted (+18% vs prior week), 43 resolved, 14 still open. Roads category dominated at 34% — rain on Monday caused a pothole spike. Average resolution time: 3.2 days (improved from 4.0d).\n\nApp Usage: 1,284 monthly active users, 156 Ask Eloy sessions/day average. Chinese user base grew 8% (106 to 114). Top AI question: water pressure status.\n\nContent: 2 articles published, 1 alert issued (heat advisory — 66% open rate). 2 drafts pending review. 3 items need ZH/DE translation.\n\nStaff: R. Gomez leads with 22 resolutions. J. Martinez carrying heaviest active load (4). T. Nguyen has capacity.\n\nKey action items: Assign RPT-1047, review content drafts, schedule N. Main St inspection.",
+    const reportsThisWeek = reports.filter(r => new Date(r.created_at) >= weekAgo);
+    const resolvedThisWeek = resolvedReports.filter(r => new Date(r.updated_at || r.created_at) >= weekAgo);
+    const reportsThisMonth = reports.filter(r => new Date(r.created_at) >= monthAgo);
 
-    staff_performance: "Staff Performance — Last 30 Days:\n\nR. Gomez (Public Works): 22 resolved, 1 active. Avg resolution: 2.1 days. Top performer — consistently fast on utility/lights issues.\n\nJ. Martinez (Field Supervisor): 18 resolved, 4 active. Avg resolution: 3.8 days. Heaviest workload — consider rebalancing 1-2 items to Nguyen.\n\nT. Nguyen (Parks): 12 resolved, 2 active. Avg resolution: 2.9 days. Has capacity for 2-3 more. Specializes in parks/vegetation.\n\nP. Wilson (Code Enforcement): 15 resolved, 2 active. Avg resolution: 4.2 days. Handles all code/zoning — longer resolution is expected for that category.\n\nRecommendation: Move RPT-1044 (vegetation) from unassigned to T. Nguyen. Consider assigning RPT-1047 (pothole) to R. Gomez.",
+    const categoryCount = {};
+    reports.forEach(r => { categoryCount[r.category || 'Other'] = (categoryCount[r.category || 'Other'] || 0) + 1; });
 
-    compare_months: "May vs April 2026:\n\nReports: 189 submitted (April: 156, +21%). Resolution rate: 85% (April: 79%, +6%). The improvement comes from faster triage — reports are getting assigned same-day more consistently.\n\nUsers: 2,847 total (April: 2,640, +7.8%). Monthly active: 1,284 (April: 1,190, +7.9%). Growth is steady — about 50 new users/week.\n\nAI Usage: Ask Eloy sessions up 28% (4,680 vs 3,660). The ZH/DE language update drove a chunk of this — new language users rely heavily on the AI chat.\n\nContent: 8 items published (April: 11, -27%). You published fewer items but the heat advisory got the highest open rate of any notification in 3 months (66%).\n\nOverall health: Trending positive. Focus areas: content volume (especially ES/ZH) and workload distribution."
-};
+    const staffAssignments = {};
+    reports.forEach(r => {
+        if (r.assigned_to) {
+            if (!staffAssignments[r.assigned_to]) staffAssignments[r.assigned_to] = { active: 0, resolved: 0 };
+            if (r.status === 'resolved' || r.status === 'closed') staffAssignments[r.assigned_to].resolved++;
+            else staffAssignments[r.assigned_to].active++;
+        }
+    });
 
-function handleGrokAction(action) {
+    const recentCritical = openReports.slice(0, 5).map(r =>
+        `- ${r.report_id || 'RPT-?'}: ${(r.description || r.category || 'No description').substring(0, 80)} (${r.status}, ${r.assigned_to || 'unassigned'}, ${r.created_at ? new Date(r.created_at).toLocaleDateString() : 'unknown date'})`
+    ).join('\n');
+
+    const newProfilesThisWeek = profiles.filter(p => new Date(p.created_at) >= weekAgo).length;
+
+    const notifsSentThisWeek = notifications.filter(n => new Date(n.created_at) >= weekAgo).length;
+
+    return `=== LIVE CRM DATA SNAPSHOT ===
+Date: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+REPORTS SUMMARY:
+- Total reports: ${reports.length}
+- Open/Submitted: ${openReports.length}
+- In Progress: ${inProgressReports.length}
+- Resolved: ${resolvedReports.length}
+- Unassigned: ${unassignedReports.length}
+- Reports this week: ${reportsThisWeek.length}
+- Resolved this week: ${resolvedThisWeek.length}
+- Reports this month: ${reportsThisMonth.length}
+- Categories: ${Object.entries(categoryCount).map(([k,v]) => `${k}: ${v}`).join(', ')}
+
+RECENT OPEN REPORTS:
+${recentCritical || 'No open reports'}
+
+UNASSIGNED REPORTS (need triage):
+${unassignedReports.slice(0, 5).map(r => `- ${r.report_id || 'RPT-?'}: ${(r.description || r.category || 'Unknown').substring(0, 60)} (${r.category || 'uncategorized'})`).join('\n') || 'None'}
+
+STAFF WORKLOAD:
+${Object.entries(staffAssignments).map(([name, data]) => `- ${name}: ${data.active} active, ${data.resolved} resolved`).join('\n') || 'No staff assignments found'}
+
+CONTENT:
+- Published news: ${news.length}
+- Active alerts: ${alerts.length}
+- Published events: ${events.length}
+
+RESIDENTS:
+- Total profiles: ${profiles.length}
+- New this week: ${newProfilesThisWeek}
+
+NOTIFICATIONS:
+- Sent this week: ${notifsSentThisWeek}
+
+BUSINESSES:
+- Registered: ${businesses.length}`;
+}
+
+async function callGrokAI(userMessage, context = '') {
+    const GROK_ENDPOINT = 'https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/grok-chat';
+
+    const crmContext = gatherCRMContext();
+    const currentPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'unknown';
+
+    const systemPrompt = `You are an AI CRM assistant for the City of Eloy, Arizona. You help city staff manage the Eloy Connect civic engagement platform.
+
+You have access to LIVE data from the CRM system. Use it to give specific, actionable answers.
+
+${crmContext}
+
+${context ? 'ADDITIONAL CONTEXT:\n' + context + '\n' : ''}
+CURRENT PAGE: The user is viewing the "${currentPage}" page of the CRM.
+
+RESPONSE GUIDELINES:
+- Be concise but thorough. Use bullet points for lists.
+- Reference specific report IDs, staff names, and data points from the live data.
+- When suggesting the user navigate somewhere, use this format: [ACTION:navigate:pagename]
+  Valid page names: dashboard, reports, content, residents, notifications, leaders, events, businesses, grok, settings
+  Example: "You can view the reports [ACTION:navigate:reports] to triage unassigned items."
+- When giving counts or percentages, calculate them from the live data provided.
+- You are speaking to city staff (administrators, managers). Be professional but friendly.
+- Format your response with clear sections when appropriate.
+- Do not make up data that is not in the live snapshot above.`;
+
+    try {
+        const response = await fetch(GROK_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + SUPABASE_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'grok-3-mini',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                ],
+                max_tokens: 1500,
+                temperature: 0.7
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`API error ${response.status}: ${errText}`);
+        }
+
+        const data = await response.json();
+
+        // Handle different response formats
+        if (data.choices && data.choices[0]?.message?.content) {
+            return data.choices[0].message.content;
+        } else if (data.content) {
+            return data.content;
+        } else if (data.response) {
+            return data.response;
+        } else if (typeof data === 'string') {
+            return data;
+        } else {
+            return JSON.stringify(data);
+        }
+    } catch (err) {
+        console.error('Grok AI call failed:', err);
+        throw err;
+    }
+}
+
+function parseAIResponse(text) {
+    // Convert [ACTION:navigate:pageName] into clickable buttons
+    let html = escapeHtml(text);
+    html = html.replace(/\[ACTION:navigate:(\w+)\]/g, (match, page) => {
+        const pageNames = {
+            dashboard: 'Dashboard', reports: 'Reports', content: 'Content',
+            residents: 'Residents', notifications: 'Notifications', leaders: 'Leaders',
+            events: 'Events', businesses: 'Businesses', grok: 'AI Briefing', settings: 'Settings'
+        };
+        const label = pageNames[page] || page;
+        return `<button class="ai-action-btn" onclick="navigateTo('${page}')" style="display:inline-flex; margin: 2px 4px; vertical-align: middle;">Go to ${label} &rarr;</button>`;
+    });
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+    // Bold **text**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Bullet points
+    html = html.replace(/- /g, '&bull; ');
+    return html;
+}
+
+async function handleGrokAction(action) {
     const responseEl = document.getElementById('grokCommandResponse');
     const textEl = document.getElementById('grokResponseText');
     responseEl.style.display = 'block';
-    textEl.innerHTML = '<span style="color: var(--accent);">Analyzing...</span>';
+    textEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;"><span class="ai-typing-dots"><span></span><span></span><span></span></span> <span style="color: var(--accent);">Analyzing live data...</span></div>';
 
-    setTimeout(() => {
-        const response = grokActionResponses[action] || 'Processing your request. In production, this would call the Grok API with admin-level context.';
-        textEl.innerHTML = response.replace(/\n/g, '<br>');
-    }, 600);
+    const prompts = {
+        weekly_summary: 'Give me a comprehensive weekly summary of the city CRM data. Include report volumes, resolution rates, resident activity, content published, and key action items. Reference specific numbers from the live data.',
+        staff_performance: 'Analyze staff performance based on report assignments and resolutions. Who has the most active workload? Who has resolved the most? Are there any imbalances to address? Give specific names and numbers.',
+        compare_months: 'Compare the current month\'s CRM data against overall trends. Look at report volumes, resolution rates, new residents, content activity. Highlight what\'s improving and what needs attention.',
+        draft_update: 'Based on the most common open reports or issues, draft a brief public status update that could be published as a news item or alert in the Eloy Connect app. Make it resident-friendly.',
+        schedule_inspection: 'Looking at the report data, identify any geographic or category clusters that suggest a bulk inspection should be scheduled. Recommend specific areas and staff to assign.',
+        translate_content: 'Review the current content items and identify any that may need translation coverage. Suggest a prioritized list for translation work.',
+        reengage_users: 'Analyze the resident profiles and suggest a re-engagement strategy for users who may be inactive. Include messaging ideas and optimal timing.'
+    };
+
+    const prompt = prompts[action] || 'Analyze the current CRM data and provide insights for this action: ' + action;
+
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(prompt);
+        textEl.innerHTML = parseAIResponse(result);
+        updateActivityStats();
+    } catch (err) {
+        textEl.innerHTML = '<span style="color: var(--warning);">Failed to reach AI: ' + escapeHtml(err.message) + '</span><br><span style="font-size:12px;color:var(--text-tertiary);">Check your connection and try again.</span>';
+        showToast('AI request failed', 'error');
+    }
 }
 
-function handleGrokQuickChat() {
+async function handleGrokQuickChat() {
     const input = document.getElementById('grokQuickInput');
     const text = input.value.trim();
     if (!text) return;
@@ -6172,13 +6395,419 @@ function handleGrokQuickChat() {
     const responseEl = document.getElementById('grokCommandResponse');
     const textEl = document.getElementById('grokResponseText');
     responseEl.style.display = 'block';
-    textEl.innerHTML = '<span style="color: var(--accent);">Thinking...</span>';
-
-    setTimeout(() => {
-        textEl.innerHTML = `Based on current Eloy Connect data: "${escapeHtml(text)}"<br><br>In production, this query would be routed through your Supabase Edge Function to Grok with full admin context — including all report data, resident analytics, content performance, and staff assignments. The response would be personalized to your role and recent activity patterns.`;
-    }, 800);
+    textEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;"><span class="ai-typing-dots"><span></span><span></span><span></span></span> <span style="color: var(--accent);">Thinking...</span></div>';
 
     input.value = '';
+
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(text);
+        textEl.innerHTML = parseAIResponse(result);
+        updateActivityStats();
+    } catch (err) {
+        textEl.innerHTML = '<span style="color: var(--warning);">Failed to reach AI: ' + escapeHtml(err.message) + '</span><br><span style="font-size:12px;color:var(--text-tertiary);">Check your connection and try again.</span>';
+        showToast('AI request failed', 'error');
+    }
+}
+
+// ---- BRIEFING PAGE: DYNAMIC DATA POPULATION ----
+
+function updateAttentionCards() {
+    const container = document.getElementById('briefingAttentionCards');
+    if (!container) return;
+
+    const reports = liveData.reports || [];
+    const cards = [];
+
+    // Find recent critical/open reports
+    const openReports = reports.filter(r => r.status === 'submitted' || r.status === 'under_review' || r.status === 'open');
+    const recentOpen = openReports.slice(0, 2);
+
+    recentOpen.forEach(r => {
+        const timeAgo = r.created_at ? getTimeAgo(new Date(r.created_at)) : 'recently';
+        const desc = (r.description || r.category || 'Report needs attention').substring(0, 60);
+        const id = r.report_id || 'RPT-?';
+        const staff = r.assigned_to || 'Unassigned';
+        cards.push(`
+            <div class="action-card" onclick="navigateToPage('reports')">
+                <div class="action-card-icon" style="background: rgba(240, 72, 72, 0.12); color: var(--warning); font-weight: 700; font-size: 14px;">!</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">${escapeHtml(desc)}</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">${escapeHtml(id)} · ${escapeHtml(staff)} · ${timeAgo}</div>
+                </div>
+                <span style="font-size: 18px; color: var(--text-tertiary);">&rarr;</span>
+            </div>
+        `);
+    });
+
+    // Unassigned reports
+    const unassigned = reports.filter(r => !r.assigned_to && r.status !== 'resolved' && r.status !== 'closed');
+    if (unassigned.length > 0) {
+        const previews = unassigned.slice(0, 3).map(r => (r.report_id || '?') + ' (' + (r.category || 'other') + ')').join(', ');
+        cards.push(`
+            <div class="action-card" onclick="navigateToPage('reports')">
+                <div class="action-card-icon" style="background: rgba(245, 148, 58, 0.12); color: var(--warm-accent); font-weight: 700; font-size: 14px;">T</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">${unassigned.length} unassigned report${unassigned.length !== 1 ? 's' : ''} need triage</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">${escapeHtml(previews)}</div>
+                </div>
+                <span style="font-size: 18px; color: var(--text-tertiary);">&rarr;</span>
+            </div>
+        `);
+    }
+
+    // Check if there are any draft/unpublished content
+    // (news is filtered to published=true in fetch, so check for low counts)
+    const newsCount = (liveData.news || []).length;
+    if (newsCount === 0) {
+        cards.push(`
+            <div class="action-card" onclick="navigateToPage('content')">
+                <div class="action-card-icon" style="background: rgba(0, 194, 212, 0.12); color: var(--accent); font-weight: 700; font-size: 14px;">D</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; font-weight: 500; margin-bottom: 3px;">No published news content</div>
+                    <div style="font-size: 12px; color: var(--text-tertiary);">Consider publishing news to keep residents informed</div>
+                </div>
+                <span style="font-size: 18px; color: var(--text-tertiary);">&rarr;</span>
+            </div>
+        `);
+    }
+
+    if (cards.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--success);">
+                <div style="font-size: 20px; margin-bottom: 6px;">&#10003;</div>
+                <div style="font-size: 14px; font-weight: 500;">You're all caught up!</div>
+                <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 4px;">No items require immediate attention right now.</div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = cards.join('');
+    }
+}
+
+function getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return diffMins + 'm ago';
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return diffHours + 'h ago';
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return diffDays + 'd ago';
+    return date.toLocaleDateString();
+}
+
+function updateSuggestionCards() {
+    const container = document.getElementById('briefingSuggestionCards');
+    if (!container) return;
+
+    const reports = liveData.reports || [];
+    const news = liveData.news || [];
+    const profiles = liveData.profiles || [];
+    const suggestions = [];
+
+    // If there are unassigned reports -> suggest triaging
+    const unassigned = reports.filter(r => !r.assigned_to && r.status !== 'resolved' && r.status !== 'closed');
+    if (unassigned.length > 0) {
+        suggestions.push({
+            icon: 'T', color: 'var(--warm-accent)', bg: 'rgba(245, 148, 58, 0.12)',
+            title: `Triage ${unassigned.length} unassigned report${unassigned.length !== 1 ? 's' : ''}`,
+            subtitle: 'Reports waiting for staff assignment',
+            action: 'weekly_summary'
+        });
+    }
+
+    // If one category is spiking -> suggest investigation
+    const categoryCount = {};
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    reports.filter(r => new Date(r.created_at) >= weekAgo).forEach(r => {
+        categoryCount[r.category || 'Other'] = (categoryCount[r.category || 'Other'] || 0) + 1;
+    });
+    const topCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+    if (topCategory && topCategory[1] >= 3) {
+        suggestions.push({
+            icon: 'S', color: 'var(--info)', bg: 'rgba(59, 158, 245, 0.12)',
+            title: `Investigate ${topCategory[0]} spike`,
+            subtitle: `${topCategory[1]} reports this week in ${topCategory[0]}`,
+            action: 'schedule_inspection'
+        });
+    }
+
+    // If content is sparse -> suggest drafting
+    if (news.length < 3) {
+        suggestions.push({
+            icon: 'W', color: 'var(--accent)', bg: 'rgba(0, 194, 212, 0.12)',
+            title: 'Draft new content for residents',
+            subtitle: `Only ${news.length} published news item${news.length !== 1 ? 's' : ''}`,
+            action: 'draft_update'
+        });
+    }
+
+    // If new residents signed up this week -> suggest welcome
+    const newResidents = profiles.filter(p => new Date(p.created_at) >= weekAgo).length;
+    if (newResidents > 0) {
+        suggestions.push({
+            icon: 'R', color: 'var(--success)', bg: 'rgba(34, 212, 126, 0.12)',
+            title: `Welcome ${newResidents} new resident${newResidents !== 1 ? 's' : ''}`,
+            subtitle: 'Send a welcome notification to new users',
+            action: 'reengage_users'
+        });
+    }
+
+    // Always offer compare months and staff performance
+    if (suggestions.length < 4) {
+        suggestions.push({
+            icon: 'C', color: 'var(--info)', bg: 'rgba(59, 158, 245, 0.12)',
+            title: 'Compare monthly trends',
+            subtitle: 'See how this month compares to last',
+            action: 'compare_months'
+        });
+    }
+    if (suggestions.length < 4) {
+        suggestions.push({
+            icon: 'P', color: 'var(--warm-accent)', bg: 'rgba(245, 148, 58, 0.12)',
+            title: 'Review staff performance',
+            subtitle: 'Analyze workload distribution',
+            action: 'staff_performance'
+        });
+    }
+
+    container.innerHTML = suggestions.slice(0, 4).map(s => `
+        <div class="action-card" onclick="handleGrokAction('${s.action}')">
+            <div class="action-card-icon" style="background: ${s.bg}; color: ${s.color}; font-weight: 700; font-size: 14px;">${s.icon}</div>
+            <div>
+                <div style="font-size: 13px; font-weight: 500; margin-bottom: 2px;">${escapeHtml(s.title)}</div>
+                <div style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(s.subtitle)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateActivityStats() {
+    const reports = liveData.reports || [];
+    const news = liveData.news || [];
+    const notifications = liveData.notifications || [];
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const resolvedThisWeek = reports.filter(r =>
+        (r.status === 'resolved' || r.status === 'closed') &&
+        new Date(r.updated_at || r.created_at) >= weekAgo
+    ).length;
+
+    // Count news published this week (use published_at field)
+    const publishedThisWeek = news.filter(n => n.published_at && new Date(n.published_at) >= weekAgo).length;
+
+    const notifsSentThisWeek = notifications.filter(n => new Date(n.created_at) >= weekAgo).length;
+
+    const el1 = document.getElementById('statReportsResolved');
+    const el2 = document.getElementById('statContentPublished');
+    const el3 = document.getElementById('statNotifsSent');
+    const el4 = document.getElementById('statAIQueries');
+
+    if (el1) el1.textContent = resolvedThisWeek;
+    if (el2) el2.textContent = publishedThisWeek;
+    if (el3) el3.textContent = notifsSentThisWeek;
+    if (el4) el4.textContent = aiQueryCount;
+}
+
+function updateCityPulse() {
+    const container = document.getElementById('briefingCityPulse');
+    if (!container) return;
+
+    const reports = liveData.reports || [];
+    const news = liveData.news || [];
+    const profiles = liveData.profiles || [];
+
+    // Response efficiency: % resolved of total
+    const totalReports = reports.length;
+    const resolvedReports = reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+    const responseEfficiency = totalReports > 0 ? Math.round((resolvedReports / totalReports) * 100) : 0;
+
+    // Content coverage: ratio of news published (more = better, cap at 100)
+    // Score based on having at least 10 published items = 100%
+    const contentScore = Math.min(100, Math.round((news.length / 10) * 100));
+
+    // App adoption: based on total profiles (target 500 = 100%)
+    const adoptionScore = Math.min(100, Math.round((profiles.length / 500) * 100));
+
+    // Resolution rate this month
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const reportsThisMonth = reports.filter(r => new Date(r.created_at) >= monthAgo);
+    const resolvedThisMonth = reportsThisMonth.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+    const monthlyResolution = reportsThisMonth.length > 0 ? Math.round((resolvedThisMonth / reportsThisMonth.length) * 100) : 0;
+
+    function renderRing(pct, color, label) {
+        const circumference = 163; // 2 * PI * 26
+        const offset = circumference - (circumference * pct / 100);
+        return `
+            <div style="text-align: center;">
+                <div class="ai-score-ring" style="margin: 0 auto 6px;">
+                    <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="${color}" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"/></svg>
+                    <div class="ai-score-value" style="color: ${color}; font-size: 14px;">${pct}%</div>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary);">${label}</div>
+            </div>
+        `;
+    }
+
+    container.innerHTML =
+        renderRing(monthlyResolution, 'var(--success)', 'Monthly<br>resolution') +
+        renderRing(responseEfficiency, 'var(--accent)', 'Overall<br>resolved') +
+        renderRing(contentScore, 'var(--warm-accent)', 'Content<br>coverage') +
+        renderRing(adoptionScore, 'var(--info)', 'App<br>adoption');
+}
+
+function refreshBriefingPage() {
+    // Update time-of-day greeting
+    const greetEl = document.getElementById('briefingGreeting');
+    if (greetEl) {
+        const hour = new Date().getHours();
+        const timeGreet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        greetEl.textContent = timeGreet + ', Andrew';
+    }
+
+    updateAttentionCards();
+    updateSuggestionCards();
+    updateActivityStats();
+    updateCityPulse();
+}
+
+// ---- DASHBOARD AI INSIGHTS ----
+let dashboardInsightsLoaded = false;
+
+async function loadDashboardAIInsights() {
+    const container = document.getElementById('dashboardAIInsights');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                <span class="ai-typing-dots"><span></span><span></span><span></span></span>
+                Generating insights from live data...
+            </div>
+        </div>
+    `;
+
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(
+            'Generate 3-5 short, specific, actionable insights about the current state of the city CRM. Each insight should be 1-2 sentences max. Focus on: report patterns or clusters, staff workload imbalances, content gaps, resident growth trends, or anything anomalous. Start each insight with a bold label. Use [ACTION:navigate:pagename] if relevant.',
+            'Context: This is for the Dashboard AI Insights panel. Keep insights brief and data-driven.'
+        );
+
+        // Parse the response into insight items
+        const lines = result.split('\n').filter(l => l.trim().length > 0);
+        const insightIcons = [
+            { cls: 'warn', color: '#F04848' },
+            { cls: 'trend', color: 'var(--accent)' },
+            { cls: 'tip', color: 'var(--success)' },
+            { cls: 'fire', color: 'var(--warm-accent)' },
+            { cls: 'info', color: 'var(--info)' }
+        ];
+
+        let html = '';
+        let insightIdx = 0;
+        lines.forEach(line => {
+            if (line.trim().length < 10) return; // skip very short lines
+            const icon = insightIcons[insightIdx % insightIcons.length];
+            html += `
+                <div class="ai-insight">
+                    <div class="ai-insight-icon ${icon.cls}" style="color:${icon.color};"></div>
+                    <div>
+                        <div class="ai-insight-text">${parseAIResponse(line)}</div>
+                    </div>
+                </div>
+            `;
+            insightIdx++;
+        });
+
+        if (html) {
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text">${parseAIResponse(result)}</div></div></div>`;
+        }
+        dashboardInsightsLoaded = true;
+        updateActivityStats();
+    } catch (err) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:16px; color:var(--text-tertiary); font-size:13px;">
+                <div style="color:var(--warning); margin-bottom:4px;">Could not generate AI insights</div>
+                <div style="font-size:11px;">${escapeHtml(err.message)}</div>
+                <button class="ai-assist-btn" style="margin-top:8px;" onclick="loadDashboardAIInsights()">Retry</button>
+            </div>
+        `;
+    }
+}
+
+// ---- REPORTS AI TRIAGE ----
+async function toggleReportsAITriage() {
+    const panel = document.getElementById('reportsAITriagePanel');
+    if (!panel) return;
+
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        panel.classList.add('open');
+        runReportsAITriage();
+    } else {
+        panel.style.display = 'none';
+        panel.classList.remove('open');
+    }
+}
+
+async function runReportsAITriage() {
+    const resultEl = document.getElementById('reportsAITriageContent');
+    if (!resultEl) return;
+
+    resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);"><span class="ai-typing-dots"><span></span><span></span><span></span></span> Analyzing open reports for triage recommendations...</div>';
+
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(
+            'Analyze all open and unassigned reports. For each unassigned report, suggest a priority level (High/Medium/Low) and which staff member should handle it based on their current workload and specialization. Also flag any report clusters or patterns. Format as a clear, actionable triage list.',
+            'Context: This is the Reports page AI Triage panel. The user wants specific assignment recommendations.'
+        );
+        resultEl.innerHTML = parseAIResponse(result);
+        updateActivityStats();
+    } catch (err) {
+        resultEl.innerHTML = '<span style="color:var(--warning);">Triage analysis failed: ' + escapeHtml(err.message) + '</span>';
+    }
+}
+
+// ---- CONTENT AI HELPER ----
+async function toggleContentAIHelper() {
+    const panel = document.getElementById('contentAIHelperPanel');
+    if (!panel) return;
+
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        panel.classList.add('open');
+    } else {
+        panel.style.display = 'none';
+        panel.classList.remove('open');
+    }
+}
+
+async function runContentAI(mode) {
+    const resultEl = document.getElementById('contentAIHelperResult');
+    if (!resultEl) return;
+
+    resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);"><span class="ai-typing-dots"><span></span><span></span><span></span></span> Working on it...</div>';
+
+    const prompts = {
+        topics: 'Based on current citizen reports, active alerts, and city data, suggest 5 content topics that would be valuable to publish as news articles or alerts in the Eloy Connect app. For each topic, explain why it\'s relevant right now. Consider what residents are reporting and what information gaps exist.',
+        headlines: 'Draft 5 engaging headlines for news articles or alerts that would be relevant to City of Eloy residents right now. Base these on current report data, active alerts, and seasonal relevance. Make them clear and informative, suitable for a civic app.',
+        keywords: 'Analyze the current CRM data (reports, alerts, events) and suggest 10-15 relevant keywords/tags that should be used for content in the Eloy Connect app. Group them by category (infrastructure, community, safety, services, etc.).'
+    };
+
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(prompts[mode], 'Context: This is the Content page AI Helper. The user is managing content for the Eloy Connect app.');
+        resultEl.innerHTML = parseAIResponse(result);
+        updateActivityStats();
+    } catch (err) {
+        resultEl.innerHTML = '<span style="color:var(--warning);">Content AI failed: ' + escapeHtml(err.message) + '</span>';
+    }
 }
 
 // navigateToPage is defined as an alias for navigateTo above
