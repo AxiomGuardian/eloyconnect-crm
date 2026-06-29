@@ -2785,6 +2785,37 @@ textarea.form-input {
                 </div>
             </div>
 
+            <!-- ENGINE 4: ENGAGEMENT ANALYTICS -->
+            <div class="charts-row">
+                <div class="chart-card" style="flex: 1;">
+                    <div class="chart-title">
+                        Engagement Analytics
+                        <span class="subtitle">Engine 4 — Content interaction tracking</span>
+                    </div>
+                    <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+                        <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div id="engTotalViews" style="font-size: 22px; font-weight: 700; color: var(--accent);">—</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Total Views</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div id="engTotalInteractions" style="font-size: 22px; font-weight: 700; color: var(--warm-accent);">—</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Interactions</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div id="engActiveSessions" style="font-size: 22px; font-weight: 700; color: var(--success);">—</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Sessions (7d)</div>
+                        </div>
+                        <div style="text-align: center; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div id="engAvgDuration" style="font-size: 22px; font-weight: 700; color: var(--stat-purple);">—</div>
+                            <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Avg Session</div>
+                        </div>
+                    </div>
+                    <div id="engTopContent" style="font-size: 13px; color: var(--text-secondary);">
+                        Loading engagement data...
+                    </div>
+                </div>
+            </div>
+
             <!-- AI ANALYTICS — DASHBOARD (live) -->
             <div class="ai-panel">
                 <div class="ai-panel-header">
@@ -5098,12 +5129,89 @@ function updateDashboardWithLiveData() {
     // Update subscriber trend widget on dashboard
     updateSubscriberWidget();
 
+    // Update Engine 4 engagement analytics
+    loadEngagementAnalytics();
+
     // Refresh AI Briefing page with live data
     refreshBriefingPage();
 
     // Load Dashboard AI Insights (only once on first data load)
     if (!dashboardInsightsLoaded && liveData.reports && liveData.reports.length > 0) {
         loadDashboardAIInsights();
+    }
+}
+
+// ENGINE 4: Load Engagement Analytics from Supabase
+async function loadEngagementAnalytics() {
+    try {
+        // Fetch content interactions count
+        const { data: interactions, error: intErr } = await supabase
+            .from('content_interactions')
+            .select('id, interaction_type', { count: 'exact' });
+
+        // Fetch session analytics from last 7 days
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: sessions, error: sesErr } = await supabase
+            .from('session_analytics')
+            .select('*')
+            .gte('session_start', weekAgo);
+
+        // Calculate metrics
+        const totalViews = interactions ? interactions.filter(i => i.interaction_type === 'view').length : 0;
+        const totalInteractions = interactions ? interactions.length : 0;
+        const sessionCount = sessions ? sessions.length : 0;
+
+        // Avg session duration
+        let avgDuration = '—';
+        if (sessions && sessions.length > 0) {
+            const totalSeconds = sessions.reduce((sum, s) => sum + (s.duration_seconds || 0), 0);
+            const avgSeconds = Math.round(totalSeconds / sessions.length);
+            if (avgSeconds >= 60) {
+                avgDuration = Math.round(avgSeconds / 60) + 'm';
+            } else {
+                avgDuration = avgSeconds + 's';
+            }
+        }
+
+        // Update UI
+        const viewsEl = document.getElementById('engTotalViews');
+        const interactionsEl = document.getElementById('engTotalInteractions');
+        const sessionsEl = document.getElementById('engActiveSessions');
+        const durationEl = document.getElementById('engAvgDuration');
+
+        if (viewsEl) viewsEl.textContent = totalViews.toLocaleString();
+        if (interactionsEl) interactionsEl.textContent = totalInteractions.toLocaleString();
+        if (sessionsEl) sessionsEl.textContent = sessionCount.toLocaleString();
+        if (durationEl) durationEl.textContent = avgDuration;
+
+        // Top content by interaction count
+        const topContentEl = document.getElementById('engTopContent');
+        if (topContentEl && interactions && interactions.length > 0) {
+            // Count interactions by type
+            const typeCounts = {};
+            interactions.forEach(i => {
+                typeCounts[i.interaction_type] = (typeCounts[i.interaction_type] || 0) + 1;
+            });
+            const sorted = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+            let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+            sorted.slice(0, 5).forEach(([type, count]) => {
+                const colors = { view: 'var(--accent)', like: 'var(--warm-accent)', share: 'var(--stat-purple)', save: 'var(--success)', comment: 'var(--info)', tap: 'var(--text-secondary)' };
+                const c = colors[type] || 'var(--text-tertiary)';
+                html += `<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+                    <span style="width:6px;height:6px;border-radius:50%;background:${c};"></span>
+                    <span style="font-size:12px;color:var(--text-secondary);text-transform:capitalize;">${type}</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${count}</span>
+                </div>`;
+            });
+            html += '</div>';
+            topContentEl.innerHTML = html;
+        } else if (topContentEl) {
+            topContentEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:13px;padding:8px 0;">No engagement data yet. Data appears as residents use the app.</div>';
+        }
+    } catch (e) {
+        console.log('[Engine 4] Engagement analytics load:', e.message);
+        const topContentEl = document.getElementById('engTopContent');
+        if (topContentEl) topContentEl.innerHTML = '<div style="color:var(--text-tertiary);font-size:13px;">Engagement tracking active. Data populates as residents interact.</div>';
     }
 }
 
@@ -6294,6 +6402,10 @@ RESPONSE GUIDELINES:
 - Format your response with clear sections when appropriate.
 - Do not make up data that is not in the live snapshot above.`;
 
+    // Create abort controller with 20-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
         const response = await fetch(GROK_ENDPOINT, {
             method: 'POST',
@@ -6309,8 +6421,11 @@ RESPONSE GUIDELINES:
                 ],
                 max_tokens: 1500,
                 temperature: 0.7
-            })
+            }),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errText = await response.text();
@@ -6332,6 +6447,10 @@ RESPONSE GUIDELINES:
             return JSON.stringify(data);
         }
     } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            throw new Error('AI request timed out after 20 seconds. The server may be busy — try again.');
+        }
         console.error('Grok AI call failed:', err);
         throw err;
     }
@@ -6692,8 +6811,8 @@ async function loadDashboardAIInsights() {
     try {
         aiQueryCount++;
         const result = await callGrokAI(
-            'Generate 3-5 short, specific, actionable insights about the current state of the city CRM. Each insight should be 1-2 sentences max. Focus on: report patterns or clusters, staff workload imbalances, content gaps, resident growth trends, or anything anomalous. Start each insight with a bold label. Use [ACTION:navigate:pagename] if relevant.',
-            'Context: This is for the Dashboard AI Insights panel. Keep insights brief and data-driven.'
+            'Generate 3-5 short, specific, actionable insights about the current state of the city CRM. Each insight should be 1-2 sentences max. Focus on: report patterns or clusters, staff workload imbalances, content gaps, resident growth trends, or anything anomalous. Start each insight with a bold label like **Label:** followed by the insight. Use [ACTION:navigate:pagename] if relevant.',
+            'Context: This is for the Dashboard AI Insights panel. Keep insights brief and data-driven. Do NOT use markdown headers (##). Just bold labels with ** markers.'
         );
 
         // Parse the response into insight items
@@ -6709,13 +6828,18 @@ async function loadDashboardAIInsights() {
         let html = '';
         let insightIdx = 0;
         lines.forEach(line => {
-            if (line.trim().length < 10) return; // skip very short lines
+            if (line.trim().length < 10) return;
+            // Skip lines that are just numbers or headers
+            if (/^[\d#\-\*]+\.?\s*$/.test(line.trim())) return;
             const icon = insightIcons[insightIdx % insightIcons.length];
+            // Convert **bold** markdown to <strong> tags
+            let parsed = parseAIResponse(line.replace(/^\d+\.\s*/, '').replace(/^[\-\*]\s*/, ''));
+            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             html += `
                 <div class="ai-insight">
                     <div class="ai-insight-icon ${icon.cls}" style="color:${icon.color};"></div>
                     <div>
-                        <div class="ai-insight-text">${parseAIResponse(line)}</div>
+                        <div class="ai-insight-text">${parsed}</div>
                     </div>
                 </div>
             `;
@@ -6725,18 +6849,36 @@ async function loadDashboardAIInsights() {
         if (html) {
             container.innerHTML = html;
         } else {
-            container.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text">${parseAIResponse(result)}</div></div></div>`;
+            // If parsing produced nothing, show the raw result
+            let rawParsed = parseAIResponse(result);
+            rawParsed = rawParsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            container.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text">${rawParsed}</div></div></div>`;
         }
         dashboardInsightsLoaded = true;
         updateActivityStats();
     } catch (err) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:16px; color:var(--text-tertiary); font-size:13px;">
-                <div style="color:var(--warning); margin-bottom:4px;">Could not generate AI insights</div>
-                <div style="font-size:11px;">${escapeHtml(err.message)}</div>
-                <button class="ai-assist-btn" style="margin-top:8px;" onclick="loadDashboardAIInsights()">Retry</button>
-            </div>
-        `;
+        // On failure, show data-driven fallback insights from local data instead of empty state
+        const reports = liveData.reports || [];
+        const openReports = reports.filter(r => r.status === 'submitted' || r.status === 'open' || r.status === 'under_review');
+        const unassigned = reports.filter(r => !r.assigned_to && r.status !== 'resolved' && r.status !== 'closed');
+        const profiles = liveData.profiles || [];
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const newThisWeek = profiles.filter(p => new Date(p.created_at) >= weekAgo).length;
+
+        let fallbackHtml = '';
+
+        if (unassigned.length > 0) {
+            fallbackHtml += `<div class="ai-insight"><div class="ai-insight-icon warn" style="color:#F04848;"></div><div><div class="ai-insight-text"><strong>Unassigned reports:</strong> ${unassigned.length} report${unassigned.length > 1 ? 's need' : ' needs'} triage and assignment. <button class="ai-action-btn" onclick="navigateTo('reports')" style="display:inline-flex;margin:2px 4px;vertical-align:middle;">Go to Reports &rarr;</button></div></div></div>`;
+        }
+        if (openReports.length > 0) {
+            fallbackHtml += `<div class="ai-insight"><div class="ai-insight-icon trend" style="color:var(--accent);"></div><div><div class="ai-insight-text"><strong>Open reports:</strong> ${openReports.length} reports are currently open across ${[...new Set(openReports.map(r => r.category || 'Other'))].length} categories.</div></div></div>`;
+        }
+        if (newThisWeek > 0) {
+            fallbackHtml += `<div class="ai-insight"><div class="ai-insight-icon tip" style="color:var(--success);"></div><div><div class="ai-insight-text"><strong>Resident growth:</strong> ${newThisWeek} new resident${newThisWeek > 1 ? 's' : ''} signed up this week. <button class="ai-action-btn" onclick="navigateTo('residents')" style="display:inline-flex;margin:2px 4px;vertical-align:middle;">View Residents &rarr;</button></div></div></div>`;
+        }
+        fallbackHtml += `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text"><strong>AI temporarily unavailable.</strong> Showing data-driven summary. <button class="ai-assist-btn" style="margin-left:8px;font-size:11px;padding:4px 10px;" onclick="loadDashboardAIInsights()">Retry AI</button></div></div></div>`;
+
+        container.innerHTML = fallbackHtml;
     }
 }
 
