@@ -906,6 +906,54 @@ textarea.form-input {
     line-height: 1.5;
 }
 
+.dictate-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.dictate-btn:hover { background: rgba(255,255,255,0.12); }
+.dictate-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Live dictation waveform — small reusable inline element next to dictate button */
+.dictate-wave {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 18px;
+    margin-left: 8px;
+    vertical-align: middle;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+}
+.dictate-wave.active { opacity: 1; }
+.dictate-wave .dw-bar {
+    width: 2px;
+    height: 3px;
+    border-radius: 2px;
+    background: #10B981;
+    box-shadow: 0 0 4px rgba(16,185,129,0.6);
+    transition: height 0.06s linear;
+}
+
+/* Emerald breathing glow on the textarea while dictating */
+@keyframes dictateBreathe {
+    0%   { box-shadow: 0 0 0 1px rgba(16,185,129,0.35), 0 0 10px 1px rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.45); }
+    50%  { box-shadow: 0 0 0 1px rgba(16,185,129,0.65), 0 0 22px 4px rgba(16,185,129,0.40); border-color: rgba(16,185,129,0.80); }
+    100% { box-shadow: 0 0 0 1px rgba(16,185,129,0.35), 0 0 10px 1px rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.45); }
+}
+.dictating-glow {
+    animation: dictateBreathe 2.4s ease-in-out infinite;
+    border-color: rgba(16,185,129,0.55) !important;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
 .form-label {
     font-size: 12px;
     font-weight: 500;
@@ -4679,7 +4727,13 @@ textarea.form-input {
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label class="form-label">Internal Notes</label>
+            <label class="form-label" style="display:flex; align-items:center; justify-content:space-between;">
+                <span>Internal Notes</span>
+                <span style="display:inline-flex; align-items:center;">
+                    <button type="button" id="reportNotesMic" class="dictate-btn" onclick="crmDictate('reportNotes', this)" title="Dictate">🎙️ Dictate</button>
+                    <span id="reportNotesWave" class="dictate-wave" aria-hidden="true"></span>
+                </span>
+            </label>
             <textarea class="form-input" id="reportNotes" rows="3" placeholder="Add a note for the assigned staff member..."></textarea>
         </div>
 
@@ -4815,6 +4869,116 @@ try {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch(e) {
     console.warn('Supabase client failed to initialize, using mock data:', e);
+}
+
+// ===== Dictation (shared deepgram-transcribe edge function) =====
+let _dictRecorder = null, _dictChunks = [], _dictTarget = null, _dictBtn = null;
+// Live waveform / glow visualizer state (Web Audio)
+let _dictAudioCtx = null, _dictAnalyser = null, _dictSource = null, _dictRAF = null;
+let _dictWaveEl = null, _dictBars = [];
+
+// Build (once) a row of ~16 bars inside a reusable .dictate-wave element, then
+// start a real-time animation driven by mic amplitude from the SHARED stream.
+function _startDictVisualizer(stream, textareaId) {
+    const WAVE_MAP = { reportNotes: 'reportNotesWave' };
+    _dictWaveEl = document.getElementById(WAVE_MAP[textareaId] || (textareaId + 'Wave'));
+    const BAR_COUNT = 16;
+    if (_dictWaveEl) {
+        _dictBars = [];
+        _dictWaveEl.innerHTML = '';
+        for (let i = 0; i < BAR_COUNT; i++) {
+            const bar = document.createElement('span');
+            bar.className = 'dw-bar';
+            _dictWaveEl.appendChild(bar);
+            _dictBars.push(bar);
+        }
+        _dictWaveEl.classList.add('active');
+    }
+    if (_dictTarget) _dictTarget.classList.add('dictating-glow');
+
+    try {
+        _dictAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        _dictSource = _dictAudioCtx.createMediaStreamSource(stream);
+        _dictAnalyser = _dictAudioCtx.createAnalyser();
+        _dictAnalyser.fftSize = 256;
+        _dictSource.connect(_dictAnalyser);
+        const bins = _dictAnalyser.frequencyBinCount; // 128
+        const data = new Uint8Array(bins);
+        const step = Math.floor(bins / BAR_COUNT) || 1;
+        const draw = () => {
+            _dictRAF = requestAnimationFrame(draw);
+            _dictAnalyser.getByteFrequencyData(data);
+            for (let i = 0; i < _dictBars.length; i++) {
+                // Average a slice of frequency bins for this bar.
+                let sum = 0;
+                const start = i * step;
+                for (let j = 0; j < step; j++) sum += data[start + j] || 0;
+                const amp = sum / step / 255; // 0..1
+                const h = 3 + amp * 16;        // 3px (quiet) -> ~19px (loud)
+                _dictBars[i].style.height = h.toFixed(1) + 'px';
+            }
+        };
+        draw();
+    } catch (err) {
+        console.warn('waveform visualizer failed', err);
+    }
+}
+
+// Tear down the animation, AudioContext, and visuals (called on stop).
+function _stopDictVisualizer() {
+    if (_dictRAF) { cancelAnimationFrame(_dictRAF); _dictRAF = null; }
+    if (_dictSource) { try { _dictSource.disconnect(); } catch (e) {} _dictSource = null; }
+    if (_dictAnalyser) { try { _dictAnalyser.disconnect(); } catch (e) {} _dictAnalyser = null; }
+    if (_dictAudioCtx) { try { _dictAudioCtx.close(); } catch (e) {} _dictAudioCtx = null; }
+    if (_dictTarget) _dictTarget.classList.remove('dictating-glow');
+    if (_dictWaveEl) {
+        _dictWaveEl.classList.remove('active');
+        const el = _dictWaveEl;
+        // Let the fade-out transition play, then clear the bars.
+        setTimeout(() => { if (el) el.innerHTML = ''; }, 400);
+    }
+    _dictWaveEl = null; _dictBars = [];
+}
+async function crmDictate(textareaId, btn) {
+    // If already recording, stop and transcribe.
+    if (_dictRecorder && _dictRecorder.state === 'recording') {
+        _dictRecorder.stop();
+        return;
+    }
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    _dictTarget = ta; _dictBtn = btn;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _dictChunks = [];
+        _dictRecorder = new MediaRecorder(stream);
+        _dictRecorder.ondataavailable = e => { if (e.data.size) _dictChunks.push(e.data); };
+        _dictRecorder.onstop = async () => {
+            _stopDictVisualizer();
+            stream.getTracks().forEach(t => t.stop());
+            if (_dictBtn) { _dictBtn.textContent = '… transcribing'; _dictBtn.disabled = true; }
+            try {
+                const blob = new Blob(_dictChunks, { type: 'audio/webm' });
+                const resp = await fetch(`${SUPABASE_URL}/functions/v1/deepgram-transcribe`, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'audio/webm' },
+                    body: blob
+                });
+                const data = await resp.json();
+                const text = (data && data.transcript) ? data.transcript : '';
+                if (text) _dictTarget.value = _dictTarget.value ? (_dictTarget.value.trim() + ' ' + text) : text;
+            } catch (err) { console.warn('dictation failed', err); }
+            if (_dictBtn) { _dictBtn.textContent = '🎙️ Dictate'; _dictBtn.disabled = false; }
+        };
+        _dictRecorder.start();
+        // Reuse the SAME mic stream for the live waveform + emerald glow.
+        _startDictVisualizer(stream, textareaId);
+        if (btn) btn.textContent = '⏹ Stop';
+    } catch (err) {
+        console.warn('mic permission denied', err);
+        _stopDictVisualizer();
+        if (btn) btn.textContent = '🎙️ Dictate';
+    }
 }
 
 // ============================================
