@@ -2683,7 +2683,10 @@ textarea.form-input {
             <p id="page-subtitle">Loading...</p>
             <script>document.getElementById('page-subtitle').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + ' — Welcome back';</script>
         </div>
-        <div class="topbar-actions" id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Administrator</div>
+        <div class="topbar-actions">
+            <div id="citySwitcher" style="display:flex; align-items:center; gap:8px;"></div>
+            <div id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Administrator</div>
+        </div>
     </header>
 
     <!-- SCROLLABLE CONTENT -->
@@ -4132,7 +4135,65 @@ textarea.form-input {
                     <h3>Staff & Settings</h3>
                     <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Manage team members, roles, and app configuration</p>
                 </div>
-                <button class="btn btn-primary" onclick="showToast('Staff management coming in Phase 5', 'info')">+ Add Staff Member</button>
+                <button class="btn btn-primary" onclick="toggleCreateStaffForm()">+ Add Staff Member</button>
+            </div>
+
+            <!-- ===== LIVE STAFF ACCOUNTS (multi-tenant) ===== -->
+            <div class="glass-card" style="margin-bottom: 24px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <h4 style="font-size: 15px; font-weight: 500;">Staff Accounts</h4>
+                    <span id="staffCountLabel" style="font-size:12px; color:var(--text-tertiary);"></span>
+                </div>
+
+                <!-- Create Account form (hidden by default) -->
+                <div id="createStaffForm" style="display:none; margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius: var(--radius-sm);">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Full Name</label>
+                            <input id="newStaffName" class="form-input" type="text" placeholder="Jane Doe" style="margin-top:4px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Email</label>
+                            <input id="newStaffEmail" class="form-input" type="email" placeholder="jane@city.gov" style="margin-top:4px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Temporary Password</label>
+                            <input id="newStaffPassword" class="form-input" type="text" placeholder="Temp password" style="margin-top:4px;">
+                        </div>
+                        <div>
+                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
+                            <select id="newStaffRole" class="form-input" style="margin-top:4px;">
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
+                                <option value="council">Council</option>
+                                <option value="worker">Worker</option>
+                            </select>
+                        </div>
+                        <div id="newStaffCityWrap" style="display:none;">
+                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">City</label>
+                            <select id="newStaffCity" class="form-input" style="margin-top:4px;"></select>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary" onclick="createStaffAccount()">Create Account</button>
+                        <button class="btn btn-ghost" onclick="toggleCreateStaffForm()">Cancel</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.06);">
+                                <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Name</th>
+                                <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Email</th>
+                                <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Role</th>
+                            </tr>
+                        </thead>
+                        <tbody id="staffTableBody">
+                            <tr><td colspan="3" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">Loading staff...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="staff-grid anim-stagger" style="margin-bottom: 24px;">
@@ -5082,6 +5143,73 @@ function guestLogin() {
     showToast('Logged in as Guest — Mayor view (full access)');
 }
 
+// ============================================
+// MULTI-TENANT (CITY) GLOBALS + HELPERS
+// ============================================
+let authRole = '';           // logged-in user's auth role (separate from demo role selector)
+let currentCityId = null;    // logged-in user's home city
+let isSuperAdmin = false;    // true when role === 'super_admin'
+let activeCityId = null;     // city currently being viewed (super_admin can switch)
+let citiesList = [];         // cached list of active cities
+
+// Scope a Supabase read query to the active city (no-op if no active city set)
+function scopeCity(query) {
+    return activeCityId ? query.eq('city_id', activeCityId) : query;
+}
+
+// Load cities + render the header switcher/label, then fetch scoped data
+async function initCityContext() {
+    if (!sbClient) return;
+    try {
+        const { data, error } = await sbClient
+            .from('cities')
+            .select('*')
+            .eq('active', true)
+            .order('name', { ascending: true });
+        if (!error && data) citiesList = data;
+    } catch (e) {
+        console.warn('Could not load cities:', e);
+    }
+
+    // For super_admin, default to first city if none chosen/stored
+    if (isSuperAdmin && !activeCityId && citiesList.length) {
+        activeCityId = citiesList[0].id;
+        localStorage.setItem('crmActiveCityId', activeCityId);
+    }
+
+    renderCitySwitcher();
+    fetchAllData();
+}
+
+// Render the city dropdown (super_admin) or static label (everyone else)
+function renderCitySwitcher() {
+    const host = document.getElementById('citySwitcher');
+    if (!host) return;
+
+    const activeCity = citiesList.find(c => c.id === activeCityId);
+    const activeName = activeCity ? activeCity.name : 'Eloy';
+
+    if (isSuperAdmin && citiesList.length) {
+        host.innerHTML = `
+            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">City</label>
+            <select id="citySwitcherSelect" class="form-input" style="padding:6px 10px; font-size:12px; min-width:150px;">
+                ${citiesList.map(c => `<option value="${c.id}" ${c.id === activeCityId ? 'selected' : ''}>${escapeHtml(c.name)}${c.state ? ', ' + escapeHtml(c.state) : ''}</option>`).join('')}
+            </select>`;
+        const sel = document.getElementById('citySwitcherSelect');
+        if (sel) {
+            sel.addEventListener('change', (ev) => {
+                activeCityId = ev.target.value;
+                localStorage.setItem('crmActiveCityId', activeCityId);
+                renderCitySwitcher();
+                fetchAllData();
+                renderStaffPage();
+            });
+        }
+    } else {
+        host.innerHTML = `<span style="font-size:12px; color:var(--text-secondary); font-weight:500;">&#127961; ${escapeHtml(activeName)}</span>`;
+    }
+}
+
 async function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value.trim();
@@ -5104,20 +5232,27 @@ async function handleLogin(e) {
         // Check role in profiles table
         const { data: profile, error: profileErr } = await sbClient
             .from('profiles')
-            .select('role')
+            .select('role, city_id')
             .eq('id', data.user.id)
             .single();
 
         if (profileErr) throw new Error('Could not verify admin role');
 
         const role = (profile?.role || '').toLowerCase();
-        if (role !== 'admin' && role !== 'staff') {
+        if (role !== 'admin' && role !== 'staff' && role !== 'super_admin') {
             await sbClient.auth.signOut();
             throw new Error('Access denied — admin role required');
         }
 
+        // Capture role + city for multi-tenant scoping
+        authRole = role;
+        currentCityId = profile?.city_id || null;
+        isSuperAdmin = (role === 'super_admin');
+        activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
+
         // Authorized — hide overlay, show CRM
         document.getElementById('loginOverlay').style.display = 'none';
+        await initCityContext();
     } catch (err) {
         errorEl.textContent = err.message || 'Sign-in failed';
         errorEl.style.display = 'block';
@@ -5138,13 +5273,19 @@ async function checkExistingSession() {
         // Verify role
         const { data: profile } = await sbClient
             .from('profiles')
-            .select('role')
+            .select('role, city_id')
             .eq('id', session.user.id)
             .single();
 
         const role = (profile?.role || '').toLowerCase();
-        if (role === 'admin' || role === 'staff') {
+        if (role === 'admin' || role === 'staff' || role === 'super_admin') {
+            // Capture role + city for multi-tenant scoping
+            authRole = role;
+            currentCityId = profile?.city_id || null;
+            isSuperAdmin = (role === 'super_admin');
+            activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
             document.getElementById('loginOverlay').style.display = 'none';
+            await initCityContext();
         } else {
             await sbClient.auth.signOut();
         }
@@ -5176,14 +5317,14 @@ async function fetchAllData() {
 
     try {
         const [reports, news, alerts, events, leaders, profiles, notifications, businesses] = await Promise.allSettled([
-            sbClient.from('reports').select('*').order('created_at', { ascending: false }),
-            sbClient.from('news').select('*').eq('published', true).order('published_at', { ascending: false }),
-            sbClient.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }),
-            sbClient.from('events').select('*').eq('published', true).order('event_date', { ascending: true }),
-            sbClient.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }),
-            sbClient.from('profiles').select('*').order('created_at', { ascending: false }),
-            sbClient.from('notifications').select('*').order('created_at', { ascending: false }).limit(50),
-            sbClient.from('businesses').select('*').order('name', { ascending: true })
+            scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }),
+            scopeCity(sbClient.from('news').select('*').eq('published', true)).order('published_at', { ascending: false }),
+            scopeCity(sbClient.from('alerts').select('*').eq('active', true)).order('created_at', { ascending: false }),
+            scopeCity(sbClient.from('events').select('*').eq('published', true)).order('event_date', { ascending: true }),
+            scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }),
+            scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }),
+            scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50),
+            scopeCity(sbClient.from('businesses').select('*')).order('name', { ascending: true })
         ]);
 
         if (reports.status === 'fulfilled' && !reports.value.error) liveData.reports = reports.value.data;
@@ -5197,6 +5338,7 @@ async function fetchAllData() {
 
         buildBusinessListings();
         updateDashboardWithLiveData();
+        renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
         console.warn('Failed to fetch live data:', e);
@@ -5870,21 +6012,21 @@ function setupRealtime() {
                 try {
                     let query;
                     switch(table) {
-                        case 'reports': query = sbClient.from('reports').select('*').order('created_at', { ascending: false }); break;
-                        case 'news': query = sbClient.from('news').select('*').eq('published', true).order('published_at', { ascending: false }); break;
-                        case 'alerts': query = sbClient.from('alerts').select('*').eq('active', true).order('created_at', { ascending: false }); break;
-                        case 'events': query = sbClient.from('events').select('*').eq('published', true).order('event_date', { ascending: true }); break;
-                        case 'leaders': query = sbClient.from('leaders').select('*').eq('active', true).order('sort_order', { ascending: true }); break;
-                        case 'profiles': query = sbClient.from('profiles').select('*').order('created_at', { ascending: false }); break;
-                        case 'notifications': query = sbClient.from('notifications').select('*').order('created_at', { ascending: false }).limit(50); break;
-                        case 'businesses': query = sbClient.from('businesses').select('*').order('name', { ascending: true }); break;
+                        case 'reports': query = scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }); break;
+                        case 'news': query = scopeCity(sbClient.from('news').select('*').eq('published', true)).order('published_at', { ascending: false }); break;
+                        case 'alerts': query = scopeCity(sbClient.from('alerts').select('*').eq('active', true)).order('created_at', { ascending: false }); break;
+                        case 'events': query = scopeCity(sbClient.from('events').select('*').eq('published', true)).order('event_date', { ascending: true }); break;
+                        case 'leaders': query = scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }); break;
+                        case 'profiles': query = scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }); break;
+                        case 'notifications': query = scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50); break;
+                        case 'businesses': query = scopeCity(sbClient.from('businesses').select('*')).order('name', { ascending: true }); break;
                     }
                     const { data, error } = await query;
                     if (!error && data) {
                         liveData[table] = data;
                         updateDashboardWithLiveData();
                         // Re-render current page if it uses this table
-                        if (table === 'profiles') renderResidentsPage();
+                        if (table === 'profiles') { renderResidentsPage(); renderStaffPage(); }
                         if (table === 'businesses' || table === 'profiles') buildBusinessListings();
                     }
                 } catch(e) { console.warn(`Realtime re-fetch ${table} failed:`, e); }
@@ -6239,6 +6381,7 @@ async function sendPushNotification() {
                     audience: audienceValue,
                     priority: priority,
                     read: false,
+                    city_id: activeCityId,
                     sent_at: isScheduled ? data.scheduled_at : new Date().toISOString()
                 });
             }
@@ -6439,6 +6582,7 @@ async function submitNewBusiness() {
             email: document.getElementById('newBizEmail')?.value?.trim() || null,
             address: document.getElementById('newBizAddress')?.value?.trim() || null,
             description: document.getElementById('newBizDesc')?.value?.trim() || null,
+            city_id: activeCityId,
             status: 'approved'
         });
         if (error) throw error;
@@ -7773,6 +7917,7 @@ async function publishContent() {
                 body_es: bodyEs || null,
                 category: category,
                 published: true,
+                city_id: activeCityId,
                 published_at: new Date().toISOString()
             }).select();
             if (error) throw error;
@@ -7787,6 +7932,7 @@ async function publishContent() {
                 event_date: new Date().toISOString().split('T')[0],
                 start_time: '9:00 AM',
                 category: category,
+                city_id: activeCityId,
                 published: true
             }).select();
             if (error) throw error;
@@ -7800,6 +7946,7 @@ async function publishContent() {
                 message_es: bodyEs || titleEs || null,
                 severity: severity,
                 active: true,
+                city_id: activeCityId,
                 expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }).select();
             if (error) throw error;
@@ -7815,6 +7962,7 @@ async function publishContent() {
                 message: notifMessage.substring(0, 300),
                 type: notifType,
                 read: false,
+                city_id: activeCityId,
                 created_at: new Date().toISOString()
             });
         } catch(notifErr) {
@@ -7863,6 +8011,7 @@ async function saveDraft() {
                 body_en: bodyEn || null,
                 body_es: bodyEs || null,
                 category: category,
+                city_id: activeCityId,
                 published: false
             });
             if (error) throw error;
@@ -7873,6 +8022,7 @@ async function saveDraft() {
                 description_en: bodyEn || null,
                 description_es: bodyEs || null,
                 event_date: new Date().toISOString().split('T')[0],
+                city_id: activeCityId,
                 published: false
             });
             if (error) throw error;
@@ -9356,6 +9506,114 @@ function openResidentDetail(userId) {
 function closeResidentDetail() {
     document.getElementById('residentDetail').classList.remove('open');
     currentDetailUserId = null;
+}
+
+// ============================================
+// STAFF ACCOUNTS (multi-tenant)
+// ============================================
+const STAFF_ROLES = ['staff', 'admin', 'super_admin', 'council', 'worker'];
+
+// Render the live staff table from liveData.profiles (already city-scoped by fetch)
+function renderStaffPage() {
+    const body = document.getElementById('staffTableBody');
+    if (!body) return;
+
+    const profiles = liveData.profiles || [];
+    const staff = profiles.filter(p => STAFF_ROLES.includes((p.role || '').toLowerCase()));
+
+    const countLabel = document.getElementById('staffCountLabel');
+    if (countLabel) countLabel.textContent = staff.length + ' account' + (staff.length === 1 ? '' : 's');
+
+    if (!staff.length) {
+        body.innerHTML = `<tr><td colspan="3" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">No staff accounts for this city yet.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = staff.map(p => {
+        const name = p.display_name || p.full_name || p.name || '—';
+        const email = p.email || '—';
+        const role = (p.role || '').toLowerCase();
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+            <td style="padding:10px 12px; font-size:13px; color:var(--text-primary);">${escapeHtml(name)}</td>
+            <td style="padding:10px 12px; font-size:13px; color:var(--text-secondary);">${escapeHtml(email)}</td>
+            <td style="padding:10px 12px; font-size:13px;"><span style="font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">${escapeHtml(role)}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+// Toggle the Create Account form (and populate the city dropdown for super_admin)
+function toggleCreateStaffForm() {
+    const form = document.getElementById('createStaffForm');
+    if (!form) return;
+    const showing = form.style.display !== 'none';
+    form.style.display = showing ? 'none' : 'block';
+
+    if (!showing) {
+        const cityWrap = document.getElementById('newStaffCityWrap');
+        const citySel = document.getElementById('newStaffCity');
+        if (isSuperAdmin && cityWrap && citySel) {
+            cityWrap.style.display = 'block';
+            citySel.innerHTML = citiesList.map(c =>
+                `<option value="${c.id}" ${c.id === activeCityId ? 'selected' : ''}>${escapeHtml(c.name)}${c.state ? ', ' + escapeHtml(c.state) : ''}</option>`
+            ).join('');
+        } else if (cityWrap) {
+            cityWrap.style.display = 'none';
+        }
+    }
+}
+
+// Create a new staff/admin account via the create-staff-user edge function
+async function createStaffAccount() {
+    const name = document.getElementById('newStaffName')?.value?.trim();
+    const email = document.getElementById('newStaffEmail')?.value?.trim();
+    const password = document.getElementById('newStaffPassword')?.value;
+    const role = document.getElementById('newStaffRole')?.value;
+    const selectedCity = document.getElementById('newStaffCity')?.value;
+
+    if (!name || !email || !password) {
+        showToast('Name, email, and password are required', 'warning');
+        return;
+    }
+    if (!sbClient) {
+        showToast('Database not connected', 'error');
+        return;
+    }
+
+    try {
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (!session) { showToast('Not signed in', 'error'); return; }
+
+        const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/create-staff-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + session.access_token
+            },
+            body: JSON.stringify({
+                email,
+                password,
+                display_name: name,
+                role,
+                city_id: isSuperAdmin ? selectedCity : currentCityId
+            })
+        });
+
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            throw new Error(result.error || result.message || 'Failed to create account');
+        }
+
+        showToast('Staff account created for ' + email, 'success');
+        // Clear form
+        document.getElementById('newStaffName').value = '';
+        document.getElementById('newStaffEmail').value = '';
+        document.getElementById('newStaffPassword').value = '';
+        toggleCreateStaffForm();
+        // Refresh staff list
+        await fetchAllData();
+    } catch (e) {
+        showToast('Failed to create account: ' + (e.message || e), 'error');
+    }
 }
 
 // ── Account Deletion & Deactivation ──
