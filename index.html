@@ -150,6 +150,53 @@ body {
 @media (max-width: 900px) { .lb-prev { left: 8px; } .lb-next { right: 8px; } .lb-img { max-width: 92vw; } }
 
 /* ============================================
+   ASK ELOY — AI COMMAND CONSOLE
+   ============================================ */
+.askeloy-panel { position: relative; border-radius: 18px; padding: 24px; overflow: hidden;
+    background: linear-gradient(180deg, rgba(63,224,232,0.045), rgba(13,22,40,0.55));
+    border: 1px solid rgba(63, 224, 232, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 0 32px rgba(63, 224, 232, 0.05); }
+.askeloy-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--success), var(--warm-accent), var(--accent));
+    background-size: 300% 100%; animation: auroraSlide 8s linear infinite; opacity: 0.7; }
+
+.askeloy-orb { position: relative; width: 40px; height: 40px; flex-shrink: 0;
+    display: grid; place-items: center; }
+.askeloy-orb .orb-core { width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 18px var(--accent); z-index: 2; }
+.askeloy-orb .orb-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(63,224,232,0.4);
+    animation: orbRipple 2.6s ease-out infinite; }
+.askeloy-orb .orb-ring.r2 { animation-delay: 1.3s; }
+@keyframes orbRipple { 0% { width: 14px; height: 14px; opacity: 0.9; } 100% { width: 44px; height: 44px; opacity: 0; } }
+
+.askeloy-input-row { display: flex; gap: 10px; align-items: center; padding: 6px 6px 6px 18px;
+    background: rgba(6, 10, 18, 0.55); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
+    transition: border-color .2s ease, box-shadow .2s ease; }
+.askeloy-input-row:focus-within { border-color: rgba(63, 224, 232, 0.5);
+    box-shadow: 0 0 0 3px rgba(63, 224, 232, 0.10), 0 0 24px rgba(63, 224, 232, 0.12); }
+.askeloy-input-row input { flex: 1; background: none; border: none; outline: none;
+    color: var(--text-primary); font-size: 14px; font-family: inherit; padding: 10px 0; }
+.askeloy-input-row input::placeholder { color: var(--text-tertiary); }
+.askeloy-send { width: 40px; height: 40px; border-radius: 11px; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: #04121A;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+    transition: box-shadow .2s ease, transform .1s ease; }
+.askeloy-send:hover { box-shadow: 0 0 20px rgba(63, 224, 232, 0.4); }
+.askeloy-send:active { transform: scale(0.95); }
+
+.askeloy-response { padding: 16px 18px; border-radius: 12px; margin-bottom: 14px;
+    background: rgba(6, 10, 18, 0.45); border: 1px solid rgba(255,255,255,0.06);
+    border-left: 2px solid var(--accent); animation: lbFade .3s ease; }
+
+.askeloy-chip { display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 10px 14px; border-radius: 12px; cursor: pointer; font-family: inherit; text-align: left;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.askeloy-chip:hover { border-color: rgba(63, 224, 232, 0.4); background: rgba(63, 224, 232, 0.06); transform: translateY(-2px); }
+.askeloy-chip .chip-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.askeloy-chip .chip-sub { font-size: 11px; color: var(--text-tertiary); }
+
+/* ============================================
    TOP NAVIGATION BAR
    ============================================ */
 .topnav {
@@ -694,6 +741,18 @@ body {
     color: var(--text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Plain-English explainer under each metric */
+.metric-explain {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    text-transform: none;
+    letter-spacing: 0;
+    line-height: 1.4;
+    margin-top: 4px;
+    opacity: 0.85;
 }
 
 /* Count-up animation for metric values */
@@ -2770,6 +2829,7 @@ textarea.form-input {
                     </div>
                     <div class="metric-value">—</div>
                     <div class="metric-label">Open Reports</div>
+                    <div class="metric-explain">Resident issues waiting to be fixed</div>
                 </div>
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-header">
@@ -2778,6 +2838,7 @@ textarea.form-input {
                     </div>
                     <div class="metric-value">—</div>
                     <div class="metric-label">Active Residents</div>
+                    <div class="metric-explain">People using the Eloy Connect app</div>
                 </div>
                 <div class="metric-card" data-accent="green">
                     <div class="metric-header">
@@ -2785,6 +2846,7 @@ textarea.form-input {
                     </div>
                     <div class="metric-value" id="dashResolved">—</div>
                     <div class="metric-label">Resolved Reports</div>
+                    <div class="metric-explain">Issues fixed and closed</div>
                 </div>
                 <div class="metric-card" data-accent="blue">
                     <div class="metric-header">
@@ -2792,6 +2854,7 @@ textarea.form-input {
                     </div>
                     <div class="metric-value" id="dashTotalReports">—</div>
                     <div class="metric-label">Total Reports</div>
+                    <div class="metric-explain">Everything residents have ever reported</div>
                 </div>
             </div>
 
@@ -3096,22 +3159,28 @@ textarea.form-input {
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Total Users</div>
+                    <div class="metric-explain">Everyone signed up in the app</div>
+                    <div class="metric-explain">Everyone signed up in the app</div>
                 </div>
                 <div class="metric-card" data-accent="green">
                     <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Monthly Active</div>
+                    <div class="metric-explain">Opened the app in the last 30 days</div>
                 </div>
                 <div class="metric-card" data-accent="orange">
                     <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">English</div>
+                    <div class="metric-explain">App language set to English</div>
                 </div>
                 <div class="metric-card" data-accent="orange">
                     <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">Spanish</div>
+                    <div class="metric-explain">App language set to Spanish</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-value" style="font-size: 22px;">—</div>
                     <div class="metric-label">ZH / DE</div>
+                    <div class="metric-explain">Chinese / German language users</div>
                 </div>
             </div>
 
@@ -3330,26 +3399,42 @@ textarea.form-input {
                         </div>
                     </div>
 
-                    <!-- COMPACT CHAT -->
-                    <div class="ai-panel" style="background: rgba(63, 224, 232, 0.02);">
-                        <div class="ai-panel-header" style="margin-bottom: 12px;">
-                            <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">Q</div>
+                    <!-- ASK ELOY — AI COMMAND CONSOLE -->
+                    <div class="askeloy-panel">
+                        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+                            <div class="askeloy-orb">
+                                <div class="orb-ring"></div>
+                                <div class="orb-ring r2"></div>
+                                <div class="orb-core"></div>
+                            </div>
                             <div>
-                                <div class="ai-panel-title">Ask AI anything</div>
-                                <div class="ai-panel-subtitle">Type a question or pick a suggestion above</div>
+                                <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.3px;">Ask Eloy</div>
+                                <div style="font-size: 12px; color: var(--text-tertiary);">Your city data, answered in plain English — reports, residents, trends</div>
+                            </div>
+                            <div style="margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--success); border: 1px solid rgba(52,211,153,0.3); padding: 4px 10px; border-radius: 999px; background: rgba(52,211,153,0.06);">
+                                <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--success);"></span> Live data
                             </div>
                         </div>
-                        <div id="grokCommandResponse" style="display: none; padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.04);">
+                        <div id="grokCommandResponse" class="askeloy-response" style="display: none;">
                             <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;" id="grokResponseText"></div>
                         </div>
-                        <div class="quick-chat-input">
-                            <input type="text" id="grokQuickInput" placeholder="Ask about reports, residents, content, or city data..." onkeydown="if(event.key==='Enter')handleGrokQuickChat()">
-                            <button class="chat-send-btn" onclick="handleGrokQuickChat()" style="width: 34px; height: 34px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button>
+                        <div class="askeloy-input-row">
+                            <input type="text" id="grokQuickInput" placeholder="Try: &quot;How many open reports this week?&quot;" onkeydown="if(event.key==='Enter')handleGrokQuickChat()">
+                            <button class="askeloy-send" onclick="handleGrokQuickChat()" title="Send"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg></button>
                         </div>
-                        <div class="chat-chips" style="padding-top: 10px;">
-                            <button class="chat-chip" onclick="handleGrokAction('weekly_summary')">Weekly summary</button>
-                            <button class="chat-chip" onclick="handleGrokAction('staff_performance')">Staff performance</button>
-                            <button class="chat-chip" onclick="handleGrokAction('compare_months')">Compare vs. last month</button>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;">
+                            <button class="askeloy-chip" onclick="handleGrokAction('weekly_summary')">
+                                <span class="chip-title">Weekly summary</span>
+                                <span class="chip-sub">What happened in Eloy this week</span>
+                            </button>
+                            <button class="askeloy-chip" onclick="handleGrokAction('staff_performance')">
+                                <span class="chip-title">Staff performance</span>
+                                <span class="chip-sub">Who resolved what, and how fast</span>
+                            </button>
+                            <button class="askeloy-chip" onclick="handleGrokAction('compare_months')">
+                                <span class="chip-title">Compare months</span>
+                                <span class="chip-sub">This month vs. last, at a glance</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3413,14 +3498,17 @@ textarea.form-input {
                 <div class="metric-card" data-accent="orange">
                     <div class="metric-value" id="notif-reachable" style="font-size: 22px;">—</div>
                     <div class="metric-label">Reachable Users</div>
+                    <div class="metric-explain">Devices that can receive a push right now</div>
                 </div>
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-value" id="notif-sent-count" style="font-size: 22px;">—</div>
                     <div class="metric-label">Notifications Sent</div>
+                    <div class="metric-explain">Push messages delivered so far</div>
                 </div>
                 <div class="metric-card" data-accent="green">
                     <div class="metric-value" id="notif-active-alerts" style="font-size: 22px;">—</div>
                     <div class="metric-label">Active Alerts</div>
+                    <div class="metric-explain">Emergency alerts live in the app now</div>
                 </div>
                 <div class="metric-card" data-accent="blue">
                     <div class="metric-value" id="notif-total-users" style="font-size: 22px;">—</div>
@@ -3636,9 +3724,9 @@ textarea.form-input {
 
             <!-- Live staff accounts are listed in the table above (#staffTableBody). -->
 
-            <div class="charts-row" style="grid-template-columns: 1fr 1fr;">
+            <div class="charts-row" style="grid-template-columns: 1fr;">
                 <div class="glass-card">
-                    <h4 style="font-size: 15px; font-weight: 500; margin-bottom: 16px;">App Configuration</h4>
+                    <h4 style="font-size: 15px; font-weight: 500; margin-bottom: 16px;">App Configuration <span style="font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 999px; background: rgba(246,196,69,0.12); color: var(--warm-accent); margin-left: 8px; letter-spacing: 0.5px; text-transform: uppercase;">Preview — controls coming soon</span></h4>
                     <div style="display: flex; flex-direction: column; gap: 14px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04);">
                             <div>
@@ -3679,23 +3767,7 @@ textarea.form-input {
                     </div>
                 </div>
 
-                <div class="glass-card">
-                    <h4 style="font-size: 15px; font-weight: 500; margin-bottom: 16px;">Supabase Connection</h4>
-                    <div style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(34, 212, 126, 0.08); border-radius: var(--radius-sm); border: 1px solid rgba(34, 212, 126, 0.2); margin-bottom: 16px;">
-                        <span style="color: var(--success); font-size: 18px;"></span>
-                        <div>
-                            <div style="font-size: 14px; font-weight: 500; color: var(--success);">Connected</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">Eloy Connect Supabase project</div>
-                        </div>
-                    </div>
-                    <div style="font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 10px;">
-                        <div style="display: flex; justify-content: space-between;"><span>Database</span><span style="color: var(--success);">Healthy</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Auth</span><span style="color: var(--success);">Active</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Storage</span><span style="color: var(--success);">12.4 MB / 1 GB</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>Edge Functions</span><span style="color: var(--success);">3 deployed</span></div>
-                        <div style="display: flex; justify-content: space-between;"><span>API Requests (today)</span><span style="color: var(--text-primary);">4,218</span></div>
-                    </div>
-                </div>
+                <!-- (Supabase Connection panel removed — internal infrastructure, not city-facing. Stats were mock.) -->
             </div>
         </div>
 
@@ -4225,6 +4297,49 @@ textarea.form-input {
     </div>
 </div>
 
+<!-- CONTENT DETAIL / EDIT MODAL -->
+<div class="modal-overlay" id="contentEditModal" onclick="if(event.target===this)closeContentDetail()">
+    <div class="modal" style="width: 560px; max-height: 82vh; overflow-y: auto; padding: 28px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+            <span class="tag" id="ceTypeTag" style="background: rgba(63,224,232,0.15); color: var(--accent);">Post</span>
+            <button class="btn btn-ghost" onclick="closeContentDetail()" style="font-size: 16px; padding: 4px 10px;">&#10005;</button>
+        </div>
+        <h3 style="font-size: 17px; font-weight: 600; margin: 10px 0 18px;" id="ceHeading">Edit post</h3>
+
+        <div id="ceEditFields">
+            <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Title</label>
+            <input id="ceTitle" type="text" style="width:100%; padding:11px 14px; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+
+            <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;" id="ceBodyLabel">Body</label>
+            <textarea id="ceBody" rows="6" style="width:100%; padding:11px 14px; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+                <div id="ceCategoryWrap">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Category</label>
+                    <input id="ceCategory" type="text" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                </div>
+                <div id="ceSeverityWrap" style="display:none;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Severity</label>
+                    <select id="ceSeverity" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                        <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+                    </select>
+                </div>
+                <div id="ceDateWrap" style="display:none;">
+                    <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Event date</label>
+                    <input id="ceDate" type="date" style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeContentDetail()" style="padding:10px 20px;">Cancel</button>
+                <button class="btn btn-primary" id="ceSaveBtn" onclick="saveContentEdit()" style="padding:10px 20px;">Save changes</button>
+            </div>
+        </div>
+
+        <div id="ceMeetingView" style="display:none; font-size:14px; color:var(--text-secondary); line-height:1.7;"></div>
+    </div>
+</div>
+
 <!-- REPORT PHOTO LIGHTBOX (in-panel carousel) -->
 <div class="photo-lightbox" id="photoLightbox" onclick="if(event.target===this)closePhotoLightbox()">
     <div class="lb-stage">
@@ -4264,6 +4379,109 @@ window.onerror = function(msg, url, line) {
 // REPORT PHOTO LIGHTBOX (in-panel carousel)
 // ============================================
 let lbPhotos = [], lbIndex = 0;
+
+// ============================================
+// CONTENT DETAIL / EDIT (click a Content row)
+// ============================================
+let ceCurrent = null; // { kind, id }
+
+function openContentDetail(kind, id) {
+    const listMap = { news: 'news', events: 'events', alerts: 'alerts', meetings: 'meetings' };
+    const item = (liveData[listMap[kind]] || []).find(x => String(x.id) === String(id));
+    if (!item) { showToast('Post not found — try refreshing', 'warning'); return; }
+    ceCurrent = { kind, id };
+
+    const tag = document.getElementById('ceTypeTag');
+    const heading = document.getElementById('ceHeading');
+    const editFields = document.getElementById('ceEditFields');
+    const meetingView = document.getElementById('ceMeetingView');
+    const catWrap = document.getElementById('ceCategoryWrap');
+    const sevWrap = document.getElementById('ceSeverityWrap');
+    const dateWrap = document.getElementById('ceDateWrap');
+
+    if (kind === 'meetings') {
+        // Read-only detail for council meetings
+        tag.textContent = 'Council';
+        tag.style.cssText = 'background: rgba(246,196,69,0.15); color: var(--warm-accent);';
+        heading.textContent = item.title || 'Council meeting';
+        editFields.style.display = 'none';
+        meetingView.style.display = 'block';
+        let parts = [];
+        parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">Date:</strong> ${escapeHtml(item.meeting_date || '—')}${item.location ? ' · ' + escapeHtml(item.location) : ''}</div>`);
+        if (item.public_summary) parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">Summary</strong><br>${escapeHtml(item.public_summary)}</div>`);
+        const tryList = (raw, label) => {
+            try { const arr = JSON.parse(raw || '[]'); if (arr.length) parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">${label}</strong><br>${arr.map(escapeHtml).join('<br>')}</div>`); } catch(e) {}
+        };
+        tryList(item.key_decisions, 'Key decisions');
+        tryList(item.topics_discussed, 'Topics discussed');
+        if (item.video_url) parts.push(`<div><a href="${escapeHtml(item.video_url)}" target="_blank" style="color:var(--accent);">Watch the meeting video</a></div>`);
+        if (parts.length <= 1) parts.push('<div style="color:var(--text-tertiary);">No summary published yet.</div>');
+        meetingView.innerHTML = parts.join('');
+    } else {
+        editFields.style.display = 'block';
+        meetingView.style.display = 'none';
+        const cfg = {
+            news:   { label: 'News',  color: 'rgba(59,130,246,0.15); color: var(--info)',      body: item.body_en,        showCat: true,  showSev: false, showDate: false },
+            events: { label: 'Event', color: 'rgba(52,211,153,0.15); color: var(--success)',   body: item.description_en, showCat: true,  showSev: false, showDate: true },
+            alerts: { label: 'Alert', color: 'rgba(244,63,94,0.15); color: var(--warning)',    body: item.message_en,     showCat: false, showSev: true,  showDate: false }
+        }[kind];
+        tag.textContent = cfg.label;
+        tag.style.cssText = 'background: ' + cfg.color + ';';
+        heading.textContent = 'Edit ' + cfg.label.toLowerCase();
+        document.getElementById('ceTitle').value = item.title_en || '';
+        document.getElementById('ceBody').value = cfg.body || '';
+        catWrap.style.display = cfg.showCat ? 'block' : 'none';
+        sevWrap.style.display = cfg.showSev ? 'block' : 'none';
+        dateWrap.style.display = cfg.showDate ? 'block' : 'none';
+        if (cfg.showCat) document.getElementById('ceCategory').value = item.category || '';
+        if (cfg.showSev) document.getElementById('ceSeverity').value = item.severity || 'low';
+        if (cfg.showDate) document.getElementById('ceDate').value = item.event_date || '';
+    }
+    document.getElementById('contentEditModal').classList.add('open');
+}
+
+function closeContentDetail() {
+    document.getElementById('contentEditModal').classList.remove('open');
+    ceCurrent = null;
+}
+
+async function saveContentEdit() {
+    if (!ceCurrent || !sbClient) return;
+    const { kind, id } = ceCurrent;
+    const title = document.getElementById('ceTitle').value.trim();
+    const body = document.getElementById('ceBody').value.trim();
+    if (!title) { showToast('Title is required', 'warning'); return; }
+
+    let update = { title_en: title };
+    if (kind === 'news') {
+        update.body_en = body || null;
+        update.excerpt_en = body ? body.substring(0, 200) : null;
+        update.category = document.getElementById('ceCategory').value.trim() || 'General';
+    } else if (kind === 'events') {
+        update.description_en = body || null;
+        update.category = document.getElementById('ceCategory').value.trim() || 'Community';
+        const d = document.getElementById('ceDate').value;
+        if (d) update.event_date = d;
+    } else if (kind === 'alerts') {
+        update.message_en = body || title;
+        update.severity = document.getElementById('ceSeverity').value;
+    }
+
+    const btn = document.getElementById('ceSaveBtn');
+    btn.textContent = 'Saving...'; btn.disabled = true;
+    try {
+        const { error } = await sbClient.from(kind).update(update).eq('id', id);
+        if (error) throw error;
+        showToast('Post updated', 'success');
+        closeContentDetail();
+        await fetchAllData();
+        updateContentPage();
+    } catch (err) {
+        showToast('Save failed: ' + (err.message || 'unknown error'), 'error');
+    } finally {
+        btn.textContent = 'Save changes'; btn.disabled = false;
+    }
+}
 
 function openPhotoLightbox(urls, startIndex) {
     if (!urls || !urls.length) return;
@@ -5286,15 +5504,15 @@ function updateContentPage() {
     if (liveData.news) {
         liveData.news.forEach(item => {
             const date = item.published_at ? new Date(item.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
-            rows.push(`<tr data-type="news">
+            rows.push(`<tr data-type="news" onclick="openContentDetail('news','${escapeHtml(item.id)}')" style="cursor:pointer;">
                 <td><span class="tag" style="background: rgba(59,158,245,0.15); color: var(--info);">News</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'General')}</td>
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${date}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="togglePublish('news', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('news', this.dataset.id)">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); togglePublish('news', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); deleteContent('news', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -5316,15 +5534,15 @@ function updateContentPage() {
                 ? 'background: rgba(255,255,255,0.06); color: var(--text-tertiary);'
                 : 'background: rgba(34,212,126,0.15); color: var(--success);';
             const rowOpacity = isPast ? 'opacity: 0.5;' : '';
-            rows.push(`<tr data-type="event" style="${rowOpacity}">
+            rows.push(`<tr data-type="event" onclick="openContentDetail('events','${escapeHtml(item.id)}')" style="cursor:pointer; ${rowOpacity}">
                 <td><span class="tag" style="${tagStyle}">${isPast ? 'Past Event' : 'Event'}</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'Community')}</td>
                 <td><span class="status ${item.published ? 'status-resolved' : 'status-draft'}"><span class="status-dot"></span>${item.published ? 'Published' : 'Draft'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.event_date || '—'}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="togglePublish('events', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('events', this.dataset.id)">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); togglePublish('events', this.dataset.id, ${item.published})">${item.published ? 'Unpublish' : 'Publish'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); deleteContent('events', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -5334,15 +5552,15 @@ function updateContentPage() {
     if (liveData.alerts) {
         liveData.alerts.forEach(item => {
             const sevColors = { high: 'var(--warning)', medium: 'var(--warm-accent)', low: 'var(--info)' };
-            rows.push(`<tr data-type="alert">
+            rows.push(`<tr data-type="alert" onclick="openContentDetail('alerts','${escapeHtml(item.id)}')" style="cursor:pointer;">
                 <td><span class="tag" style="background: rgba(240,72,72,0.15); color: var(--warning);">Alert</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td><span style="color: ${sevColors[item.severity] || 'var(--text-secondary)'}; font-weight: 600; text-transform: uppercase; font-size: 11px;">${escapeHtml(item.severity || 'low')}</span></td>
                 <td><span class="status ${item.active ? 'status-open' : 'status-resolved'}"><span class="status-dot"></span>${item.active ? 'Active' : 'Inactive'}</span></td>
                 <td style="color: var(--text-tertiary);">${item.created_at ? new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
                 <td>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="deactivateAlert(this.dataset.id)">${item.active ? 'Deactivate' : '—'}</button>
-                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('alerts', this.dataset.id)">Delete</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); deactivateAlert(this.dataset.id)">${item.active ? 'Deactivate' : '—'}</button>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); deleteContent('alerts', this.dataset.id)">Delete</button>
                 </td>
             </tr>`);
         });
@@ -5368,13 +5586,13 @@ function updateContentPage() {
             const isPast = (item.meeting_date || '') < today;
             const st = mStatus[item.status] || mStatus.scheduled;
             const typeLabel = (item.meeting_type || 'council').charAt(0).toUpperCase() + (item.meeting_type || 'council').slice(1);
-            rows.push(`<tr data-type="meeting" style="${isPast ? 'opacity: 0.6;' : ''}">
+            rows.push(`<tr data-type="meeting" onclick="openContentDetail('meetings','${escapeHtml(item.id)}')" style="cursor:pointer; ${isPast ? 'opacity: 0.6;' : ''}">
                 <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">Council</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title || 'Untitled meeting')}${item.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${escapeHtml(item.location)}</div>` : ''}</td>
                 <td>${escapeHtml(typeLabel)}</td>
                 <td><span class="status ${st.cls}"><span class="status-dot"></span>${st.label}</span></td>
                 <td style="color: var(--text-tertiary);">${item.meeting_date || '—'}</td>
-                <td style="color: var(--text-tertiary); font-size: 11px;">${item.video_url ? `<a href="${escapeHtml(item.video_url)}" target="_blank" style="color: var(--accent);">Video</a>` : '—'}</td>
+                <td style="color: var(--text-tertiary); font-size: 11px;">${item.video_url ? `<a href="${escapeHtml(item.video_url)}" target="_blank" onclick="event.stopPropagation();" style="color: var(--accent);">Video</a>` : '—'}</td>
             </tr>`);
         });
     }
