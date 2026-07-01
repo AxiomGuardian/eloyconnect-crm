@@ -2612,18 +2612,18 @@ textarea.form-input {
         <!-- Role Switcher -->
         <div class="topnav-role-switcher" id="roleSwitcher">
             <button class="topnav-role-btn" onclick="toggleRoleDropdown()">
-                <div class="topnav-role-avatar" id="sidebarUserAvatar">AS</div>
+                <div class="topnav-role-avatar" id="sidebarUserAvatar">—</div>
                 <div class="topnav-role-text">
-                    <span class="topnav-role-name" id="sidebarUserName">Andrew Sutton</span>
-                    <span class="topnav-role-label" id="sidebarRoleBadge">Mayor / City Manager</span>
+                    <span class="topnav-role-name" id="sidebarUserName">City Staff</span>
+                    <span class="topnav-role-label" id="sidebarRoleBadge">City Staff</span>
                 </div>
                 <span class="topnav-role-chevron">&#9662;</span>
             </button>
             <div class="topnav-role-dropdown" id="roleDropdown">
                 <div class="role-option active" data-role="mayor" onclick="switchRoleFromDropdown('mayor')">
-                    <div class="role-option-avatar">AS</div>
+                    <div class="role-option-avatar">—</div>
                     <div class="role-option-info">
-                        <div class="role-option-name">Andrew Sutton</div>
+                        <div class="role-option-name">City Staff</div>
                         <div class="role-option-title">Mayor / City Manager</div>
                     </div>
                 </div>
@@ -2685,7 +2685,7 @@ textarea.form-input {
         </div>
         <div class="topbar-actions">
             <div id="citySwitcher" style="display:flex; align-items:center; gap:8px;"></div>
-            <div id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Administrator</div>
+            <div id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Staff</div>
             <button onclick="signOutCRM()" title="Sign out" style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary); font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:inherit;">
                 <span style="font-size:13px;">⎋</span> Sign out
             </button>
@@ -2962,129 +2962,7 @@ textarea.form-input {
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody">
-                        <tr onclick="openReportDetail('RPT-1047')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1047</td>
-                            <td>Pothole on N. Main St near library</td>
-                            <td><span class="tag tag-roads">Roads</span></td>
-                            <td><span class="status status-open"><span class="status-dot"></span>Open</span></td>
-                            <td>Maria G.</td>
-                            <td style="color: var(--text-tertiary);">Unassigned</td>
-                            <td style="color: var(--text-tertiary);">2 hours ago</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1047</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Pothole on N. Main St near library</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Large pothole approximately 2 feet wide on the northbound lane of N. Main Street, directly in front of the library...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">—</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-roads" style="font-size:10px;">Roads</span><span class="tag tag-alert-med" style="font-size:10px;">Medium</span></div>
-                            </div>
-                        </tr>
-                        <tr onclick="openReportDetail('RPT-1046')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1046</td>
-                            <td>Fire hydrant leaking — W. Shedd Rd</td>
-                            <td><span class="tag tag-water">Water</span></td>
-                            <td><span class="status status-critical"><span class="status-dot"></span>Critical</span></td>
-                            <td>Anonymous</td>
-                            <td>J. Martinez</td>
-                            <td style="color: var(--text-tertiary);">3 hours ago</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1046</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Fire hydrant leaking — W. Shedd Rd</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Fire hydrant on W. Shedd Rd is actively leaking water onto the street. Poses safety risk and wastes water resources...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">Anonymous</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-water" style="font-size:10px;">Water</span><span class="tag tag-alert-high" style="font-size:10px;">Critical</span></div>
-                            </div>
-                        </tr>
-                        <tr onclick="openReportDetail('RPT-1045')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1045</td>
-                            <td>Water pressure low — W. Houser Rd area</td>
-                            <td><span class="tag tag-water">Water</span></td>
-                            <td><span class="status status-progress"><span class="status-dot"></span>In Progress</span></td>
-                            <td>Carlos R.</td>
-                            <td>J. Martinez</td>
-                            <td style="color: var(--text-tertiary);">5 hours ago</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1045</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Water pressure low — W. Houser Rd area</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Multiple residents reporting low water pressure in the W. Houser Rd area since this morning. Possible main line issue...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">Carlos Rodriguez</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-water" style="font-size:10px;">Water</span><span class="tag tag-alert-med" style="font-size:10px;">Medium</span></div>
-                            </div>
-                        </tr>
-                        <tr onclick="openReportDetail('RPT-1044')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1044</td>
-                            <td>Overgrown vegetation blocking sidewalk — E. 6th St</td>
-                            <td><span class="tag tag-parks">Parks</span></td>
-                            <td><span class="status status-open"><span class="status-dot"></span>Open</span></td>
-                            <td>Robert K.</td>
-                            <td style="color: var(--text-tertiary);">Unassigned</td>
-                            <td style="color: var(--text-tertiary);">Yesterday</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1044</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Overgrown vegetation blocking sidewalk — E. 6th St</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Large bushes and tree branches are blocking most of the sidewalk on E. 6th St, forcing pedestrians into the street...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">Robert Kim</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-parks" style="font-size:10px;">Parks</span><span class="tag tag-alert-low" style="font-size:10px;">Low</span></div>
-                            </div>
-                        </tr>
-                        <tr onclick="openReportDetail('RPT-1043')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1043</td>
-                            <td>Broken sprinkler head at Heritage Park</td>
-                            <td><span class="tag tag-parks">Parks</span></td>
-                            <td><span class="status status-progress"><span class="status-dot"></span>In Progress</span></td>
-                            <td>David L.</td>
-                            <td>T. Nguyen</td>
-                            <td style="color: var(--text-tertiary);">Yesterday</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1043</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Broken sprinkler head at Heritage Park</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Sprinkler head near the east playground is broken and spraying water continuously. Wasting water and creating a muddy area...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">David Lopez</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-parks" style="font-size:10px;">Parks</span><span class="tag tag-alert-med" style="font-size:10px;">Medium</span></div>
-                            </div>
-                        </tr>
-                        <tr onclick="openReportDetail('RPT-1042')">
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1042</td>
-                            <td>Flickering streetlight — N. Toltec Rd & W. Battaglia Dr</td>
-                            <td><span class="tag tag-lights">Lights</span></td>
-                            <td><span class="status status-open"><span class="status-dot"></span>Open</span></td>
-                            <td>Susan T.</td>
-                            <td style="color: var(--text-tertiary);">Unassigned</td>
-                            <td style="color: var(--text-tertiary);">2 days ago</td>
-                            <div class="hover-popup" style="min-width:280px;">
-                                <div class="popup-title">RPT-1042</div>
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:6px;">Flickering streetlight — N. Toltec Rd & W. Battaglia Dr</div>
-                                <div style="font-size:12px; margin-bottom:8px;">Streetlight at the intersection of N. Toltec Rd and W. Battaglia Dr flickers constantly at night, creating a safety hazard...</div>
-                                <div class="popup-line"><span>Reporter</span><span class="popup-val">Susan Torres</span></div>
-                                <div style="display:flex; gap:6px; margin-top:8px;"><span class="tag tag-lights" style="font-size:10px;">Lights</span><span class="tag tag-alert-low" style="font-size:10px;">Low</span></div>
-                            </div>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1041</td>
-                            <td>Illegal dumping near vacant lot — S. Main St</td>
-                            <td><span class="tag tag-other">Other</span></td>
-                            <td><span class="status status-progress"><span class="status-dot"></span>In Progress</span></td>
-                            <td>Jose M.</td>
-                            <td>P. Wilson</td>
-                            <td style="color: var(--text-tertiary);">2 days ago</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1038</td>
-                            <td>Streetlight out — 600 block E. 5th St</td>
-                            <td><span class="tag tag-lights">Lights</span></td>
-                            <td><span class="status status-resolved"><span class="status-dot"></span>Resolved</span></td>
-                            <td>Anonymous</td>
-                            <td>R. Gomez</td>
-                            <td style="color: var(--text-tertiary);">3 days ago</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 500; color: var(--accent);">RPT-1035</td>
-                            <td>Graffiti on retaining wall near Senior Center</td>
-                            <td><span class="tag tag-other">Other</span></td>
-                            <td><span class="status status-resolved"><span class="status-dot"></span>Resolved</span></td>
-                            <td>Lisa M.</td>
-                            <td>P. Wilson</td>
-                            <td style="color: var(--text-tertiary);">4 days ago</td>
-                        </tr>
+                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading reports…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3217,99 +3095,7 @@ textarea.form-input {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr data-type="alert" class="content-row-hover" style="position:relative;">
-                            <td><span class="tag tag-alert-high">Alert — High</span></td>
-                            <td style="font-weight: 500;">Heat Advisory — Extreme temperatures expected</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES ZH DE</span></td>
-                            <td style="color: var(--text-tertiary);">May 22, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                            <div class="hover-popup" style="left:120px;">
-                                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">Heat Advisory — Extreme temperatures expected</div>
-                                <div style="font-size:12px; line-height:1.5;">Temperatures are expected to exceed 110F this weekend. Residents should stay hydrated, avoid outdoor activity during peak hours, and check on elderly neighbors...</div>
-                                <div class="popup-highlight">66% open rate -- 1,892 of 2,847 users</div>
-                            </div>
-                        </tr>
-                        <tr data-type="news" class="content-row-hover" style="position:relative;">
-                            <td><span class="tag tag-news">News</span></td>
-                            <td style="font-weight: 500;">New community pool hours for summer 2026</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES</span></td>
-                            <td style="color: var(--text-tertiary);">May 20, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="alert">
-                            <td><span class="tag tag-alert-med">Alert — Medium</span></td>
-                            <td style="font-weight: 500;">Water main repair — N. Main St</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES ZH DE</span></td>
-                            <td style="color: var(--text-tertiary);">May 18, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="event">
-                            <td><span class="tag tag-event">Event</span></td>
-                            <td style="font-weight: 500;">Community cleanup day — Heritage Park</td>
-                            <td><span class="status status-draft"><span class="status-dot"></span>Draft</span></td>
-                            <td><span style="font-size: 12px;">EN ES</span></td>
-                            <td style="color: var(--text-tertiary);">June 7, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="event">
-                            <td><span class="tag tag-event">Event</span></td>
-                            <td style="font-weight: 500;">Council Meeting — Monthly session</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES ZH DE</span></td>
-                            <td style="color: var(--text-tertiary);">June 10, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="news">
-                            <td><span class="tag tag-news">News</span></td>
-                            <td style="font-weight: 500;">Skydive Arizona hosts international championship</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES</span></td>
-                            <td style="color: var(--text-tertiary);">May 15, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="news">
-                            <td><span class="tag tag-news">News</span></td>
-                            <td style="font-weight: 500;">New playground equipment installed at Camino Real Park</td>
-                            <td><span class="status status-draft"><span class="status-dot"></span>Draft</span></td>
-                            <td><span style="font-size: 12px;">EN</span></td>
-                            <td style="color: var(--text-tertiary);">May 25, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
-                        <tr data-type="alert">
-                            <td><span class="tag tag-alert-low">Alert — Low</span></td>
-                            <td style="font-weight: 500;">Library summer reading program registration open</td>
-                            <td><span class="status status-published"><span class="status-dot"></span>Published</span></td>
-                            <td><span style="font-size: 12px;">EN ES</span></td>
-                            <td style="color: var(--text-tertiary);">May 12, 2026</td>
-                            <td>
-                                <button class="btn btn-ghost">Edit</button>
-                                <button class="btn btn-ghost" style="color:var(--warning);">Del</button>
-                            </td>
-                        </tr>
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading content…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3547,26 +3333,7 @@ textarea.form-input {
                         </tr>
                     </thead>
                     <tbody id="residentsTableBody">
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">IR</div><div><div class="resident-name">Isaac Rodriguez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">guardian.v.artemis@gmail.com</td><td style="color: var(--text-tertiary);">Nov 12, 2025</td><td style="color: var(--text-secondary);">1 hour ago</td><td style="font-weight: 500;">14</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--warm-accent), #D85A30);">MG</div><div><div class="resident-name">Maria Garcia</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">maria.garcia@email.com</td><td style="color: var(--text-tertiary);">Jan 3, 2026</td><td style="color: var(--text-secondary);">2 hours ago</td><td style="font-weight: 500;">12</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">EN / ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--success), #0F6E56);">CR</div><div><div class="resident-name">Carlos Rodriguez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">carlos.rdz@email.com</td><td style="color: var(--text-tertiary);">Feb 14, 2026</td><td style="color: var(--text-secondary);">3 hours ago</td><td style="font-weight: 500;">8</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--info), #0E5C8A);">JH</div><div><div class="resident-name">Jose Hernandez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">jose.hernandez@email.com</td><td style="color: var(--text-tertiary);">Dec 8, 2025</td><td style="color: var(--text-secondary);">5 hours ago</td><td style="font-weight: 500;">6</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #7F77DD, #534AB7);">RK</div><div><div class="resident-name">Robert Kim</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">r.kim@email.com</td><td style="color: var(--text-tertiary);">Mar 22, 2026</td><td style="color: var(--text-secondary);">1 day ago</td><td style="font-weight: 500;">3</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), #1D9E75);">WL</div><div><div class="resident-name">Wei Liu</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">wei.liu@email.com</td><td style="color: var(--text-tertiary);">Apr 5, 2026</td><td style="color: var(--text-secondary);">6 hours ago</td><td style="font-weight: 500;">1</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.1); color: #A855F7;">ZH</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #D4537E, #72243E);">LM</div><div><div class="resident-name">Lisa Mitchell</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">lisa.mitchell@email.com</td><td style="color: var(--text-tertiary);">Jan 15, 2026</td><td style="color: var(--text-secondary);">2 days ago</td><td style="font-weight: 500;">5</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--warm-accent), #D85A30);">AF</div><div><div class="resident-name">Alejandra Fuentes</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">a.fuentes@email.com</td><td style="color: var(--text-tertiary);">Mar 1, 2026</td><td style="color: var(--text-secondary);">4 hours ago</td><td style="font-weight: 500;">9</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="true"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--info), #0E5C8A);">DL</div><div><div class="resident-name">David Lopez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">david.lopez@email.com</td><td style="color: var(--text-tertiary);">May 28, 2026</td><td style="color: var(--text-secondary);">12 hours ago</td><td style="font-weight: 500;">2</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--success), #0F6E56);">ST</div><div><div class="resident-name">Susan Torres</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">s.torres@email.com</td><td style="color: var(--text-tertiary);">Feb 20, 2026</td><td style="color: var(--text-secondary);">1 day ago</td><td style="font-weight: 500;">4</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">EN / ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="true"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #7F77DD, #534AB7);">RM</div><div><div class="resident-name">Rosa Morales</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">rosa.morales@email.com</td><td style="color: var(--text-tertiary);">May 30, 2026</td><td style="color: var(--text-secondary);">30 min ago</td><td style="font-weight: 500;">1</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">FM</div><div><div class="resident-name">Frank Morales</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">f.morales@email.com</td><td style="color: var(--text-tertiary);">Apr 18, 2026</td><td style="color: var(--text-secondary);">8 hours ago</td><td style="font-weight: 500;">3</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="inactive" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #6B7280, #4B5563);">PT</div><div><div class="resident-name">Patricia Tran</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">p.tran@email.com</td><td style="color: var(--text-tertiary);">Jan 28, 2026</td><td style="color: var(--text-tertiary);">3 weeks ago</td><td style="font-weight: 500;">0</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-draft" style="font-size: 11px;"><span class="status-dot"></span>Inactive</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--warm-accent), #D85A30);">EG</div><div><div class="resident-name">Eduardo Gutierrez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">e.gutierrez@email.com</td><td style="color: var(--text-tertiary);">Dec 15, 2025</td><td style="color: var(--text-secondary);">5 hours ago</td><td style="font-weight: 500;">7</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="true"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--info), #0E5C8A);">KS</div><div><div class="resident-name">Karen Smith</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">karen.s@email.com</td><td style="color: var(--text-tertiary);">Jun 1, 2026</td><td style="color: var(--text-secondary);">45 min ago</td><td style="font-weight: 500;">0</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #D4537E, #72243E);">HZ</div><div><div class="resident-name">Hong Zhang</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">hong.zhang@email.com</td><td style="color: var(--text-tertiary);">Apr 22, 2026</td><td style="color: var(--text-secondary);">1 day ago</td><td style="font-weight: 500;">2</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.1); color: #A855F7;">ZH</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="inactive" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, #6B7280, #4B5563);">JC</div><div><div class="resident-name">James Cooper</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">j.cooper@email.com</td><td style="color: var(--text-tertiary);">Feb 5, 2026</td><td style="color: var(--text-tertiary);">4 weeks ago</td><td style="font-weight: 500;">1</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(59,158,245,0.1); color: var(--info);">EN</span></td><td><span class="status status-draft" style="font-size: 11px;"><span class="status-dot"></span>Inactive</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--success), #0F6E56);">MR</div><div><div class="resident-name">Miguel Ramirez</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">m.ramirez@email.com</td><td style="color: var(--text-tertiary);">Mar 10, 2026</td><td style="color: var(--text-secondary);">2 days ago</td><td style="font-weight: 500;">4</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">EN / ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">KW</div><div><div class="resident-name">Klaus Weber</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">k.weber@email.com</td><td style="color: var(--text-tertiary);">May 8, 2026</td><td style="color: var(--text-secondary);">3 days ago</td><td style="font-weight: 500;">1</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.1); color: #A855F7;">DE</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
-                        <tr data-status="active" data-new="false"><td><div class="flex items-center gap-12"><div class="resident-avatar" style="background: linear-gradient(135deg, var(--warm-accent), #D85A30);">GF</div><div><div class="resident-name">Gloria Fuentes</div></div></div></td><td style="color: var(--text-secondary); font-size: 12px;">g.fuentes@email.com</td><td style="color: var(--text-tertiary);">May 1, 2026</td><td style="color: var(--text-secondary);">7 hours ago</td><td style="font-weight: 500;">3</td><td><span style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: rgba(245,148,58,0.1); color: var(--warm-accent);">ES</span></td><td><span class="status status-resolved" style="font-size: 11px;"><span class="status-dot"></span>Active</span></td></tr>
+                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading residents…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3768,16 +3535,15 @@ textarea.form-input {
             <div class="briefing-card" style="margin-bottom: 20px;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between;">
                     <div>
-                        <div id="briefingGreeting" style="font-size: 12px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Good morning, Andrew</div>
+                        <div id="briefingGreeting" style="font-size: 12px; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Welcome</div>
                         <div style="font-size: 22px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px;">Your daily briefing</div>
                         <div id="briefingSummaryText" style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 600px;">
                             Loading live data...
                         </div>
                     </div>
                     <div style="text-align: center; flex-shrink: 0; margin-left: 24px;">
-                        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; color: white; font-weight: 600; margin: 0 auto 8px;">AS</div>
-                        <div style="font-size: 12px; color: var(--text-tertiary);">City Administrator</div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Last login: 8:42 AM</div>
+                        <div id="briefingUserAvatar" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--primary)); display: flex; align-items: center; justify-content: center; font-size: 28px; color: white; font-weight: 600; margin: 0 auto 8px;">—</div>
+                        <div id="briefingUserRole" style="font-size: 12px; color: var(--text-tertiary);">City Staff</div>
                     </div>
                 </div>
             </div>
@@ -4199,114 +3965,7 @@ textarea.form-input {
                 </div>
             </div>
 
-            <div class="staff-grid anim-stagger" style="margin-bottom: 24px;">
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, var(--accent), var(--primary));">AS</div>
-                    <div class="staff-name">Andrew Sutton</div>
-                    <div class="staff-role">City Administrator</div>
-                    <div class="staff-dept">Administration</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--accent);">Admin</div><div class="staff-stat-label">Role</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val">24</div><div class="staff-stat-label">Actions</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Andrew Sutton</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Oversees daily operations and strategic planning for the City of Eloy. Leads the Eloy Connect initiative.</div>
-                        <div class="popup-line"><span>Actions this week</span><span class="popup-val">24</span></div>
-                        <div class="popup-line"><span>Reports reviewed</span><span class="popup-val">14</span></div>
-                        <div class="popup-line"><span>Email</span><span class="popup-val" style="font-size:11px;">asutton@eloyaz.gov</span></div>
-                    </div>
-                </div>
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, var(--info), #0E5C8A);">JM</div>
-                    <div class="staff-name">J. Martinez</div>
-                    <div class="staff-role">Field Supervisor</div>
-                    <div class="staff-dept">Public Works</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--success);">18</div><div class="staff-stat-label">Resolved</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--warm-accent);">4</div><div class="staff-stat-label">Active</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">J. Martinez</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Field Supervisor handling water, roads, and utility infrastructure repairs. Leads the on-site crew.</div>
-                        <div class="popup-line"><span>Resolved (30d)</span><span class="popup-val" style="color:var(--success);">18</span></div>
-                        <div class="popup-line"><span>Active reports</span><span class="popup-val" style="color:var(--warm-accent);">4</span></div>
-                        <div class="popup-line"><span>Avg resolution</span><span class="popup-val">3.8 days</span></div>
-                        <div class="popup-highlight">Heaviest workload -- consider rebalancing</div>
-                    </div>
-                </div>
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, var(--success), #0F6E56);">TN</div>
-                    <div class="staff-name">T. Nguyen</div>
-                    <div class="staff-role">Parks Coordinator</div>
-                    <div class="staff-dept">Community Services</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--success);">12</div><div class="staff-stat-label">Resolved</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--warm-accent);">2</div><div class="staff-stat-label">Active</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">T. Nguyen</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Parks & vegetation coordinator. Handles park maintenance, irrigation, and landscape compliance.</div>
-                        <div class="popup-line"><span>Resolved (30d)</span><span class="popup-val" style="color:var(--success);">12</span></div>
-                        <div class="popup-line"><span>Active reports</span><span class="popup-val" style="color:var(--warm-accent);">2</span></div>
-                        <div class="popup-line"><span>Avg resolution</span><span class="popup-val">2.9 days</span></div>
-                        <div class="popup-highlight">Has capacity for 2-3 more assignments</div>
-                    </div>
-                </div>
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, var(--warm-accent), #D85A30);">RG</div>
-                    <div class="staff-name">R. Gomez</div>
-                    <div class="staff-role">Utility Technician</div>
-                    <div class="staff-dept">Public Works</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--success);">22</div><div class="staff-stat-label">Resolved</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--warm-accent);">1</div><div class="staff-stat-label">Active</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">R. Gomez</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Utility technician specializing in streetlights, water systems, and electrical infrastructure.</div>
-                        <div class="popup-line"><span>Resolved (30d)</span><span class="popup-val" style="color:var(--success);">22</span></div>
-                        <div class="popup-line"><span>Active reports</span><span class="popup-val" style="color:var(--warm-accent);">1</span></div>
-                        <div class="popup-line"><span>Avg resolution</span><span class="popup-val">2.1 days</span></div>
-                        <div class="popup-highlight">Top performer -- fastest resolution time</div>
-                    </div>
-                </div>
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, #7F77DD, #534AB7);">PW</div>
-                    <div class="staff-name">P. Wilson</div>
-                    <div class="staff-role">Code Enforcement</div>
-                    <div class="staff-dept">Planning & Zoning</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--success);">15</div><div class="staff-stat-label">Resolved</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--warm-accent);">2</div><div class="staff-stat-label">Active</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">P. Wilson</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Code enforcement officer handling violations, zoning compliance, and property inspections.</div>
-                        <div class="popup-line"><span>Resolved (30d)</span><span class="popup-val" style="color:var(--success);">15</span></div>
-                        <div class="popup-line"><span>Active notices</span><span class="popup-val" style="color:var(--warm-accent);">2</span></div>
-                        <div class="popup-line"><span>Avg resolution</span><span class="popup-val">4.2 days</span></div>
-                        <div class="popup-line"><span>Phone</span><span class="popup-val" style="font-size:11px;">520-466-3005</span></div>
-                    </div>
-                </div>
-                <div class="staff-card">
-                    <div class="staff-avatar" style="background: linear-gradient(135deg, #D4537E, #72243E);">SK</div>
-                    <div class="staff-name">S. Kim</div>
-                    <div class="staff-role">Content Editor</div>
-                    <div class="staff-dept">Communications</div>
-                    <div class="staff-stats">
-                        <div style="text-align: center;"><div class="staff-stat-val" style="color: var(--accent);">Editor</div><div class="staff-stat-label">Role</div></div>
-                        <div style="text-align: center;"><div class="staff-stat-val">31</div><div class="staff-stat-label">Posts</div></div>
-                    </div>
-                    <div class="hover-popup">
-                        <div class="popup-title">S. Kim</div>
-                        <div style="font-size:12px; margin-bottom:6px;">Content editor managing news articles, event listings, and alert publications across all languages.</div>
-                        <div class="popup-line"><span>Posts published</span><span class="popup-val">31</span></div>
-                        <div class="popup-line"><span>Translations managed</span><span class="popup-val">18</span></div>
-                        <div class="popup-line"><span>Avg open rate</span><span class="popup-val" style="color:var(--success);">62%</span></div>
-                    </div>
-                </div>
-            </div>
+            <!-- Live staff accounts are listed in the table above (#staffTableBody). -->
 
             <div class="charts-row" style="grid-template-columns: 1fr 1fr;">
                 <div class="glass-card">
@@ -4503,7 +4162,7 @@ textarea.form-input {
             <!-- Name -->
             <div>
                 <label class="form-label">Full Name *</label>
-                <input type="text" class="form-input" id="leaderName" placeholder="e.g. Andrew Sutton">
+                <input type="text" class="form-input" id="leaderName" placeholder="e.g. Jane Doe">
             </div>
             <!-- Title / Position -->
             <div>
@@ -4702,16 +4361,16 @@ textarea.form-input {
 <div class="detail-panel" id="reportDetail">
     <div class="detail-header">
         <div>
-            <div style="font-size: 16px; font-weight: 600;" id="detailId">RPT-1047</div>
-            <div id="reportSubmittedTime" style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">Submitted 2 hours ago</div>
+            <div style="font-size: 16px; font-weight: 600;" id="detailId">Report</div>
+            <div id="reportSubmittedTime" style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">—</div>
         </div>
         <button class="btn btn-ghost" onclick="closeDetail()" style="font-size: 20px;" title="Close (Esc)">✕</button>
     </div>
     <div class="detail-body">
         <div style="margin-bottom: 20px;">
             <span class="status status-open" style="margin-bottom: 12px; display: inline-flex;"><span class="status-dot"></span>Open</span>
-            <h3 style="font-size: 18px; font-weight: 600; margin: 8px 0;">Pothole on N. Main St near library</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">Large pothole approximately 2 feet wide on the northbound lane of N. Main Street, directly in front of the Eloy Santa Cruz Library. It's deep enough to damage vehicle tires and is creating a hazard for cyclists.</p>
+            <h3 style="font-size: 18px; font-weight: 600; margin: 8px 0;">—</h3>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">—</p>
         </div>
 
         <div id="reportMapArea" style="background: var(--surface); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
@@ -5235,7 +4894,7 @@ async function handleLogin(e) {
         // Check role in profiles table
         const { data: profile, error: profileErr } = await sbClient
             .from('profiles')
-            .select('role, city_id')
+            .select('role, city_id, display_name, email')
             .eq('id', data.user.id)
             .single();
 
@@ -5252,6 +4911,9 @@ async function handleLogin(e) {
         currentCityId = profile?.city_id || null;
         isSuperAdmin = (role === 'super_admin');
         activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
+
+        // Populate header with the real signed-in user
+        applyHeaderUser(profile, data.user.email);
 
         // Authorized — hide overlay, show CRM
         document.getElementById('loginOverlay').style.display = 'none';
@@ -5277,6 +4939,42 @@ async function signOutCRM() {
     showLoginScreen();
 }
 
+// Populate the top-right header with the real signed-in user (name, role, initials).
+// Falls back to neutral labels when the profile has no name/role — never a fake name.
+let currentUserName = '';
+let currentUserRoleLabel = '';
+function applyHeaderUser(profile, authEmail) {
+    const name = (profile && profile.display_name) ? profile.display_name
+        : (profile && profile.email) ? profile.email
+        : (authEmail || 'City Staff');
+    const roleRaw = (profile && profile.role) ? String(profile.role) : '';
+    const roleLabel = roleRaw
+        ? roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1).replace(/_/g, ' ')
+        : 'City Staff';
+    const initials = name && name.indexOf('@') === -1
+        ? name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+        : (name || 'U').substring(0, 2).toUpperCase();
+
+    currentUserName = name;
+    currentUserRoleLabel = roleLabel;
+
+    const nameEl = document.getElementById('sidebarUserName');
+    if (nameEl) nameEl.textContent = name;
+    const roleBadgeEl = document.getElementById('sidebarRoleBadge');
+    if (roleBadgeEl) roleBadgeEl.textContent = roleLabel;
+    const avatarEl = document.getElementById('sidebarUserAvatar');
+    if (avatarEl) avatarEl.textContent = initials;
+    const headerRoleEl = document.getElementById('sidebarUserRole');
+    if (headerRoleEl) headerRoleEl.textContent = roleLabel;
+
+    // Mirror into the AI Briefing greeting card
+    const briefRole = document.getElementById('briefingUserRole');
+    if (briefRole) briefRole.textContent = roleLabel;
+    const briefAvatar = document.getElementById('briefingUserAvatar');
+    if (briefAvatar) briefAvatar.textContent = initials;
+    if (typeof refreshBriefingPage === 'function') refreshBriefingPage();
+}
+
 // Auto-restore session on page load
 async function checkExistingSession() {
     if (!sbClient) { showLoginScreen(); return; }
@@ -5287,7 +4985,7 @@ async function checkExistingSession() {
         // Verify role
         const { data: profile } = await sbClient
             .from('profiles')
-            .select('role, city_id')
+            .select('role, city_id, display_name, email')
             .eq('id', session.user.id)
             .single();
 
@@ -5298,6 +4996,7 @@ async function checkExistingSession() {
             currentCityId = profile?.city_id || null;
             isSuperAdmin = (role === 'super_admin');
             activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
+            applyHeaderUser(profile, session.user.email);
             hideLoginScreen();
             await initCityContext();
         } else {
@@ -5366,11 +5065,12 @@ function updateDashboardWithLiveData() {
     // --- Dashboard page metric cards ---
     const dashMetrics = document.querySelectorAll('#page-dashboard > .metrics-grid .metric-value');
 
-    if (liveData.reports) {
-        const openReports = liveData.reports.filter(r => r.status === 'submitted' || r.status === 'under_review' || r.status === 'open').length;
-        const inProgress = liveData.reports.filter(r => r.status === 'in_progress' || r.status === 'assigned' || r.status === 'under_review').length;
-        const resolvedReports = liveData.reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
-        const totalReports = liveData.reports.length;
+    {
+        const reports = liveData.reports || [];
+        const openReports = reports.filter(r => r.status === 'submitted' || r.status === 'under_review' || r.status === 'open').length;
+        const inProgress = reports.filter(r => r.status === 'in_progress' || r.status === 'assigned' || r.status === 'under_review').length;
+        const resolvedReports = reports.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+        const totalReports = reports.length;
 
         if (dashMetrics.length >= 1) dashMetrics[0].textContent = openReports.toLocaleString();
 
@@ -5382,10 +5082,10 @@ function updateDashboardWithLiveData() {
 
         // Update nav badge
         const reportsBadge = document.getElementById('navReportsBadge');
-        if (reportsBadge) reportsBadge.textContent = openReports || totalReports;
+        if (reportsBadge) reportsBadge.textContent = openReports;
 
         // Update pages subtitle for reports
-        pages.reports.subtitle = (openReports || totalReports) + ' reports require attention';
+        pages.reports.subtitle = openReports + ' reports require attention';
 
         // Update AI briefing reference to reports
         updateAIBriefingCounts(openReports, inProgress);
@@ -5400,8 +5100,8 @@ function updateDashboardWithLiveData() {
         updateRecentActivity();
     }
 
-    if (liveData.profiles) {
-        const totalResidents = liveData.profiles.length;
+    {
+        const totalResidents = (liveData.profiles || []).length;
         if (dashMetrics.length >= 2) dashMetrics[1].textContent = totalResidents.toLocaleString();
 
         // Update Residents page stats
@@ -5420,11 +5120,11 @@ function updateDashboardWithLiveData() {
         // Compute language breakdown
         if (resMetrics.length >= 5) {
             const langCounts = {};
-            liveData.profiles.forEach(p => {
+            (liveData.profiles || []).forEach(p => {
                 const lang = (p.language_pref || 'en').toLowerCase();
                 langCounts[lang] = (langCounts[lang] || 0) + 1;
             });
-            const total = liveData.profiles.length || 1;
+            const total = (liveData.profiles || []).length || 1;
             resMetrics[2].textContent = Math.round((langCounts['en'] || 0) / total * 100) + '%';
             resMetrics[3].textContent = Math.round((langCounts['es'] || 0) / total * 100) + '%';
             const zhDe = ((langCounts['zh'] || 0) + (langCounts['de'] || 0));
@@ -5795,9 +5495,14 @@ function getTimeAgo(dateStr) {
 
 // Update reports table with live Supabase data
 function updateReportsTable() {
-    if (!liveData.reports) return;
     const tbody = document.querySelector('#reportsTableBody');
     if (!tbody) return;
+
+    const reports = liveData.reports || [];
+    if (reports.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No reports yet</td></tr>';
+        return;
+    }
 
     // Build a profile lookup map for fast resident name resolution
     const profileMap = {};
@@ -5807,7 +5512,7 @@ function updateReportsTable() {
         });
     }
 
-    tbody.innerHTML = liveData.reports.slice(0, 30).map(r => {
+    tbody.innerHTML = reports.slice(0, 30).map(r => {
         const statusMap = {
             submitted: { label: 'Open', color: 'var(--info)', class: 'status-open' },
             under_review: { label: 'Under Review', color: 'var(--warm-accent)', class: 'status-in-review' },
@@ -5835,23 +5540,16 @@ function updateReportsTable() {
 
 // Update content page with live news/events/alerts
 function updateContentPage() {
-    if (!liveData.news && !liveData.events && !liveData.alerts) return;
-
-    // Update counts
-    if (liveData.news) {
-        const newsCount = document.querySelector('#newsCount');
-        if (newsCount) newsCount.textContent = liveData.news.length;
-    }
-    if (liveData.events) {
-        const eventsCount = document.querySelector('#eventsCount');
+    // Update counts (default to 0 when there is no live data)
+    const newsCountEl = document.querySelector('#newsCount');
+    if (newsCountEl) newsCountEl.textContent = (liveData.news || []).length;
+    const eventsCountEl = document.querySelector('#eventsCount');
+    if (eventsCountEl) {
         const today = new Date().toISOString().split('T')[0];
-        const upcomingCount = liveData.events.filter(e => (e.event_date || '') >= today).length;
-        if (eventsCount) eventsCount.textContent = upcomingCount;
+        eventsCountEl.textContent = (liveData.events || []).filter(e => (e.event_date || '') >= today).length;
     }
-    if (liveData.alerts) {
-        const alertsCount = document.querySelector('#alertsCount');
-        if (alertsCount) alertsCount.textContent = liveData.alerts.length;
-    }
+    const alertsCountEl = document.querySelector('#alertsCount');
+    if (alertsCountEl) alertsCountEl.textContent = (liveData.alerts || []).length;
 
     const tbody = document.querySelector('#content-table tbody');
     if (!tbody) return;
@@ -5924,22 +5622,29 @@ function updateContentPage() {
         });
     }
 
-    tbody.innerHTML = rows.join('');
+    tbody.innerHTML = rows.length
+        ? rows.join('')
+        : '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">No content yet</td></tr>';
 }
 
 // Update residents page with live profile data
 function updateResidentsPage() {
-    if (!liveData.profiles) return;
+    const profiles = liveData.profiles || [];
 
     // Update resident count
     const residentCount = document.querySelector('#residentCount');
-    if (residentCount) residentCount.textContent = liveData.profiles.length;
+    if (residentCount) residentCount.textContent = profiles.length;
 
     // Update residents table if it exists
     const tbody = document.querySelector('#residentsTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = liveData.profiles.map(p => {
+    if (profiles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No residents yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = profiles.map(p => {
         const joined = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
         const langFlags = { en: 'EN', es: 'ES', zh: 'ZH', de: 'DE' };
         const flag = langFlags[p.language_pref] || '--';
@@ -7107,7 +6812,10 @@ function refreshBriefingPage() {
     if (greetEl) {
         const hour = new Date().getHours();
         const timeGreet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-        greetEl.textContent = timeGreet + ', Andrew';
+        const firstName = (currentUserName && currentUserName.indexOf('@') === -1)
+            ? currentUserName.split(' ')[0]
+            : '';
+        greetEl.textContent = firstName ? (timeGreet + ', ' + firstName) : timeGreet;
     }
 
     updateAttentionCards();
@@ -8495,15 +8203,15 @@ let cityLeaders = [
     },
     {
         id: 'ldr-002',
-        name: 'Andrew Sutton',
+        name: 'City Administrator',
         title: 'City Administrator',
         department: 'Administration',
         type: 'staff',
-        email: 'asutton@eloyaz.gov',
-        phone: '520-466-3001',
+        email: '',
+        phone: '',
         photo_url: '',
-        bio_en: 'Andrew Sutton serves as City Administrator, overseeing daily operations and strategic planning for the City of Eloy. He leads the implementation of the Eloy Connect digital initiative.',
-        bio_es: 'Andrew Sutton sirve como Administrador de la Ciudad, supervisando las operaciones diarias y la planificacion estrategica para la Ciudad de Eloy.',
+        bio_en: 'The City Administrator oversees daily operations and strategic planning for the City of Eloy, leading the implementation of the Eloy Connect digital initiative.',
+        bio_es: 'El Administrador de la Ciudad supervisa las operaciones diarias y la planificacion estrategica para la Ciudad de Eloy.',
         sort_order: 2,
         active: true
     },
@@ -9184,9 +8892,8 @@ const pilotFlags = {
 const roleConfig = {
     mayor: {
         label: 'Mayor / City Manager',
-        user: 'Andrew Sutton',
-        initials: 'AS',
-        title: 'City Administrator',
+        // user/initials/title are unused for display — the real signed-in user
+        // populates the header via applyHeaderUser(). Kept only for RBAC page list.
         pages: ['dashboard', 'reports', 'content', 'residents', 'grok', 'directory', 'enforcement', 'notifications', 'leaders', 'staff']
     },
     chambers: {
@@ -9219,15 +8926,10 @@ function switchRole(role) {
     const config = roleConfig[role];
     if (!config) return;
 
-    // Update top nav user info
-    const avatarEl = document.getElementById('sidebarUserAvatar');
-    const nameEl = document.getElementById('sidebarUserName');
-    const roleEl = document.getElementById('sidebarUserRole');
-    const badgeEl = document.getElementById('sidebarRoleBadge');
-    if (avatarEl) avatarEl.textContent = config.initials;
-    if (nameEl) nameEl.textContent = config.user;
-    if (roleEl) roleEl.textContent = config.title;
-    if (badgeEl) badgeEl.textContent = config.label;
+    // NOTE: The top-right header (name / role / avatar) reflects the REAL signed-in
+    // user and is set by applyHeaderUser() after login. The role switcher only
+    // controls page visibility (RBAC) below — it must not overwrite the real user
+    // with a demo persona.
 
     // Gray out nav items based on role AND pilot flags
     const navItems = document.querySelectorAll('.nav-item[data-page]');
