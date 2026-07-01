@@ -4811,14 +4811,12 @@ function updateDashboardWithLiveData() {
         // Update AI briefing reference to reports
         updateAIBriefingCounts(openReports, inProgress);
 
-        // Update Report Volume chart with live data
-        updateReportVolumeChart();
-
-        // Update Reports by Category chart
-        updateCategoryChart();
-
-        // Update Recent Activity
-        updateRecentActivity();
+        // Charts/activity are wrapped so a single render error can't abort the
+        // rest of updateDashboardWithLiveData() (which would freeze the Reports
+        // table + Recent Activity on their "Loading…" placeholders).
+        try { updateReportVolumeChart(); } catch (e) { console.warn('Report volume chart failed:', e); }
+        try { updateCategoryChart(); } catch (e) { console.warn('Category chart failed:', e); }
+        try { updateRecentActivity(); } catch (e) { console.warn('Recent activity failed:', e); }
     }
 
     {
@@ -4860,23 +4858,13 @@ function updateDashboardWithLiveData() {
     // Note: Dashboard metric cards [2] (Avg Resolution Time) and [3] (Ask Eloy Sessions)
     // are demo/presentation metrics — not updated from live data
 
-    // Update Reports page table with live data
-    updateReportsTable();
-
-    // Update Content page with live data
-    updateContentPage();
-
-    // Update Residents page with live data
-    updateResidentsPage();
-
-    // Update subscriber trend widget on dashboard
-    updateSubscriberWidget();
-
-    // Update Engine 4 engagement analytics
-    loadEngagementAnalytics();
-
-    // Refresh AI Briefing page with live data
-    refreshBriefingPage();
+    // Each render is isolated so one failure can't block the others.
+    try { updateReportsTable(); } catch (e) { console.warn('Reports table failed:', e); }
+    try { updateContentPage(); } catch (e) { console.warn('Content page failed:', e); }
+    try { updateResidentsPage(); } catch (e) { console.warn('Residents page failed:', e); }
+    try { updateSubscriberWidget(); } catch (e) { console.warn('Subscriber widget failed:', e); }
+    try { loadEngagementAnalytics(); } catch (e) { console.warn('Engagement analytics failed:', e); }
+    try { refreshBriefingPage(); } catch (e) { console.warn('Briefing page failed:', e); }
 
     // Load Dashboard AI Insights (only once on first data load)
     if (!dashboardInsightsLoaded && liveData.reports && liveData.reports.length > 0) {
@@ -5433,8 +5421,9 @@ function updateResidentsPage() {
     }
 }
 
-// Fetch data on page load
-fetchAllData();
+// NOTE: data is fetched AFTER auth via checkExistingSession() -> initCityContext() -> fetchAllData().
+// A premature top-level fetchAllData() here (pre-login, no city context) could error and leave
+// tables stuck on their "Loading…" placeholder, so it has been removed intentionally.
 
 // ============================================
 // SUPABASE REALTIME — Live data + Presence
