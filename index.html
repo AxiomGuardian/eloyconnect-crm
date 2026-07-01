@@ -2967,78 +2967,8 @@ textarea.form-input {
                 </table>
             </div>
 
-            <!-- AI ANALYTICS — REPORTS -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">T</div>
-                        <div>
-                            <div class="ai-panel-title">Smart Triage</div>
-                            <div class="ai-panel-subtitle">AI-recommended priority and assignment <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 4px;">Preview</span></div>
-                        </div>
-                        <span class="ai-badge">AI</span>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>RPT-1046 escalated to Critical:</strong> Fire hydrant leak poses safety risk and wastes water. AI confidence: 97%. Recommended: J. Martinez (closest field crew, 2 active jobs).</div>
-                            <button class="ai-action-btn">Auto-assign →</button>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon trend" style="color:var(--accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Geographic cluster:</strong> RPT-1045, RPT-1046, and RPT-1041 are all within the W. Houser / S. Main corridor. Recommend a single site visit to address all three.</div>
-                            <button class="ai-action-btn">Create grouped dispatch →</button>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Workload imbalance:</strong> J. Martinez has 4 active reports vs. T. Nguyen at 2. RPT-1044 (parks/vegetation) is a better fit for Nguyen's department.</div>
-                            <button class="ai-action-btn">Rebalance →</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">A</div>
-                        <div>
-                            <div class="ai-panel-title">Pattern Analysis</div>
-                            <div class="ai-panel-subtitle">Trends and anomalies in report data <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); margin-left: 4px;">Preview</span></div>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-                        <div style="text-align: center; padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04);">
-                            <div class="ai-score-ring" style="margin: 0 auto 8px;">
-                                <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--accent)" stroke-dasharray="163" stroke-dashoffset="26"/></svg>
-                                <div class="ai-score-value" style="color: var(--accent);">84</div>
-                            </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">AI Categorization<br>Accuracy</div>
-                        </div>
-                        <div style="text-align: center; padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04);">
-                            <div class="ai-score-ring" style="margin: 0 auto 8px;">
-                                <svg viewBox="0 0 60 60"><circle class="ring-bg" cx="30" cy="30" r="26"/><circle class="ring-fill" cx="30" cy="30" r="26" stroke="var(--success)" stroke-dasharray="163" stroke-dashoffset="41"/></svg>
-                                <div class="ai-score-value" style="color: var(--success);">75</div>
-                            </div>
-                            <div style="font-size: 11px; color: var(--text-secondary);">Predicted Resolution<br>Rate (7 day)</div>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon info" style="color:var(--info);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Recurring issue:</strong> N. Main St has had 8 pothole reports in 90 days. This street may need full resurfacing vs. individual patch repairs.</div>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon fire" style="color:var(--warm-accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Seasonal forecast:</strong> Based on last year's data, park/irrigation reports typically spike 60% in June. Consider preemptive inspections next week.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- (Removed static Smart Triage / Pattern Analysis mock panels.
+                 The live "AI Triage" button above runs real analysis on current reports.) -->
         </div>
 
         <!-- ========== CONTENT ========== -->
@@ -3100,164 +3030,7 @@ textarea.form-input {
                 </table>
             </div>
 
-            <!-- SOCIAL MEDIA TIMELINE — RECENT POSTS -->
-            <div class="glass-card" style="margin-top: 20px; margin-bottom: 20px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                    <div>
-                        <h4 style="font-size: 15px; font-weight: 600;">Recent Posts</h4>
-                        <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">Cross-platform publishing activity</p>
-                    </div>
-                    <button class="btn btn-secondary" style="font-size:12px;" onclick="navigateToPage('content')">View All Posts</button>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="social-post">
-                        <div class="social-post-header">
-                            <div class="social-post-platform" style="background:rgba(59,158,245,0.12); color:var(--info);">W</div>
-                            <div style="flex:1;">
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary);">Eloy Connect Web</div>
-                                <div class="social-post-meta">Published May 22, 2026 at 6:00 AM</div>
-                            </div>
-                            <span class="status status-published" style="font-size:10px;"><span class="status-dot"></span>Live</span>
-                        </div>
-                        <div class="social-post-body">Heat Advisory: Extreme temperatures expected this weekend. Stay hydrated and check on your neighbors. Cooling centers are open at the Eloy Library and Senior Center.</div>
-                        <div class="social-post-stats">
-                            <span>1,892 views</span>
-                            <span>66% open rate</span>
-                            <span>23 shares</span>
-                        </div>
-                    </div>
-                    <div class="social-post">
-                        <div class="social-post-header">
-                            <div class="social-post-platform" style="background:rgba(59,130,246,0.12); color:#3B82F6;">f</div>
-                            <div style="flex:1;">
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary);">Facebook</div>
-                                <div class="social-post-meta">Published May 20, 2026 at 5:30 PM</div>
-                            </div>
-                            <span class="status status-published" style="font-size:10px;"><span class="status-dot"></span>Live</span>
-                        </div>
-                        <div class="social-post-body">The Eloy Community Pool is now open for summer! New hours: Mon-Sat 10AM-8PM, Sun 12PM-6PM. Free entry for all Eloy residents with ID.</div>
-                        <div class="social-post-stats">
-                            <span>847 reach</span>
-                            <span>142 reactions</span>
-                            <span>38 comments</span>
-                        </div>
-                    </div>
-                    <div class="social-post">
-                        <div class="social-post-header">
-                            <div class="social-post-platform" style="background:rgba(142,168,190,0.12); color:var(--text-secondary);">X</div>
-                            <div style="flex:1;">
-                                <div style="font-size:13px; font-weight:500; color:var(--text-primary);">Twitter / X</div>
-                                <div class="social-post-meta">Published May 18, 2026 at 8:00 AM</div>
-                            </div>
-                            <span class="status status-published" style="font-size:10px;"><span class="status-dot"></span>Live</span>
-                        </div>
-                        <div class="social-post-body">Water main repair underway on N. Main St. Expect reduced pressure in the surrounding area. Crews are working to restore full service ASAP. Updates: eloyconnect.app</div>
-                        <div class="social-post-stats">
-                            <span>312 impressions</span>
-                            <span>24 retweets</span>
-                            <span>18 likes</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI ANALYTICS — CONTENT -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">C</div>
-                        <div>
-                            <div class="ai-panel-title">Content Intelligence</div>
-                            <div class="ai-panel-subtitle">Publishing insights and recommendations</div>
-                        </div>
-                        <span class="ai-badge">AI</span>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon fire" style="color:var(--warm-accent);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Optimal publish window:</strong> Your audience is most active Tuesday–Thursday, 7–9 AM and 5–7 PM. The community pool article posted at 2 PM got 23% fewer opens than the heat advisory posted at 6 AM.</div>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Translation gap:</strong> 3 published items only have EN/ES — missing ZH and DE. Chinese speakers have 82% Ask Eloy usage, so untranslated content pushes them to the chatbot instead of the feed.</div>
-                            <button class="ai-action-btn">Auto-translate missing →</button>
-                        </div>
-                    </div>
-                    <div class="ai-insight">
-                        <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                        <div>
-                            <div class="ai-insight-text"><strong>Content calendar suggestion:</strong> No events published for the week of June 14–20. Based on last year's data, this is typically when summer program registrations peak. Consider a "What's Open This Summer" roundup.</div>
-                            <button class="ai-action-btn">Draft with AI →</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ai-panel">
-                    <div class="ai-panel-header">
-                        <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">E</div>
-                        <div>
-                            <div class="ai-panel-title">Engagement Predictions</div>
-                            <div class="ai-panel-subtitle">AI-estimated reach for recent content</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Heat Advisory — Extreme temps</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">Alert · High</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--success);">66%</div>
-                                <div style="font-size: 10px; color: var(--text-tertiary);">open rate</div>
-                            </div>
-                            <div style="width: 50px; height: 24px; position: relative;">
-                                <svg viewBox="0 0 50 24" style="width: 50px; height: 24px;"><polyline points="0,20 10,18 20,14 30,8 40,5 50,3" fill="none" stroke="var(--success)" stroke-width="2"/></svg>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Community pool hours</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">News</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--accent);">74%</div>
-                                <div style="font-size: 10px; color: var(--text-tertiary);">open rate</div>
-                            </div>
-                            <div style="width: 50px; height: 24px; position: relative;">
-                                <svg viewBox="0 0 50 24" style="width: 50px; height: 24px;"><polyline points="0,22 10,16 20,10 30,6 40,4 50,2" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Community cleanup day</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">Event · Draft</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--warm-accent);">~48%</div>
-                                <div style="font-size: 10px; color: var(--text-tertiary);">predicted</div>
-                            </div>
-                            <div style="width: 50px; height: 24px; position: relative;">
-                                <svg viewBox="0 0 50 24" style="width: 50px; height: 24px;"><polyline points="0,18 10,16 20,14 30,12 40,10 50,9" fill="none" stroke="var(--warm-accent)" stroke-width="2" stroke-dasharray="4,3"/></svg>
-                            </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playground equipment installed</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">News · Draft</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--warm-accent);">~52%</div>
-                                <div style="font-size: 10px; color: var(--text-tertiary);">predicted</div>
-                            </div>
-                            <div style="width: 50px; height: 24px; position: relative;">
-                                <svg viewBox="0 0 50 24" style="width: 50px; height: 24px;"><polyline points="0,18 10,14 20,12 30,10 40,9 50,8" fill="none" stroke="var(--warm-accent)" stroke-width="2" stroke-dasharray="4,3"/></svg>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- (Removed mock Recent Posts timeline + Content Intelligence / Engagement Predictions panels. Live content analytics will render here.) -->
         </div>
 
         <!-- ========== RESIDENTS ========== -->
@@ -3338,59 +3111,7 @@ textarea.form-input {
                 </table>
             </div>
 
-            <!-- AI ANALYTICS — RESIDENTS -->
-            <div class="ai-panel" style="margin-top: 20px;">
-                <div class="ai-panel-header">
-                    <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">R</div>
-                    <div>
-                        <div class="ai-panel-title">Resident Intelligence</div>
-                        <div class="ai-panel-subtitle">Behavior patterns, risk signals, and outreach opportunities</div>
-                    </div>
-                    <span class="ai-badge">AI</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-                    <div style="padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04); text-align: center;">
-                        <div style="font-size: 22px; font-weight: 600; color: var(--success);">94%</div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">30-Day Retention</div>
-                        <div style="font-size: 10px; color: var(--success); margin-top: 2px;">↑ 3% vs last month</div>
-                    </div>
-                    <div style="padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04); text-align: center;">
-                        <div style="font-size: 22px; font-weight: 600; color: var(--warm-accent);">127</div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">At-Risk Users</div>
-                        <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 2px;">No activity 14+ days</div>
-                    </div>
-                    <div style="padding: 14px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04); text-align: center;">
-                        <div style="font-size: 22px; font-weight: 600; color: var(--accent);">4.2</div>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Avg. Sessions / Week</div>
-                        <div style="font-size: 10px; color: var(--accent); margin-top: 2px;">↑ 0.6 from March</div>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon warn" style="color:#F04848;"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Churn risk — Spanish segment:</strong> 23 Spanish-speaking users who were weekly-active haven't opened the app in 12+ days. They primarily used the Events tab — the last ES event was 3 weeks ago. Publishing a new Spanish-language event may re-engage them.</div>
-                        <button class="ai-action-btn" onclick="navigateToPage('content')">Create ES event →</button>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon trend" style="color:var(--accent);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Chinese user growth:</strong> ZH users increased 40% since the language update (81 → 114). They spend 3.2x more time in Ask Eloy than other language groups. The AI chat is their primary value driver — investing in ZH prompt quality will directly impact retention.</div>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon tip" style="color:var(--success);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Power user pattern:</strong> Users who submit at least 1 report in their first week have 89% 90-day retention vs. 54% for those who don't. Consider adding a "Submit your first report" onboarding nudge for new users.</div>
-                    </div>
-                </div>
-                <div class="ai-insight">
-                    <div class="ai-insight-icon info" style="color:var(--info);"></div>
-                    <div>
-                        <div class="ai-insight-text"><strong>Language crossover:</strong> 18% of Spanish-primary users also browse content in English. Consider a "bilingual mode" that shows both languages simultaneously on key alerts for this crossover segment.</div>
-                    </div>
-                </div>
-            </div>
+            <!-- (Removed mock Resident Intelligence panel — churn/retention/language-segment figures were all invented. Not an attention-metrics app.) -->
 
             <!-- ========== NEIGHBORHOOD MAP — COMING SOON ========== -->
             <div class="glass-card" style="margin-top: 24px; padding: 0; overflow: hidden; border: 1px solid rgba(59,130,246,0.15);">
@@ -8189,117 +7910,103 @@ updateEnforcementCounts();
 let cityLeaders = [
     {
         id: 'ldr-001',
-        name: 'Micah Powell',
+        name: 'Andrew Sutton',
         title: 'Mayor',
         department: 'City Council',
         type: 'elected',
-        email: 'mpowell@eloyaz.gov',
-        phone: '520-466-3000',
+        email: 'asutton@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Mayor Micah Powell has served the City of Eloy since 2020, bringing a vision of growth, transparency, and community engagement to the city.',
-        bio_es: 'El alcalde Micah Powell ha servido a la Ciudad de Eloy desde 2020, trayendo una vision de crecimiento, transparencia y participacion comunitaria.',
+        bio_en: 'Andrew Sutton serves as Mayor of the City of Eloy, leading the City Council in setting policy and fiscal priorities for the community.',
+        bio_es: 'Andrew Sutton se desempena como Alcalde de la Ciudad de Eloy, dirigiendo al Concejo Municipal en el establecimiento de politicas y prioridades fiscales para la comunidad.',
         sort_order: 1,
         active: true
     },
     {
         id: 'ldr-002',
-        name: 'City Administrator',
-        title: 'City Administrator',
-        department: 'Administration',
-        type: 'staff',
-        email: '',
-        phone: '',
+        name: 'Michelle McKinley-Tarango',
+        title: 'Vice Mayor',
+        department: 'City Council',
+        type: 'elected',
+        email: 'mmckinley@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'The City Administrator oversees daily operations and strategic planning for the City of Eloy, leading the implementation of the Eloy Connect digital initiative.',
-        bio_es: 'El Administrador de la Ciudad supervisa las operaciones diarias y la planificacion estrategica para la Ciudad de Eloy.',
+        bio_en: 'Michelle McKinley-Tarango serves as Vice Mayor on the Eloy City Council, representing residents of the City of Eloy.',
+        bio_es: 'Michelle McKinley-Tarango se desempena como Vicealcaldesa del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 2,
         active: true
     },
     {
         id: 'ldr-003',
-        name: 'Tim Dumler',
-        title: 'Vice Mayor',
+        name: 'Daniel Snyder',
+        title: 'Council Member',
         department: 'City Council',
         type: 'elected',
-        email: 'tdumler@eloyaz.gov',
-        phone: '520-466-3000',
+        email: 'dsnyder@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Vice Mayor Tim Dumler serves on the Eloy City Council, focusing on infrastructure development and community safety.',
-        bio_es: 'El vicealcalde Tim Dumler sirve en el Concejo Municipal de Eloy, enfocandose en el desarrollo de infraestructura y la seguridad comunitaria.',
+        bio_en: 'Daniel Snyder serves as a member of the Eloy City Council, representing the residents of the City of Eloy.',
+        bio_es: 'Daniel Snyder es miembro del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 3,
         active: true
     },
     {
         id: 'ldr-004',
-        name: 'Edwardo G. Guillen',
+        name: 'Michael Vodrazka',
         title: 'Council Member',
         department: 'City Council',
         type: 'elected',
-        email: 'eguillen@eloyaz.gov',
-        phone: '520-466-3000',
+        email: 'mvodrazka@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Council Member Edwardo G. Guillen represents the residents of Eloy with a focus on community development and public services.',
-        bio_es: 'El miembro del concejo Edwardo G. Guillen representa a los residentes de Eloy con un enfoque en el desarrollo comunitario y los servicios publicos.',
+        bio_en: 'Michael Vodrazka serves as a member of the Eloy City Council, representing the residents of the City of Eloy.',
+        bio_es: 'Michael Vodrazka es miembro del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 4,
         active: true
     },
     {
         id: 'ldr-005',
-        name: 'Jose A. Resendiz',
+        name: 'Josephine "JoAnne" Galindo',
         title: 'Council Member',
         department: 'City Council',
         type: 'elected',
-        email: 'jresendiz@eloyaz.gov',
-        phone: '520-466-3000',
+        email: 'jgalindo@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Council Member Jose A. Resendiz is committed to advocating for economic growth and quality of life improvements for Eloy residents.',
-        bio_es: 'El miembro del concejo Jose A. Resendiz esta comprometido a abogar por el crecimiento economico y mejoras en la calidad de vida de los residentes de Eloy.',
+        bio_en: 'Josephine "JoAnne" Galindo serves as a member of the Eloy City Council, representing the residents of the City of Eloy.',
+        bio_es: 'Josephine "JoAnne" Galindo es miembro del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 5,
         active: true
     },
     {
         id: 'ldr-006',
-        name: 'Anabel Flores',
+        name: 'Sara Curtis',
         title: 'Council Member',
         department: 'City Council',
         type: 'elected',
-        email: 'aflores@eloyaz.gov',
-        phone: '520-466-3000',
+        email: 'scurtis@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Council Member Anabel Flores brings a strong voice for families, education, and cultural enrichment in the City of Eloy.',
-        bio_es: 'La miembro del concejo Anabel Flores aporta una fuerte voz para las familias, la educacion y el enriquecimiento cultural en la Ciudad de Eloy.',
+        bio_en: 'Sara Curtis serves as a member of the Eloy City Council, representing the residents of the City of Eloy.',
+        bio_es: 'Sara Curtis es miembro del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 6,
         active: true
     },
     {
         id: 'ldr-007',
-        name: 'Harvey W. Krauss',
-        title: 'City Manager',
-        department: 'City Manager',
-        type: 'staff',
-        email: 'hkrauss@eloyaz.gov',
-        phone: '520-466-3002',
+        name: 'Jose Garcia',
+        title: 'Council Member',
+        department: 'City Council',
+        type: 'elected',
+        email: 'jgarcia@eloyaz.gov',
+        phone: '520-466-9201',
         photo_url: '',
-        bio_en: 'Harvey W. Krauss manages city operations, working closely with the City Council to execute policy and deliver essential services to residents.',
-        bio_es: 'Harvey W. Krauss administra las operaciones de la ciudad, trabajando estrechamente con el Concejo Municipal para ejecutar politicas y brindar servicios esenciales.',
+        bio_en: 'Jose Garcia serves as a member of the Eloy City Council, representing the residents of the City of Eloy.',
+        bio_es: 'Jose Garcia es miembro del Concejo Municipal de Eloy, representando a los residentes de la Ciudad de Eloy.',
         sort_order: 7,
         active: true
-    },
-    {
-        id: 'ldr-008',
-        name: 'Brian Starkman',
-        title: 'Police Chief',
-        department: 'Police',
-        type: 'staff',
-        email: 'bstarkman@eloyaz.gov',
-        phone: '520-466-3200',
-        photo_url: '',
-        bio_en: 'Chief Brian Starkman leads the Eloy Police Department, dedicated to public safety and community policing.',
-        bio_es: 'El jefe Brian Starkman lidera el Departamento de Policia de Eloy, dedicado a la seguridad publica y la policia comunitaria.',
-        sort_order: 8,
-        active: true
     }
-];
+]
 
 let editingLeaderId = null;
 let leaderActiveState = true;
