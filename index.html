@@ -2705,13 +2705,6 @@ textarea.form-input {
                     </div>
                     <div class="metric-value">—</div>
                     <div class="metric-label">Open Reports</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Priority Breakdown</div>
-                        <div class="popup-line"><span>High priority</span><span class="popup-val" style="color:var(--warning);">12</span></div>
-                        <div class="popup-line"><span>Medium priority</span><span class="popup-val" style="color:var(--warm-accent);">20</span></div>
-                        <div class="popup-line"><span>Low priority</span><span class="popup-val" style="color:var(--info);">15</span></div>
-                        <div class="popup-highlight">3 unassigned need triage</div>
-                    </div>
                 </div>
                 <div class="metric-card" data-accent="teal">
                     <div class="metric-header">
@@ -2720,41 +2713,20 @@ textarea.form-input {
                     </div>
                     <div class="metric-value">—</div>
                     <div class="metric-label">Active Residents</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">User Breakdown</div>
-                        <div class="popup-line"><span>New this week</span><span class="popup-val" style="color:var(--success);">89</span></div>
-                        <div class="popup-line"><span>Returning users</span><span class="popup-val">1,195</span></div>
-                        <div class="popup-highlight">94% 30-day retention rate</div>
-                    </div>
                 </div>
                 <div class="metric-card" data-accent="green">
                     <div class="metric-header">
-                        <div class="metric-icon green" style="font-size:14px; font-weight:700;">T</div>
-                        <span class="metric-change up">-0.8d improved</span>
+                        <div class="metric-icon green" style="font-size:14px; font-weight:700;">R</div>
                     </div>
-                    <div class="metric-value">3.2d</div>
-                    <div class="metric-label">Avg. Resolution Time</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">By Category</div>
-                        <div class="popup-line"><span>Roads</span><span class="popup-val">2.1d</span></div>
-                        <div class="popup-line"><span>Water</span><span class="popup-val">4.5d</span></div>
-                        <div class="popup-line"><span>Parks</span><span class="popup-val">1.8d</span></div>
-                        <div class="popup-highlight">Improved from 4.0d last month</div>
-                    </div>
+                    <div class="metric-value" id="dashResolved">—</div>
+                    <div class="metric-label">Resolved Reports</div>
                 </div>
                 <div class="metric-card" data-accent="blue">
                     <div class="metric-header">
-                        <div class="metric-icon blue" style="font-size:15px; font-weight:700;">AI</div>
-                        <span class="metric-change neutral">Today</span>
+                        <div class="metric-icon blue" style="font-size:14px; font-weight:700;">T</div>
                     </div>
-                    <div class="metric-value">156</div>
-                    <div class="metric-label">Ask Eloy AI Sessions</div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Top Question</div>
-                        <div class="popup-line"><span>"Water bill payment"</span><span class="popup-val">34 asks</span></div>
-                        <div class="popup-line"><span>"Cooling centers"</span><span class="popup-val">18 asks</span></div>
-                        <div class="popup-highlight">Usage up 34% vs last Tuesday</div>
-                    </div>
+                    <div class="metric-value" id="dashTotalReports">—</div>
+                    <div class="metric-label">Total Reports</div>
                 </div>
             </div>
 
@@ -3355,34 +3327,7 @@ textarea.form-input {
                     <!-- WHAT RESIDENTS ARE ASKING -->
                     <div class="glass-card">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Top Ask Eloy questions today</div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--warm-accent); width: 24px;">1</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"When will water pressure be fixed?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">2</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"Where are the cooling centers?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">3</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"How do I pay my water bill?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">4</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"What time does the library close?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm);">
-                                <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary); width: 24px;">5</div>
-                                <div style="font-size: 13px; color: var(--text-secondary); flex: 1;">"Is there a community cleanup this week?"</div>
-                                <div style="font-size: 11px; color: var(--text-tertiary);">--</div>
-                            </div>
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-tertiary); text-align: center; margin-top: 10px; font-style: italic;">Sample questions shown. Live query tracking coming in a future update.</div>
+                        <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No resident questions logged yet. Ask Eloy queries will rank here as residents use the app.</div>
                     </div>
                 </div>
             </div>
@@ -3397,36 +3342,23 @@ textarea.form-input {
                 </div>
             </div>
 
-            <!-- DELIVERY STATS -->
+            <!-- DELIVERY STATS (live) -->
             <div class="metrics-grid anim-stagger" style="margin-bottom: 24px;">
-                <div class="metric-card" data-accent="teal">
-                    <div class="metric-value" style="font-size: 22px;">8,428</div>
-                    <div class="metric-label">Total Sent (30d) <span style="font-size: 9px; color: var(--text-tertiary);">Demo</span></div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Delivery Breakdown</div>
-                        <div class="popup-line"><span>Broadcasts</span><span class="popup-val">3</span></div>
-                        <div class="popup-line"><span>Targeted</span><span class="popup-val">2</span></div>
-                        <div class="popup-highlight">Demo data — notification tracking coming soon</div>
-                    </div>
-                </div>
-                <div class="metric-card" data-accent="green">
-                    <div class="metric-value" style="font-size: 22px;">66%</div>
-                    <div class="metric-label">Avg. Open Rate <span style="font-size: 9px; color: var(--text-tertiary);">Demo</span></div>
-                    <div class="hover-popup">
-                        <div class="popup-title">Open Rate by Type</div>
-                        <div class="popup-line"><span>Alerts</span><span class="popup-val" style="color:var(--success);">72%</span></div>
-                        <div class="popup-line"><span>News</span><span class="popup-val">61%</span></div>
-                        <div class="popup-line"><span>Events</span><span class="popup-val">58%</span></div>
-                        <div class="popup-highlight">Demo data — analytics coming soon</div>
-                    </div>
-                </div>
                 <div class="metric-card" data-accent="orange">
                     <div class="metric-value" id="notif-reachable" style="font-size: 22px;">—</div>
                     <div class="metric-label">Reachable Users</div>
                 </div>
+                <div class="metric-card" data-accent="teal">
+                    <div class="metric-value" id="notif-sent-count" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Notifications Sent</div>
+                </div>
+                <div class="metric-card" data-accent="green">
+                    <div class="metric-value" id="notif-active-alerts" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Active Alerts</div>
+                </div>
                 <div class="metric-card" data-accent="blue">
-                    <div class="metric-value" style="font-size: 22px;">94%</div>
-                    <div class="metric-label">Delivery Rate</div>
+                    <div class="metric-value" id="notif-total-users" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Total Users</div>
                 </div>
             </div>
 
@@ -3456,11 +3388,11 @@ textarea.form-input {
                             <div>
                                 <label class="form-label">Audience</label>
                                 <select class="form-input" id="notifAudience">
-                                    <option>All Users (2,847)</option>
-                                    <option>English Speakers (1,764)</option>
-                                    <option>Spanish Speakers (912)</option>
-                                    <option>Chinese Speakers (114)</option>
-                                    <option>German Speakers (57)</option>
+                                    <option>All Users</option>
+                                    <option>English Speakers</option>
+                                    <option>Spanish Speakers</option>
+                                    <option>Chinese Speakers</option>
+                                    <option>German Speakers</option>
                                 </select>
                             </div>
                             <div>
@@ -3506,58 +3438,8 @@ textarea.form-input {
                             Recent Sent Notifications
                             <span style="font-size:12px; color:var(--text-tertiary); font-weight:400;">Last 30 days</span>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            <div class="notif-card">
-                                <div class="notif-card-header">
-                                    <div class="notif-card-title" style="color:var(--warning);">Heat Advisory</div>
-                                    <div class="notif-card-stats">
-                                        <span style="color:var(--success);">66% opened</span>
-                                        <span>May 22</span>
-                                    </div>
-                                </div>
-                                <div class="notif-card-body">Extreme temperatures expected this weekend. Stay hydrated and check on elderly neighbors. Cooling centers open at Library and Senior Center.</div>
-                                <div class="notif-delivery-bar">
-                                    <div class="notif-delivery-fill" style="width:66%; background:var(--success);"></div>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--text-tertiary);">
-                                    <span>Sent to 2,847 users</span>
-                                    <span>1,892 opened</span>
-                                </div>
-                            </div>
-                            <div class="notif-card">
-                                <div class="notif-card-header">
-                                    <div class="notif-card-title" style="color:var(--info);">Water Main Repair</div>
-                                    <div class="notif-card-stats">
-                                        <span style="color:var(--accent);">58% opened</span>
-                                        <span>May 18</span>
-                                    </div>
-                                </div>
-                                <div class="notif-card-body">N. Main St affected area. Expect reduced water pressure for the next 24-48 hours while crews complete emergency repairs.</div>
-                                <div class="notif-delivery-bar">
-                                    <div class="notif-delivery-fill" style="width:58%; background:var(--accent);"></div>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--text-tertiary);">
-                                    <span>Sent to 2,801 users</span>
-                                    <span>1,624 opened</span>
-                                </div>
-                            </div>
-                            <div class="notif-card">
-                                <div class="notif-card-header">
-                                    <div class="notif-card-title" style="color:var(--accent);">Community Pool Opens!</div>
-                                    <div class="notif-card-stats">
-                                        <span style="color:var(--success);">74% opened</span>
-                                        <span>May 16</span>
-                                    </div>
-                                </div>
-                                <div class="notif-card-body">New summer hours start Monday! Mon-Sat 10AM-8PM, Sun 12PM-6PM. Free entry for all Eloy residents with valid ID.</div>
-                                <div class="notif-delivery-bar">
-                                    <div class="notif-delivery-fill" style="width:74%; background:var(--success);"></div>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:var(--text-tertiary);">
-                                    <span>Sent to 2,780 users</span>
-                                    <span>2,058 opened</span>
-                                </div>
-                            </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;" id="notifRecentList">
+                            <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No notifications sent yet. Ones you send will appear here.</div>
                         </div>
                     </div>
                 </div>
@@ -4855,8 +4737,18 @@ function updateDashboardWithLiveData() {
         if (notifReachable) notifReachable.textContent = totalResidents.toLocaleString();
     }
 
-    // Note: Dashboard metric cards [2] (Avg Resolution Time) and [3] (Ask Eloy Sessions)
-    // are demo/presentation metrics — not updated from live data
+    // Dashboard cards 3/4 + Notifications stat cards — all wired to live data
+    // (replaces former demo metrics: 3.2d resolution, 156 AI sessions, 8,428 sent, etc.)
+    {
+        const reps = liveData.reports || [];
+        const resolved = reps.filter(r => r.status === 'resolved' || r.status === 'closed').length;
+        const dr = document.getElementById('dashResolved'); if (dr) dr.textContent = resolved.toLocaleString();
+        const dt = document.getElementById('dashTotalReports'); if (dt) dt.textContent = reps.length.toLocaleString();
+
+        const ns = document.getElementById('notif-sent-count'); if (ns) ns.textContent = (liveData.notifications || []).length.toLocaleString();
+        const na = document.getElementById('notif-active-alerts'); if (na) na.textContent = (liveData.alerts || []).length.toLocaleString();
+        const nt = document.getElementById('notif-total-users'); if (nt) nt.textContent = (liveData.profiles || []).length.toLocaleString();
+    }
 
     // Each render is isolated so one failure can't block the others.
     try { updateReportsTable(); } catch (e) { console.warn('Reports table failed:', e); }
