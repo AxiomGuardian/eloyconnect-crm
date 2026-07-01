@@ -2686,6 +2686,9 @@ textarea.form-input {
         <div class="topbar-actions">
             <div id="citySwitcher" style="display:flex; align-items:center; gap:8px;"></div>
             <div id="sidebarUserRole" style="font-size:12px; color:var(--text-tertiary);">City Administrator</div>
+            <button onclick="signOutCRM()" title="Sign out" style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary); font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:inherit;">
+                <span style="font-size:13px;">⎋</span> Sign out
+            </button>
         </div>
     </header>
 
@@ -5263,12 +5266,23 @@ async function handleLogin(e) {
     }
 }
 
+// Show/hide the login overlay.
+function showLoginScreen() { document.getElementById('loginOverlay').style.display = 'flex'; }
+function hideLoginScreen() { document.getElementById('loginOverlay').style.display = 'none'; }
+
+// Sign out of the CRM and return to the login screen.
+async function signOutCRM() {
+    try { if (sbClient) await sbClient.auth.signOut(); } catch (e) { console.warn(e); }
+    authRole = ''; currentCityId = null; isSuperAdmin = false; activeCityId = null;
+    showLoginScreen();
+}
+
 // Auto-restore session on page load
 async function checkExistingSession() {
-    if (!sbClient) return;
+    if (!sbClient) { showLoginScreen(); return; }
     try {
         const { data: { session } } = await sbClient.auth.getSession();
-        if (!session) return;
+        if (!session) { showLoginScreen(); return; }
 
         // Verify role
         const { data: profile } = await sbClient
@@ -5284,13 +5298,15 @@ async function checkExistingSession() {
             currentCityId = profile?.city_id || null;
             isSuperAdmin = (role === 'super_admin');
             activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
-            document.getElementById('loginOverlay').style.display = 'none';
+            hideLoginScreen();
             await initCityContext();
         } else {
             await sbClient.auth.signOut();
+            showLoginScreen();
         }
     } catch (e) {
         console.warn('Session check failed:', e);
+        showLoginScreen();
     }
 }
 
