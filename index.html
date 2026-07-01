@@ -3046,6 +3046,7 @@ textarea.form-input {
                 <button class="filter-tab" onclick="filterContent('news', this)">News</button>
                 <button class="filter-tab" onclick="filterContent('event', this)">Events</button>
                 <button class="filter-tab" onclick="filterContent('alert', this)">Alerts</button>
+                <button class="filter-tab" onclick="filterContent('meeting', this)">Council</button>
                 <button class="filter-tab" onclick="filterContent('draft', this)">Drafts</button>
             </div>
 
@@ -4741,6 +4742,7 @@ let liveData = {
     news: null,
     alerts: null,
     events: null,
+    meetings: null,
     leaders: null,
     profiles: null,
     notifications: null,
@@ -4755,11 +4757,12 @@ async function fetchAllData() {
     if (!sbClient) return;
 
     try {
-        const [reports, news, alerts, events, leaders, profiles, notifications, businesses] = await Promise.allSettled([
+        const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses] = await Promise.allSettled([
             scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('news').select('*').eq('published', true)).order('published_at', { ascending: false }),
             scopeCity(sbClient.from('alerts').select('*').eq('active', true)).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('events').select('*').eq('published', true)).order('event_date', { ascending: true }),
+            scopeCity(sbClient.from('meeting_records').select('*').eq('is_public', true)).order('meeting_date', { ascending: false }),
             scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }),
             scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50),
@@ -4770,6 +4773,7 @@ async function fetchAllData() {
         if (news.status === 'fulfilled' && !news.value.error) liveData.news = news.value.data;
         if (alerts.status === 'fulfilled' && !alerts.value.error) liveData.alerts = alerts.value.data;
         if (events.status === 'fulfilled' && !events.value.error) liveData.events = events.value.data;
+        if (meetings.status === 'fulfilled' && !meetings.value.error) liveData.meetings = meetings.value.data;
         if (leaders.status === 'fulfilled' && !leaders.value.error) liveData.leaders = leaders.value.data;
         if (profiles.status === 'fulfilled' && !profiles.value.error) liveData.profiles = profiles.value.data;
         if (notifications.status === 'fulfilled' && !notifications.value.error) liveData.notifications = notifications.value.data;
@@ -5340,6 +5344,37 @@ function updateContentPage() {
                     <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="deactivateAlert(this.dataset.id)">${item.active ? 'Deactivate' : '—'}</button>
                     <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px; color: var(--warning);" data-id="${escapeHtml(item.id)}" onclick="deleteContent('alerts', this.dataset.id)">Delete</button>
                 </td>
+            </tr>`);
+        });
+    }
+
+    // Council meetings (from meeting_records — Engine 2)
+    if (liveData.meetings) {
+        const today = new Date().toISOString().split('T')[0];
+        // Upcoming first (ascending), then past (most recent first)
+        const sortedMeetings = [...liveData.meetings].sort((a, b) => {
+            const aIsPast = (a.meeting_date || '') < today;
+            const bIsPast = (b.meeting_date || '') < today;
+            if (aIsPast !== bIsPast) return aIsPast ? 1 : -1;
+            return aIsPast ? (b.meeting_date || '').localeCompare(a.meeting_date || '') : (a.meeting_date || '').localeCompare(b.meeting_date || '');
+        });
+        const mStatus = {
+            scheduled: { label: 'Scheduled', cls: 'status-in-review' },
+            in_progress: { label: 'In Session', cls: 'status-progress' },
+            completed: { label: 'Completed', cls: 'status-resolved' },
+            cancelled: { label: 'Cancelled', cls: 'status-draft' }
+        };
+        sortedMeetings.forEach(item => {
+            const isPast = (item.meeting_date || '') < today;
+            const st = mStatus[item.status] || mStatus.scheduled;
+            const typeLabel = (item.meeting_type || 'council').charAt(0).toUpperCase() + (item.meeting_type || 'council').slice(1);
+            rows.push(`<tr data-type="meeting" style="${isPast ? 'opacity: 0.6;' : ''}">
+                <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">Council</span></td>
+                <td style="font-weight: 500;">${escapeHtml(item.title || 'Untitled meeting')}${item.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${escapeHtml(item.location)}</div>` : ''}</td>
+                <td>${escapeHtml(typeLabel)}</td>
+                <td><span class="status ${st.cls}"><span class="status-dot"></span>${st.label}</span></td>
+                <td style="color: var(--text-tertiary);">${item.meeting_date || '—'}</td>
+                <td style="color: var(--text-tertiary); font-size: 11px;">${item.video_url ? `<a href="${escapeHtml(item.video_url)}" target="_blank" style="color: var(--accent);">Video</a>` : '—'}</td>
             </tr>`);
         });
     }
