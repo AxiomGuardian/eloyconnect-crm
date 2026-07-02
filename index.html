@@ -7966,6 +7966,32 @@ async function publishContent() {
             console.warn('Notification insert failed (non-blocking):', notifErr.message);
         }
 
+        // Fire a REAL push notification to residents' phones (APNs via edge function)
+        try {
+            const { data: { session: pushSession } } = await sbClient.auth.getSession();
+            const pushResp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-push-notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (pushSession?.access_token || SUPABASE_KEY)
+                },
+                body: JSON.stringify({
+                    title: titleEn,
+                    body: notifMessage.substring(0, 150),
+                    broadcast: true,
+                    data: { type: notifType }
+                })
+            });
+            const pushResult = await pushResp.json().catch(() => ({}));
+            if (pushResp.ok && pushResult.sent > 0) {
+                showToast(`Push sent to ${pushResult.sent} device${pushResult.sent > 1 ? 's' : ''}`, 'success');
+            } else if (pushResult.error || pushResult.error_sample) {
+                console.warn('Push delivery issue:', pushResult);
+            }
+        } catch (pushErr) {
+            console.warn('Push send failed (non-blocking):', pushErr.message);
+        }
+
         showToast(`${contentType} published successfully!`, 'success');
         closeModal();
         await fetchAllData();
