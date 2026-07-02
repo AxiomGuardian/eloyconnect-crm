@@ -8068,15 +8068,23 @@ async function deleteContent(table, id) {
     if (!confirmed) return;
 
     try {
-        const { error } = await sbClient
+        // .select() returns the deleted rows — if RLS blocks the delete,
+        // Supabase reports success with 0 rows. Catch that honestly.
+        const { data: deleted, error } = await sbClient
             .from(table)
             .delete()
-            .eq('id', id);
+            .eq('id', id)
+            .select('id');
 
         if (error) throw error;
+        if (!deleted || deleted.length === 0) {
+            showToast('Delete was blocked by database permissions — nothing was removed', 'warning');
+            return;
+        }
 
         showToast('Item deleted', 'success');
         await fetchAllData();
+        updateContentPage();
     } catch(e) {
         showToast('Failed to delete: ' + e.message, 'error');
     }
