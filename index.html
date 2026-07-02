@@ -2890,6 +2890,27 @@ textarea.form-input {
                 </div>
             </div>
 
+            <!-- AI ANALYTICS — DASHBOARD (live) — "what should I do today", front and center -->
+            <div class="ai-panel" style="margin-bottom: 24px;">
+                <div class="ai-panel-header">
+                    <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">AI</div>
+                    <div>
+                        <div class="ai-panel-title">AI Insights</div>
+                        <div class="ai-panel-subtitle">Auto-generated from your city data — what needs your attention today</div>
+                    </div>
+                    <span class="ai-badge">Live AI</span>
+                    <button class="ai-assist-btn" style="margin-left:8px;font-size:11px;padding:5px 10px;" onclick="loadDashboardAIInsights()">Refresh</button>
+                </div>
+                <div id="dashboardAIInsights">
+                    <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">
+                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <span class="ai-typing-dots"><span></span><span></span><span></span></span>
+                            Generating insights from live data...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="charts-row">
                 <div class="chart-card">
                     <div class="chart-title">
@@ -3002,26 +3023,6 @@ textarea.form-input {
                 </div>
             </div>
 
-            <!-- AI ANALYTICS — DASHBOARD (live) -->
-            <div class="ai-panel">
-                <div class="ai-panel-header">
-                    <div class="ai-panel-icon" style="color:var(--accent); font-size:14px; font-weight:700;">AI</div>
-                    <div>
-                        <div class="ai-panel-title">AI Insights</div>
-                        <div class="ai-panel-subtitle">Auto-generated from your city data</div>
-                    </div>
-                    <span class="ai-badge">Live AI</span>
-                    <button class="ai-assist-btn" style="margin-left:8px;font-size:11px;padding:5px 10px;" onclick="loadDashboardAIInsights()">Refresh</button>
-                </div>
-                <div id="dashboardAIInsights">
-                    <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">
-                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
-                            <span class="ai-typing-dots"><span></span><span></span><span></span></span>
-                            Generating insights from live data...
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- ========== REPORTS ========== -->
@@ -3229,7 +3230,7 @@ textarea.form-input {
                     </div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Feature Adoption <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px;">Demo</span></div>
+                    <div class="chart-title">Feature Adoption <span class="subtitle" id="featureAdoptionSub">Live — populates as residents use the app</span></div>
                     <div style="height: 220px; position: relative;">
                         <canvas id="chartFeatures"></canvas>
                     </div>
@@ -4395,8 +4396,12 @@ textarea.form-input {
                 <div style="display:flex; gap:12px; align-items:flex-start;">
                     <div id="ceImagePreview" style="width:96px; height:72px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:11px; flex-shrink:0;">No photo</div>
                     <div style="flex:1;">
-                        <input id="ceImage" type="url" placeholder="Paste an image link (https://...)" oninput="ceUpdateImagePreview()" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-                        <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Paste a link for now — direct upload from your computer is coming with the storage setup.</div>
+                        <input id="ceImage" type="url" placeholder="Paste an image link, or upload below" oninput="ceUpdateImagePreview()" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                            <input id="ceImageFile" type="file" accept="image/*" style="display:none;" onchange="ceUploadImage(this.files[0])">
+                            <button class="btn btn-secondary" onclick="document.getElementById('ceImageFile').click()" style="font-size:12px; padding:7px 14px;">Upload from computer</button>
+                            <span id="ceImageStatus" style="font-size:11px; color:var(--text-tertiary);"></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4529,6 +4534,25 @@ function openContentDetail(kind, id) {
         } else { locWrap.style.display = 'none'; }
     }
     document.getElementById('contentEditModal').classList.add('open');
+}
+
+async function ceUploadImage(file) {
+    if (!file || !sbClient) return;
+    const status = document.getElementById('ceImageStatus');
+    if (file.size > 8 * 1024 * 1024) { status.textContent = 'Too big — keep it under 8 MB.'; return; }
+    status.textContent = 'Uploading…';
+    try {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = (ceCurrent?.kind || 'content') + '/' + Date.now() + '_' + safeName;
+        const { error } = await sbClient.storage.from('content-images').upload(path, file, { cacheControl: '3600', upsert: false });
+        if (error) throw error;
+        const { data } = sbClient.storage.from('content-images').getPublicUrl(path);
+        document.getElementById('ceImage').value = data.publicUrl;
+        ceUpdateImagePreview();
+        status.textContent = 'Uploaded — save changes to publish it.';
+    } catch (err) {
+        status.textContent = 'Upload failed: ' + (err.message || 'unknown error');
+    }
 }
 
 function ceUpdateImagePreview() {
@@ -5121,6 +5145,7 @@ async function fetchAllData() {
         buildBusinessListings();
         updateDashboardWithLiveData();
         try { updateGrowthCharts(); } catch(e) { console.warn('growth charts:', e); }
+        try { updateFeatureAdoption(); } catch(e) { console.warn('feature adoption:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -7280,6 +7305,27 @@ new Chart(document.getElementById('chartResidentGrowth'), {
     options: chartDefaults
 });
 
+// Feature Adoption from real engagement_events (Engine 4)
+async function updateFeatureAdoption() {
+    if (!sbClient) return;
+    const { data, error } = await scopeCity(sbClient.from('engagement_events').select('page_name')).limit(5000);
+    if (error || !data) return;
+    const sub = document.getElementById('featureAdoptionSub');
+    const chart = Chart.getChart(document.getElementById('chartFeatures'));
+    if (!chart) return;
+    if (!data.length) {
+        if (sub) sub.textContent = 'Live — populates as residents use the app';
+        return; // keep zeroed bars, honest empty state
+    }
+    const counts = {};
+    data.forEach(e => { const k = e.page_name || 'Other'; counts[k] = (counts[k] || 0) + 1; });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    chart.data.labels = top.map(t => t[0]);
+    chart.data.datasets[0].data = top.map(t => t[1]);
+    chart.update('none');
+    if (sub) sub.textContent = data.length.toLocaleString() + ' interactions tracked';
+}
+
 // Fill both growth charts from real profile signup dates
 function updateGrowthCharts() {
     const profiles = liveData.profiles || [];
@@ -7299,13 +7345,13 @@ function updateGrowthCharts() {
     if (rg) { rg.data.labels = labels; rg.data.datasets[0].data = cumulative; rg.data.datasets[1].data = newPerMonth; rg.update('none'); }
 }
 
-// Feature Adoption (residents page)
+// Feature Adoption (residents page) — real usage from engagement_events (Engine 4)
 new Chart(document.getElementById('chartFeatures'), {
     type: 'bar',
     data: {
         labels: ['Home Feed', 'Ask Eloy', 'Events', 'Report', 'More'],
         datasets: [{
-            data: [89, 62, 54, 38, 72],
+            data: [0, 0, 0, 0, 0],
             backgroundColor: ['#3B9EF5', '#3FE0E8', '#34D399', '#F6C445', '#567088'],
             borderRadius: 4,
             barPercentage: 0.6
