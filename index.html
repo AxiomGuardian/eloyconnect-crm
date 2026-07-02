@@ -197,6 +197,37 @@ body {
 .askeloy-chip .chip-sub { font-size: 11px; color: var(--text-tertiary); }
 
 /* ============================================
+   CURSOR ORB — subliminal white glow that
+   follows the mouse and warms up on clickables
+   ============================================ */
+.cursor-orb { position: fixed; top: 0; left: 0; width: 26px; height: 26px; border-radius: 50%;
+    pointer-events: none; z-index: 10002; opacity: 0; filter: blur(1px);
+    background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(63,224,232,0.16) 55%, transparent 75%);
+    mix-blend-mode: screen; transform: translate(-50%, -50%);
+    transition: width .18s ease, height .18s ease, opacity .3s ease; }
+.cursor-orb.on { opacity: 0.45; }
+.cursor-orb.hot { width: 46px; height: 46px; opacity: 0.75; }
+
+/* Interactive elements glow up under the orb */
+.nav-item, .btn, .filter-tab, .chat-chip, .ai-assist-btn { transition: box-shadow .2s ease, border-color .2s ease, background .2s ease, color .2s ease; }
+.nav-item:hover { text-shadow: 0 0 12px rgba(63, 224, 232, 0.45); }
+.data-table tbody tr[onclick]:hover td { text-shadow: 0 0 10px rgba(63, 224, 232, 0.18); }
+
+/* Typewriter caret for AI Briefing */
+.type-caret { display: inline-block; width: 2px; height: 1em; background: var(--accent);
+    vertical-align: text-bottom; margin-left: 2px; animation: caretBlink 0.8s step-end infinite; }
+@keyframes caretBlink { 50% { opacity: 0; } }
+
+/* AI markdown rendering (shared by all AI surfaces) */
+.ai-md-h { font-weight: 600; color: var(--text-primary); font-size: 13px; margin: 10px 0 4px;
+    padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.ai-md-p { margin: 3px 0; }
+.ai-md-li { position: relative; padding-left: 16px; margin: 3px 0; }
+.ai-md-li::before { content: '\2022'; position: absolute; left: 2px; color: var(--accent); }
+.ai-md-li .ai-md-num { color: var(--accent); font-weight: 600; margin-right: 2px; }
+.ai-md-li:has(.ai-md-num)::before { content: ''; }
+
+/* ============================================
    TOP NAVIGATION BAR
    ============================================ */
 .topnav {
@@ -2697,6 +2728,7 @@ textarea.form-input {
 <div class="amb"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="bg-grid"></div>
 <div class="aurora-line"></div>
+<div class="cursor-orb" id="cursorOrb"></div>
 
 <!-- SIDEBAR -->
 <!-- TOP NAVIGATION BAR -->
@@ -2894,13 +2926,13 @@ textarea.form-input {
                             <div class="activity-dot" style="background: var(--text-tertiary);"></div>
                             <div>
                                 <div class="activity-text" style="color: var(--text-tertiary);">Loading recent activity...</div>
-                                <div class="activity-time">Syncing with Supabase</div>
+                                <div class="activity-time">Loading live city data</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">App Users — 6 Months <span style="font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px;">Demo</span></div>
+                    <div class="chart-title">App Users — 6 Months <span class="subtitle">Real signups, running total</span></div>
                     <div style="height: 220px; position: relative;">
                         <canvas id="chartGrowth"></canvas>
                     </div>
@@ -3094,12 +3126,17 @@ textarea.form-input {
                 </button>
                 <div class="ai-assist-body">
                     <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                        <button class="ai-assist-btn" onclick="toggleDraftReview()" style="border-color: rgba(63,224,232,0.35);">Review My Draft</button>
                         <button class="ai-assist-btn" onclick="runContentAI('topics')">Suggest Topics</button>
                         <button class="ai-assist-btn" onclick="runContentAI('headlines')">Draft Headlines</button>
                         <button class="ai-assist-btn" onclick="runContentAI('keywords')">Suggest Keywords</button>
                     </div>
+                    <div id="contentDraftReview" style="display:none; margin-bottom:12px;">
+                        <textarea id="contentDraftBox" rows="4" placeholder="Paste or write your draft here — title, body, or both. The AI reviews it against live city data and suggests a tighter version." style="width:100%; padding:12px 14px; background:rgba(6,10,18,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+                        <button class="ai-assist-btn" onclick="runContentAI('review')" style="margin-top:8px;">Review it</button>
+                    </div>
                     <div id="contentAIHelperResult" style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
-                        <span style="color:var(--text-tertiary);">Choose an option above to get AI-powered content suggestions based on current city data and recent reports.</span>
+                        <span style="color:var(--text-tertiary);">Choose an option above — suggestions are generated from your live city data (open reports, alerts, resident activity), not canned ideas.</span>
                     </div>
                 </div>
             </div>
@@ -3669,41 +3706,6 @@ textarea.form-input {
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
                     <h4 style="font-size: 15px; font-weight: 500;">Staff Accounts</h4>
                     <span id="staffCountLabel" style="font-size:12px; color:var(--text-tertiary);"></span>
-                </div>
-
-                <!-- Create Account form (hidden by default) -->
-                <div id="createStaffForm" style="display:none; margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius: var(--radius-sm);">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-                        <div>
-                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Full Name</label>
-                            <input id="newStaffName" class="form-input" type="text" placeholder="Jane Doe" style="margin-top:4px;">
-                        </div>
-                        <div>
-                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Email</label>
-                            <input id="newStaffEmail" class="form-input" type="email" placeholder="jane@city.gov" style="margin-top:4px;">
-                        </div>
-                        <div>
-                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Temporary Password</label>
-                            <input id="newStaffPassword" class="form-input" type="text" placeholder="Temp password" style="margin-top:4px;">
-                        </div>
-                        <div>
-                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
-                            <select id="newStaffRole" class="form-input" style="margin-top:4px;">
-                                <option value="staff">Staff</option>
-                                <option value="admin">Admin</option>
-                                <option value="council">Council</option>
-                                <option value="worker">Worker</option>
-                            </select>
-                        </div>
-                        <div id="newStaffCityWrap" style="display:none;">
-                            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">City</label>
-                            <select id="newStaffCity" class="form-input" style="margin-top:4px;"></select>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary" onclick="createStaffAccount()">Create Account</button>
-                        <button class="btn btn-ghost" onclick="toggleCreateStaffForm()">Cancel</button>
-                    </div>
                 </div>
 
                 <div style="overflow-x:auto;">
@@ -4297,6 +4299,59 @@ textarea.form-input {
     </div>
 </div>
 
+<!-- ADD STAFF MEMBER MODAL -->
+<div class="modal-overlay" id="createStaffForm" onclick="if(event.target===this)toggleCreateStaffForm()">
+    <div class="modal" style="width: 520px; padding: 32px;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:22px;">
+            <div id="newStaffAvatar" style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#04121A; flex-shrink:0; transition: transform .2s ease;">+</div>
+            <div>
+                <h3 style="font-size:18px; font-weight:600;">Add a staff member</h3>
+                <p style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">Creates a real login for the Eloy Connect CRM</p>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Full Name</label>
+                <input id="newStaffName" class="form-input" type="text" placeholder="Jane Doe" style="margin-top:6px;" oninput="updateStaffAvatarPreview()">
+            </div>
+            <div>
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Email</label>
+                <input id="newStaffEmail" class="form-input" type="email" placeholder="jane@eloyaz.gov" style="margin-top:6px;">
+            </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
+            <select id="newStaffRole" class="form-input" style="margin-top:6px;" onchange="updateStaffRoleHint()">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+                <option value="council">Council</option>
+                <option value="worker">Worker</option>
+            </select>
+            <div id="newStaffRoleHint" style="font-size:12px; color:var(--text-tertiary); margin-top:6px;">Day-to-day city operations — manages reports, content, and residents.</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:14px;">
+            <div>
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Temporary Password</label>
+                <input id="newStaffPassword" class="form-input" type="text" placeholder="They change it on first sign-in" style="margin-top:6px;">
+            </div>
+            <button class="btn btn-secondary" onclick="generateTempPassword()" style="padding:10px 16px; white-space:nowrap;">Generate</button>
+        </div>
+
+        <div id="newStaffCityWrap" style="display:none; margin-bottom:14px;">
+            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">City</label>
+            <select id="newStaffCity" class="form-input" style="margin-top:6px;"></select>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px;">
+            <button class="btn btn-ghost" onclick="toggleCreateStaffForm()">Cancel</button>
+            <button class="btn btn-primary" onclick="createStaffAccount()" style="padding:10px 22px;">Create Account</button>
+        </div>
+    </div>
+</div>
+
 <!-- CONTENT DETAIL / EDIT MODAL -->
 <div class="modal-overlay" id="contentEditModal" onclick="if(event.target===this)closeContentDetail()">
     <div class="modal" style="width: 560px; max-height: 82vh; overflow-y: auto; padding: 28px;">
@@ -4313,20 +4368,36 @@ textarea.form-input {
             <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;" id="ceBodyLabel">Body</label>
             <textarea id="ceBody" rows="6" style="width:100%; padding:11px 14px; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
                 <div id="ceCategoryWrap">
                     <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Category</label>
-                    <input id="ceCategory" type="text" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                    <select id="ceCategory" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;"></select>
                 </div>
                 <div id="ceSeverityWrap" style="display:none;">
                     <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Severity</label>
-                    <select id="ceSeverity" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                    <select id="cePostSeverity" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
                         <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
                     </select>
                 </div>
                 <div id="ceDateWrap" style="display:none;">
                     <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Event date</label>
                     <input id="ceDate" type="date" style="width:100%; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;">
+                </div>
+            </div>
+
+            <div id="ceLocationWrap" style="display:none; margin-bottom:14px;">
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Location</label>
+                <input id="ceLocation" type="text" placeholder="e.g. Eloy Memorial Park, 5839 E. Milligan Rd" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:14px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+            </div>
+
+            <div id="ceImageWrap" style="display:none; margin-bottom:20px;">
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Photo</label>
+                <div style="display:flex; gap:12px; align-items:flex-start;">
+                    <div id="ceImagePreview" style="width:96px; height:72px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:11px; flex-shrink:0;">No photo</div>
+                    <div style="flex:1;">
+                        <input id="ceImage" type="url" placeholder="Paste an image link (https://...)" oninput="ceUpdateImagePreview()" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                        <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Paste a link for now — direct upload from your computer is coming with the storage setup.</div>
+                    </div>
                 </div>
             </div>
 
@@ -4433,11 +4504,39 @@ function openContentDetail(kind, id) {
         catWrap.style.display = cfg.showCat ? 'block' : 'none';
         sevWrap.style.display = cfg.showSev ? 'block' : 'none';
         dateWrap.style.display = cfg.showDate ? 'block' : 'none';
-        if (cfg.showCat) document.getElementById('ceCategory').value = item.category || '';
-        if (cfg.showSev) document.getElementById('ceSeverity').value = item.severity || 'low';
+        if (cfg.showCat) {
+            // Dropdown = base categories + everything already used in live data + this item's own
+            const base = ['General', 'Community', 'Community Services', 'Public Safety', 'Infrastructure', 'Government', 'Planning', 'Development', 'Library', 'Parks & Recreation', 'Events', 'Youth'];
+            const inData = [...(liveData.news || []), ...(liveData.events || [])].map(x => x.category).filter(Boolean);
+            const cats = [...new Set([...base, ...inData, item.category].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            const sel = document.getElementById('ceCategory');
+            sel.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            sel.value = item.category || 'General';
+        }
+        if (cfg.showSev) document.getElementById('cePostSeverity').value = item.severity || 'low';
         if (cfg.showDate) document.getElementById('ceDate').value = item.event_date || '';
+        // Photo (news + events have image_url)
+        const imgWrap = document.getElementById('ceImageWrap');
+        const locWrap = document.getElementById('ceLocationWrap');
+        if (kind === 'news' || kind === 'events') {
+            imgWrap.style.display = 'block';
+            document.getElementById('ceImage').value = item.image_url || '';
+            ceUpdateImagePreview();
+        } else { imgWrap.style.display = 'none'; }
+        if (kind === 'events') {
+            locWrap.style.display = 'block';
+            document.getElementById('ceLocation').value = item.location_en || '';
+        } else { locWrap.style.display = 'none'; }
     }
     document.getElementById('contentEditModal').classList.add('open');
+}
+
+function ceUpdateImagePreview() {
+    const url = document.getElementById('ceImage').value.trim();
+    const box = document.getElementById('ceImagePreview');
+    box.innerHTML = url
+        ? `<img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.textContent='Bad link'">`
+        : 'No photo';
 }
 
 function closeContentDetail() {
@@ -4456,15 +4555,18 @@ async function saveContentEdit() {
     if (kind === 'news') {
         update.body_en = body || null;
         update.excerpt_en = body ? body.substring(0, 200) : null;
-        update.category = document.getElementById('ceCategory').value.trim() || 'General';
+        update.category = document.getElementById('ceCategory').value || 'General';
+        update.image_url = document.getElementById('ceImage').value.trim() || null;
     } else if (kind === 'events') {
         update.description_en = body || null;
-        update.category = document.getElementById('ceCategory').value.trim() || 'Community';
+        update.category = document.getElementById('ceCategory').value || 'Community';
+        update.image_url = document.getElementById('ceImage').value.trim() || null;
+        update.location_en = document.getElementById('ceLocation').value.trim() || null;
         const d = document.getElementById('ceDate').value;
         if (d) update.event_date = d;
     } else if (kind === 'alerts') {
         update.message_en = body || title;
-        update.severity = document.getElementById('ceSeverity').value;
+        update.severity = document.getElementById('cePostSeverity').value;
     }
 
     const btn = document.getElementById('ceSaveBtn');
@@ -4522,6 +4624,25 @@ document.addEventListener('keydown', function(e) {
     else if (e.key === 'ArrowRight') lightboxStep(1);
     else if (e.key === 'ArrowLeft') lightboxStep(-1);
 });
+
+// ============================================
+// CURSOR ORB (mouse-following glow, desktop only)
+// ============================================
+(function initCursorOrb() {
+    if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
+    const orb = document.getElementById('cursorOrb');
+    if (!orb) return;
+    let x = 0, y = 0, raf = null;
+    const render = () => { orb.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`; raf = null; };
+    document.addEventListener('mousemove', (e) => {
+        x = e.clientX; y = e.clientY;
+        orb.classList.add('on');
+        const hot = e.target.closest && e.target.closest('a, button, [onclick], .nav-item, .filter-tab, input, select, textarea');
+        orb.classList.toggle('hot', !!hot);
+        if (!raf) raf = requestAnimationFrame(render);
+    }, { passive: true });
+    document.addEventListener('mouseleave', () => orb.classList.remove('on'));
+})();
 
 // ============================================
 // SUPABASE CLIENT — LIVE DATA
@@ -4999,6 +5120,7 @@ async function fetchAllData() {
 
         buildBusinessListings();
         updateDashboardWithLiveData();
+        try { updateGrowthCharts(); } catch(e) { console.warn('growth charts:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -5051,7 +5173,7 @@ function updateDashboardWithLiveData() {
         // Update Residents page stats
         const residentsSubtitle = document.getElementById('residentsPageSubtitle');
         if (residentsSubtitle) {
-            residentsSubtitle.textContent = totalResidents.toLocaleString() + ' total users · Live data from Supabase';
+            residentsSubtitle.textContent = totalResidents.toLocaleString() + ' total users · live city data';
         }
         pages.residents.subtitle = totalResidents.toLocaleString() + ' registered users';
 
@@ -5181,19 +5303,57 @@ async function loadEngagementAnalytics() {
     }
 }
 
-// Update AI Briefing page report counts
+// Update AI Briefing page report counts (typed, character by character)
+let briefingTyped = false;
 function updateAIBriefingCounts(openCount, inProgressCount) {
     const briefingText = document.getElementById('briefingSummaryText');
-    if (briefingText) {
-        const newsCount = liveData.news ? liveData.news.length : 0;
-        const alertsCount = liveData.alerts ? liveData.alerts.length : 0;
-        const profilesCount = liveData.profiles ? liveData.profiles.length : 0;
-        briefingText.innerHTML = 'You have <strong style="color: var(--warm-accent);">' + openCount + ' open reports</strong>, ' +
-            '<strong style="color: var(--accent);">' + newsCount + ' published news</strong> items, ' +
-            '<strong style="color: var(--info);">' + alertsCount + ' active alerts</strong>, and ' +
-            '<strong style="color: var(--success);">' + profilesCount + ' registered users</strong>. ' +
-            'Live data synced from Supabase.';
-    }
+    if (!briefingText) return;
+    const newsCount = liveData.news ? liveData.news.length : 0;
+    const alertsCount = liveData.alerts ? liveData.alerts.length : 0;
+    const profilesCount = liveData.profiles ? liveData.profiles.length : 0;
+    const html = 'You have <strong style="color: var(--warm-accent);">' + openCount + ' open reports</strong>, ' +
+        '<strong style="color: var(--accent);">' + newsCount + ' published news</strong> items, ' +
+        '<strong style="color: var(--info);">' + alertsCount + ' active alerts</strong>, and ' +
+        '<strong style="color: var(--success);">' + profilesCount + ' registered users</strong>. ' +
+        'All numbers are live from your city right now.';
+    if (briefingTyped) { briefingText.innerHTML = html; return; } // only type it once per session
+    briefingTyped = true;
+    typeHTML(briefingText, html, 12);
+}
+
+// Typewriter that respects HTML tags (types visible characters only)
+function typeHTML(el, html, msPerChar) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const total = (tmp.textContent || '').length;
+    let shown = 0;
+    el.innerHTML = '<span class="type-caret"></span>';
+    const timer = setInterval(() => {
+        shown += 1;
+        if (shown >= total) {
+            clearInterval(timer);
+            el.innerHTML = html;
+            return;
+        }
+        // Rebuild html clipped to `shown` visible characters
+        let count = 0;
+        const clip = (node) => {
+            let out = '';
+            for (const child of node.childNodes) {
+                if (count >= shown) break;
+                if (child.nodeType === 3) {
+                    const take = Math.min(child.textContent.length, shown - count);
+                    out += escapeHtml(child.textContent.substring(0, take));
+                    count += take;
+                } else if (child.nodeType === 1) {
+                    const inner = clip(child);
+                    if (inner) out += '<' + child.tagName.toLowerCase() + (child.getAttribute('style') ? ' style="' + child.getAttribute('style') + '"' : '') + '>' + inner + '</' + child.tagName.toLowerCase() + '>';
+                }
+            }
+            return out;
+        };
+        el.innerHTML = clip(tmp) + '<span class="type-caret"></span>';
+    }, msPerChar);
 }
 
 // Update Report Volume chart with live data
@@ -6334,9 +6494,11 @@ function gatherCRMContext() {
         }
     });
 
+    const rptId = (r) => 'RPT-' + String(r.id || '').substring(0, 4).toUpperCase();
     const recentCritical = openReports.slice(0, 5).map(r =>
-        `- ${r.report_id || 'RPT-?'}: ${(r.description || r.category || 'No description').substring(0, 80)} (${r.status}, ${r.assigned_to || 'unassigned'}, ${r.created_at ? new Date(r.created_at).toLocaleDateString() : 'unknown date'})`
+        `- ${rptId(r)} "${(r.title || 'Untitled').substring(0, 60)}": ${(r.description || r.category || 'No description').substring(0, 80)} (${r.category || 'Other'}, ${r.status}, ${r.assigned_to || 'unassigned'}, ${r.created_at ? new Date(r.created_at).toLocaleDateString() : 'unknown date'})`
     ).join('\n');
+    const allReportIds = reports.slice(0, 25).map(r => `${rptId(r)}=${(r.title || r.category || 'untitled').substring(0, 40)} [${r.status}]`).join('; ');
 
     const newProfilesThisWeek = profiles.filter(p => new Date(p.created_at) >= weekAgo).length;
 
@@ -6360,7 +6522,10 @@ RECENT OPEN REPORTS:
 ${recentCritical || 'No open reports'}
 
 UNASSIGNED REPORTS (need triage):
-${unassignedReports.slice(0, 5).map(r => `- ${r.report_id || 'RPT-?'}: ${(r.description || r.category || 'Unknown').substring(0, 60)} (${r.category || 'uncategorized'})`).join('\n') || 'None'}
+${unassignedReports.slice(0, 5).map(r => `- ${rptId(r)} "${(r.title || 'Untitled').substring(0, 60)}": ${(r.description || r.category || 'Unknown').substring(0, 60)} (${r.category || 'uncategorized'})`).join('\n') || 'None'}
+
+ALL REPORT IDS (use these exact IDs when referencing reports):
+${allReportIds || 'None'}
 
 STAFF WORKLOAD:
 ${Object.entries(staffAssignments).map(([name, data]) => `- ${name}: ${data.active} active, ${data.resolved} resolved`).join('\n') || 'No staff assignments found'}
@@ -6462,24 +6627,35 @@ RESPONSE GUIDELINES:
 }
 
 function parseAIResponse(text) {
-    // Convert [ACTION:navigate:pageName] into clickable buttons
-    let html = escapeHtml(text);
-    html = html.replace(/\[ACTION:navigate:(\w+)\]/g, (match, page) => {
-        const pageNames = {
-            dashboard: 'Dashboard', reports: 'Reports', content: 'Content',
-            residents: 'Residents', notifications: 'Notifications', leaders: 'Leaders',
-            events: 'Events', businesses: 'Businesses', grok: 'AI Briefing', settings: 'Settings'
-        };
-        const label = pageNames[page] || page;
-        return `<button class="ai-action-btn" onclick="navigateTo('${page}')" style="display:inline-flex; margin: 2px 4px; vertical-align: middle;">Go to ${label} &rarr;</button>`;
-    });
-    // Convert newlines to <br>
-    html = html.replace(/\n/g, '<br>');
-    // Bold **text**
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Bullet points
-    html = html.replace(/- /g, '&bull; ');
-    return html;
+    // Mini-markdown renderer for ALL AI text surfaces:
+    // headings (#..####), **bold**, bullets (-,*,•), numbered lists, [ACTION] buttons.
+    const pageNames = {
+        dashboard: 'Dashboard', reports: 'Reports', content: 'Content',
+        residents: 'Residents', notifications: 'Notifications', leaders: 'Leaders',
+        events: 'Events', businesses: 'Businesses', grok: 'AI Briefing', settings: 'Settings'
+    };
+    const inline = (s) => {
+        s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        s = s.replace(/\[ACTION:navigate:(\w+)\]/g, (m, page) => {
+            const label = pageNames[page] || page;
+            return `<button class="ai-action-btn" onclick="navigateTo('${page}')" style="display:inline-flex; margin: 2px 4px; vertical-align: middle;">Go to ${label} &rarr;</button>`;
+        });
+        // Strip leftover stray markdown markers the model sometimes emits
+        s = s.replace(/^\*+\s*/, '').replace(/\*+$/, '');
+        return s;
+    };
+    const lines = escapeHtml(text).split('\n');
+    const out = [];
+    for (const raw of lines) {
+        const line = raw.trim();
+        let m;
+        if (!line) { out.push('<div style="height:6px;"></div>'); }
+        else if ((m = line.match(/^#{1,4}\s+(.+)$/))) { out.push('<div class="ai-md-h">' + inline(m[1]) + '</div>'); }
+        else if ((m = line.match(/^[-*•]\s+(.+)$/))) { out.push('<div class="ai-md-li">' + inline(m[1]) + '</div>'); }
+        else if ((m = line.match(/^(\d+)[.)]\s+(.+)$/))) { out.push('<div class="ai-md-li"><span class="ai-md-num">' + m[1] + '.</span> ' + inline(m[2]) + '</div>'); }
+        else { out.push('<div class="ai-md-p">' + inline(line) + '</div>'); }
+    }
+    return out.join('');
 }
 
 async function handleGrokAction(action) {
@@ -6550,7 +6726,7 @@ function updateAttentionCards() {
     recentOpen.forEach(r => {
         const timeAgo = r.created_at ? getTimeAgo(new Date(r.created_at)) : 'recently';
         const desc = (r.description || r.category || 'Report needs attention').substring(0, 60);
-        const id = r.report_id || 'RPT-?';
+        const id = 'RPT-' + String(r.id || '').substring(0, 4).toUpperCase();
         const staff = r.assigned_to || 'Unassigned';
         cards.push(`
             <div class="action-card" onclick="navigateToPage('reports')">
@@ -6840,9 +7016,8 @@ async function loadDashboardAIInsights() {
             // Skip lines that are just numbers or headers
             if (/^[\d#\-\*]+\.?\s*$/.test(line.trim())) return;
             const icon = insightIcons[insightIdx % insightIcons.length];
-            // Convert **bold** markdown to <strong> tags
-            let parsed = parseAIResponse(line.replace(/^\d+\.\s*/, '').replace(/^[\-\*]\s*/, ''));
-            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Strip list markers only when followed by whitespace (don't eat ** bold markers)
+            const parsed = parseAIResponse(line.replace(/^\d+[.)]\s+/, '').replace(/^[-*•]\s+/, ''));
             html += `
                 <div class="ai-insight">
                     <div class="ai-insight-icon ${icon.cls}" style="color:${icon.color};"></div>
@@ -6858,9 +7033,7 @@ async function loadDashboardAIInsights() {
             container.innerHTML = html;
         } else {
             // If parsing produced nothing, show the raw result
-            let rawParsed = parseAIResponse(result);
-            rawParsed = rawParsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            container.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text">${rawParsed}</div></div></div>`;
+            container.innerHTML = `<div class="ai-insight"><div class="ai-insight-icon info" style="color:var(--info);"></div><div><div class="ai-insight-text">${parseAIResponse(result)}</div></div></div>`;
         }
         dashboardInsightsLoaded = true;
         updateActivityStats();
@@ -6950,6 +7123,19 @@ async function runContentAI(mode) {
         keywords: 'Analyze the current CRM data (reports, alerts, events) and suggest 10-15 relevant keywords/tags that should be used for content in the Eloy Connect app. Group them by category (infrastructure, community, safety, services, etc.).'
     };
 
+    // Draft review mode: analyze what the user actually wrote
+    if (mode === 'review') {
+        const modalTitle = document.getElementById('contentTitle')?.value?.trim() || '';
+        const modalBody = document.getElementById('contentBody')?.value?.trim() || '';
+        const boxDraft = document.getElementById('contentDraftBox')?.value?.trim() || '';
+        const draft = boxDraft || [modalTitle, modalBody].filter(Boolean).join('\n\n');
+        if (!draft) {
+            resultEl.innerHTML = '<span style="color:var(--warm-accent);">Write or paste a draft first — either in the box above or in the Create Content form — and I\'ll review it.</span>';
+            return;
+        }
+        prompts.review = `Review this DRAFT the staff member wrote for the Eloy Connect app:\n\n---\n${draft}\n---\n\nGive: 1) A quick verdict (one line). 2) A tighter suggested headline. 3) An improved version of the body, resident-friendly, plain English. 4) Anything from the live city data that should be added or corrected (dates, report references, contact info). Keep it practical — this person wants to publish soon.`;
+    }
+
     try {
         aiQueryCount++;
         const result = await callGrokAI(prompts[mode], 'Context: This is the Content page AI Helper. The user is managing content for the Eloy Connect app.');
@@ -6958,6 +7144,12 @@ async function runContentAI(mode) {
     } catch (err) {
         resultEl.innerHTML = '<span style="color:var(--warning);">Content AI failed: ' + escapeHtml(err.message) + '</span>';
     }
+}
+
+function toggleDraftReview() {
+    const box = document.getElementById('contentDraftReview');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box.style.display === 'block') document.getElementById('contentDraftBox').focus();
 }
 
 // navigateToPage is defined as an alias for navigateTo above
@@ -7041,9 +7233,9 @@ new Chart(document.getElementById('chartCategories'), {
 new Chart(document.getElementById('chartGrowth'), {
     type: 'line',
     data: {
-        labels: ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        labels: [],
         datasets: [{
-            data: [820, 910, 1020, 1080, 1190, 1284],
+            data: [],
             borderColor: '#3FE0E8',
             backgroundColor: 'rgba(63, 224, 232, 0.06)',
             fill: true,
@@ -7055,16 +7247,17 @@ new Chart(document.getElementById('chartGrowth'), {
     },
     options: chartDefaults
 });
+// (Populated with real signup data by updateGrowthCharts once profiles load)
 
-// Resident Growth (residents page)
+// Resident Growth (residents page) — populated with real data by updateGrowthCharts
 new Chart(document.getElementById('chartResidentGrowth'), {
     type: 'line',
     data: {
-        labels: ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        labels: [],
         datasets: [
             {
-                label: 'Total',
-                data: [1800, 2010, 2200, 2420, 2640, 2847],
+                label: 'Total signed up',
+                data: [],
                 borderColor: '#3FE0E8',
                 backgroundColor: 'rgba(63, 224, 232, 0.06)',
                 fill: true,
@@ -7073,10 +7266,10 @@ new Chart(document.getElementById('chartResidentGrowth'), {
                 borderWidth: 2
             },
             {
-                label: 'Active',
-                data: [820, 910, 1020, 1080, 1190, 1284],
+                label: 'New that month',
+                data: [],
                 borderColor: '#F6C445',
-                backgroundColor: 'rgba(245, 148, 58, 0.06)',
+                backgroundColor: 'rgba(246, 196, 69, 0.06)',
                 fill: true,
                 tension: 0.4,
                 pointRadius: 3,
@@ -7086,6 +7279,25 @@ new Chart(document.getElementById('chartResidentGrowth'), {
     },
     options: chartDefaults
 });
+
+// Fill both growth charts from real profile signup dates
+function updateGrowthCharts() {
+    const profiles = liveData.profiles || [];
+    if (!profiles.length) return;
+    const now = new Date();
+    const labels = [], newPerMonth = [], cumulative = [];
+    for (let i = 5; i >= 0; i--) {
+        const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        labels.push(mStart.toLocaleDateString('en-US', { month: 'short' }));
+        newPerMonth.push(profiles.filter(p => { const d = new Date(p.created_at); return d >= mStart && d < mEnd; }).length);
+        cumulative.push(profiles.filter(p => new Date(p.created_at) < mEnd).length);
+    }
+    const g = Chart.getChart(document.getElementById('chartGrowth'));
+    if (g) { g.data.labels = labels; g.data.datasets[0].data = cumulative; g.update('none'); }
+    const rg = Chart.getChart(document.getElementById('chartResidentGrowth'));
+    if (rg) { rg.data.labels = labels; rg.data.datasets[0].data = cumulative; rg.data.datasets[1].data = newPerMonth; rg.update('none'); }
+}
 
 // Feature Adoption (residents page)
 new Chart(document.getElementById('chartFeatures'), {
@@ -9226,8 +9438,8 @@ function renderStaffPage() {
 function toggleCreateStaffForm() {
     const form = document.getElementById('createStaffForm');
     if (!form) return;
-    const showing = form.style.display !== 'none';
-    form.style.display = showing ? 'none' : 'block';
+    const showing = form.classList.contains('open');
+    form.classList.toggle('open', !showing);
 
     if (!showing) {
         const cityWrap = document.getElementById('newStaffCityWrap');
@@ -9244,6 +9456,35 @@ function toggleCreateStaffForm() {
 }
 
 // Create a new staff/admin account via the create-staff-user edge function
+// ── Add Staff modal helpers ──
+function updateStaffAvatarPreview() {
+    const name = document.getElementById('newStaffName')?.value?.trim() || '';
+    const av = document.getElementById('newStaffAvatar');
+    if (!av) return;
+    const initials = name.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).slice(0, 2).join('');
+    av.textContent = initials || '+';
+    av.style.transform = 'scale(1.12)';
+    setTimeout(() => { av.style.transform = 'scale(1)'; }, 150);
+}
+
+function updateStaffRoleHint() {
+    const hints = {
+        staff: 'Day-to-day city operations — manages reports, content, and residents.',
+        admin: 'Full control of this city\'s CRM, including staff and settings.',
+        council: 'Sees reports, dashboards, and council materials. No editing.',
+        worker: 'Field crew — sees assigned jobs in the Public Works app.'
+    };
+    const el = document.getElementById('newStaffRoleHint');
+    if (el) el.textContent = hints[document.getElementById('newStaffRole')?.value] || '';
+}
+
+function generateTempPassword() {
+    const words = ['Mesa', 'Sol', 'Vista', 'Cactus', 'Canyon', 'Adobe', 'Sierra', 'Aurora'];
+    const pw = 'Eloy' + words[Math.floor(Math.random() * words.length)] + Math.floor(100 + Math.random() * 900) + '!';
+    const input = document.getElementById('newStaffPassword');
+    if (input) { input.value = pw; input.focus(); }
+}
+
 async function createStaffAccount() {
     const name = document.getElementById('newStaffName')?.value?.trim();
     const email = document.getElementById('newStaffEmail')?.value?.trim();
