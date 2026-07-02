@@ -4232,7 +4232,7 @@ textarea.form-input {
 
         <div style="margin-bottom: 14px;">
             <label class="form-label">Content Type</label>
-            <select class="form-input" id="contentType">
+            <select class="form-input" id="contentType" onchange="document.getElementById('ccPhotoWrap').style.display = this.value === 'Civic Alert' ? 'none' : 'block'">
                 <option>News Article</option>
                 <option>Community Event</option>
                 <option>Civic Alert</option>
@@ -4267,6 +4267,21 @@ textarea.form-input {
                     <option>Medium - Advisory</option>
                     <option>High - Urgent</option>
                 </select>
+            </div>
+        </div>
+
+        <div id="ccPhotoWrap" style="margin-bottom: 14px;">
+            <label class="form-label">Photo <span style="color: var(--text-tertiary); font-weight: 400; text-transform: none;">(news &amp; events)</span></label>
+            <div style="display:flex; gap:12px; align-items:flex-start; margin-top: 4px;">
+                <div id="ccImagePreview" style="width:96px; height:72px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:11px; flex-shrink:0;">No photo</div>
+                <div style="flex:1;">
+                    <input class="form-input" id="ccImage" type="url" placeholder="Paste an image link, or upload below" oninput="ccUpdateImagePreview()">
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+                        <input id="ccImageFile" type="file" accept="image/*" style="display:none;" onchange="ccUploadImage(this.files[0])">
+                        <button class="btn btn-secondary" onclick="document.getElementById('ccImageFile').click()" style="font-size:12px; padding:7px 14px;">Upload from computer</button>
+                        <span id="ccImageStatus" style="font-size:11px; color:var(--text-tertiary);"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -4536,23 +4551,43 @@ function openContentDetail(kind, id) {
     document.getElementById('contentEditModal').classList.add('open');
 }
 
-async function ceUploadImage(file) {
+// Shared uploader: sends a file to the content-images bucket, writes the public
+// URL into `urlInputId`, reports progress in `statusId`.
+async function uploadContentImage(file, urlInputId, statusId, folder, onDone) {
     if (!file || !sbClient) return;
-    const status = document.getElementById('ceImageStatus');
+    const status = document.getElementById(statusId);
     if (file.size > 8 * 1024 * 1024) { status.textContent = 'Too big — keep it under 8 MB.'; return; }
     status.textContent = 'Uploading…';
     try {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = (ceCurrent?.kind || 'content') + '/' + Date.now() + '_' + safeName;
+        const path = folder + '/' + Date.now() + '_' + safeName;
         const { error } = await sbClient.storage.from('content-images').upload(path, file, { cacheControl: '3600', upsert: false });
         if (error) throw error;
         const { data } = sbClient.storage.from('content-images').getPublicUrl(path);
-        document.getElementById('ceImage').value = data.publicUrl;
-        ceUpdateImagePreview();
-        status.textContent = 'Uploaded — save changes to publish it.';
+        document.getElementById(urlInputId).value = data.publicUrl;
+        if (onDone) onDone();
+        status.textContent = 'Uploaded.';
     } catch (err) {
         status.textContent = 'Upload failed: ' + (err.message || 'unknown error');
     }
+}
+
+function ceUploadImage(file) {
+    uploadContentImage(file, 'ceImage', 'ceImageStatus', ceCurrent?.kind || 'content', ceUpdateImagePreview);
+}
+
+// Create-content modal photo helpers
+function ccUploadImage(file) {
+    const type = document.getElementById('contentType')?.value === 'Community Event' ? 'events' : 'news';
+    uploadContentImage(file, 'ccImage', 'ccImageStatus', type, ccUpdateImagePreview);
+}
+
+function ccUpdateImagePreview() {
+    const url = document.getElementById('ccImage').value.trim();
+    const box = document.getElementById('ccImagePreview');
+    box.innerHTML = url
+        ? `<img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.textContent='Bad link'">`
+        : 'No photo';
 }
 
 function ceUpdateImagePreview() {
@@ -7855,6 +7890,7 @@ async function publishContent() {
     const bodyEn = document.getElementById('contentBody')?.value?.trim();
     const category = document.getElementById('contentCategory')?.value || 'General';
     const severity = document.getElementById('contentSeverity')?.value?.split(' ')[0]?.toLowerCase() || 'low';
+    const imageUrl = document.getElementById('ccImage')?.value?.trim() || null;
     const titleEs = contentTranslations.title_es;
     const bodyEs = contentTranslations.body_es;
 
@@ -7875,6 +7911,7 @@ async function publishContent() {
                 body_en: bodyEn || null,
                 body_es: bodyEs || null,
                 category: category,
+                image_url: imageUrl,
                 published: true,
                 city_id: activeCityId,
                 published_at: new Date().toISOString()
@@ -7891,6 +7928,7 @@ async function publishContent() {
                 event_date: new Date().toISOString().split('T')[0],
                 start_time: '9:00 AM',
                 category: category,
+                image_url: imageUrl,
                 city_id: activeCityId,
                 published: true
             }).select();
