@@ -7880,6 +7880,22 @@ async function autoTranslateContent() {
 }
 
 async function publishContent() {
+    // Guard against double-clicks — publishing takes a few seconds
+    // (insert + notification + push), and a second click created duplicates.
+    if (publishContent._busy) return;
+    publishContent._busy = true;
+    const pubBtn = document.querySelector('#contentModal .btn-primary');
+    const pubBtnText = pubBtn ? pubBtn.textContent : '';
+    if (pubBtn) { pubBtn.disabled = true; pubBtn.textContent = 'Publishing…'; }
+    try {
+        await _publishContentImpl();
+    } finally {
+        publishContent._busy = false;
+        if (pubBtn) { pubBtn.disabled = false; pubBtn.textContent = pubBtnText; }
+    }
+}
+
+async function _publishContentImpl() {
     if (!sbClient) {
         showToast('Supabase not connected', 'error');
         return;
