@@ -4232,10 +4232,11 @@ textarea.form-input {
 
         <div style="margin-bottom: 14px;">
             <label class="form-label">Content Type</label>
-            <select class="form-input" id="contentType" onchange="document.getElementById('ccPhotoWrap').style.display = this.value === 'Civic Alert' ? 'none' : 'block'">
+            <select class="form-input" id="contentType" onchange="ccTypeChanged()">
                 <option>News Article</option>
                 <option>Community Event</option>
                 <option>Civic Alert</option>
+                <option>Council Meeting</option>
             </select>
         </div>
 
@@ -4267,6 +4268,17 @@ textarea.form-input {
                     <option>Medium - Advisory</option>
                     <option>High - Urgent</option>
                 </select>
+            </div>
+        </div>
+
+        <div id="ccWhenWhereWrap" style="display:none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div>
+                <label class="form-label">Date</label>
+                <input class="form-input" id="ccDate" type="date">
+            </div>
+            <div>
+                <label class="form-label">Location <span style="color: var(--text-tertiary); font-weight: 400; text-transform: none;">(optional)</span></label>
+                <input class="form-input" id="ccLocation" type="text" placeholder="e.g. Council Chambers, 595 N C Street">
             </div>
         </div>
 
@@ -5189,10 +5201,10 @@ async function fetchAllData() {
     try {
         const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses] = await Promise.allSettled([
             scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }),
-            scopeCity(sbClient.from('news').select('*').eq('published', true)).order('published_at', { ascending: false }),
-            scopeCity(sbClient.from('alerts').select('*').eq('active', true)).order('created_at', { ascending: false }),
-            scopeCity(sbClient.from('events').select('*').eq('published', true)).order('event_date', { ascending: true }),
-            scopeCity(sbClient.from('meeting_records').select('*').eq('is_public', true)).order('meeting_date', { ascending: false }),
+            scopeCity(sbClient.from('news').select('*')).order('published_at', { ascending: false, nullsFirst: false }),
+            scopeCity(sbClient.from('alerts').select('*')).order('created_at', { ascending: false }),
+            scopeCity(sbClient.from('events').select('*')).order('event_date', { ascending: true }),
+            scopeCity(sbClient.from('meeting_records').select('*')).order('meeting_date', { ascending: false }),
             scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }),
             scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50),
@@ -5836,7 +5848,9 @@ function updateContentPage() {
         };
         sortedMeetings.forEach(item => {
             const isPast = (item.meeting_date || '') < today;
-            const st = mStatus[item.status] || mStatus.scheduled;
+            const st = item.is_public === false
+                ? { label: 'Draft', cls: 'status-draft' }
+                : (mStatus[item.status] || mStatus.scheduled);
             const typeLabel = (item.meeting_type || 'council').charAt(0).toUpperCase() + (item.meeting_type || 'council').slice(1);
             rows.push(`<tr data-type="meeting" onclick="openContentDetail('meetings','${escapeHtml(item.id)}')" style="cursor:pointer; ${isPast ? 'opacity: 0.6;' : ''}">
                 <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">Council</span></td>
@@ -5844,7 +5858,10 @@ function updateContentPage() {
                 <td>${escapeHtml(typeLabel)}</td>
                 <td><span class="status ${st.cls}"><span class="status-dot"></span>${st.label}</span></td>
                 <td style="color: var(--text-tertiary);">${item.meeting_date || '—'}</td>
-                <td style="color: var(--text-tertiary); font-size: 11px;">${item.video_url ? `<a href="${escapeHtml(item.video_url)}" target="_blank" onclick="event.stopPropagation();" style="color: var(--accent);">Video</a>` : '—'}</td>
+                <td>
+                    <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 8px;" data-id="${escapeHtml(item.id)}" onclick="event.stopPropagation(); togglePublish('meeting_records', this.dataset.id, ${item.is_public !== false})">${item.is_public === false ? 'Publish' : 'Unpublish'}</button>
+                    ${item.video_url ? `<a href="${escapeHtml(item.video_url)}" target="_blank" onclick="event.stopPropagation();" style="color: var(--accent); font-size: 11px;">Video</a>` : ''}
+                </td>
             </tr>`);
         });
     }
@@ -5962,9 +5979,9 @@ function setupRealtime() {
                     let query;
                     switch(table) {
                         case 'reports': query = scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }); break;
-                        case 'news': query = scopeCity(sbClient.from('news').select('*').eq('published', true)).order('published_at', { ascending: false }); break;
-                        case 'alerts': query = scopeCity(sbClient.from('alerts').select('*').eq('active', true)).order('created_at', { ascending: false }); break;
-                        case 'events': query = scopeCity(sbClient.from('events').select('*').eq('published', true)).order('event_date', { ascending: true }); break;
+                        case 'news': query = scopeCity(sbClient.from('news').select('*')).order('published_at', { ascending: false, nullsFirst: false }); break;
+                        case 'alerts': query = scopeCity(sbClient.from('alerts').select('*')).order('created_at', { ascending: false }); break;
+                        case 'events': query = scopeCity(sbClient.from('events').select('*')).order('event_date', { ascending: true }); break;
                         case 'leaders': query = scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }); break;
                         case 'profiles': query = scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }); break;
                         case 'notifications': query = scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50); break;
@@ -6169,10 +6186,23 @@ function filterContent(type, btn) {
 // ============================================
 // MODAL
 // ============================================
+function ccTypeChanged() {
+    const t = document.getElementById('contentType')?.value || 'News Article';
+    const photos = document.getElementById('ccPhotoWrap');
+    const whenWhere = document.getElementById('ccWhenWhereWrap');
+    if (photos) photos.style.display = (t === 'News Article' || t === 'Community Event') ? 'block' : 'none';
+    if (whenWhere) whenWhere.style.display = (t === 'Community Event' || t === 'Council Meeting') ? 'grid' : 'none';
+}
+
 function openModal(type) {
     // Fresh start every time — a photo from the last post must never
     // silently ride along on the next one.
     ccResetPhotos();
+    const d = document.getElementById('ccDate');
+    if (d) d.value = new Date().toISOString().split('T')[0];
+    const loc = document.getElementById('ccLocation');
+    if (loc) loc.value = '';
+    ccTypeChanged();
     document.getElementById('contentModal').classList.add('open');
 }
 
@@ -7980,8 +8010,9 @@ async function _publishContentImpl() {
                 title_es: titleEs || null,
                 description_en: bodyEn || null,
                 description_es: bodyEs || null,
-                event_date: new Date().toISOString().split('T')[0],
+                event_date: (document.getElementById('ccDate')?.value) || new Date().toISOString().split('T')[0],
                 start_time: '9:00 AM',
+                location_en: document.getElementById('ccLocation')?.value?.trim() || null,
                 category: category,
                 image_url: imageUrl,
                 image_urls: imageUrls,
@@ -8004,10 +8035,23 @@ async function _publishContentImpl() {
             }).select();
             if (error) throw error;
             result = data;
+
+        } else if (contentType === 'Council Meeting') {
+            const { data, error } = await sbClient.from('meeting_records').insert({
+                title: titleEn,
+                public_summary: bodyEn || null,
+                meeting_date: (document.getElementById('ccDate')?.value) || new Date().toISOString().split('T')[0],
+                location: document.getElementById('ccLocation')?.value?.trim() || null,
+                meeting_type: 'council',
+                is_public: true,
+                city_id: activeCityId
+            }).select();
+            if (error) throw error;
+            result = data;
         }
 
         // Also create a notification so the app shows it
-        const notifType = contentType === 'Civic Alert' ? 'alert' : contentType === 'Community Event' ? 'event' : 'news';
+        const notifType = contentType === 'Civic Alert' ? 'alert' : contentType === 'Community Event' ? 'event' : contentType === 'Council Meeting' ? 'meeting' : 'news';
         const notifMessage = bodyEn || titleEn;
         try {
             await sbClient.from('notifications').insert({
@@ -8092,6 +8136,8 @@ async function saveDraft() {
                 body_en: bodyEn || null,
                 body_es: bodyEs || null,
                 category: category,
+                image_url: ccPhotos[0] || null,
+                image_urls: ccPhotos.slice(),
                 city_id: activeCityId,
                 published: false
             });
@@ -8102,9 +8148,36 @@ async function saveDraft() {
                 title_es: titleEs || null,
                 description_en: bodyEn || null,
                 description_es: bodyEs || null,
-                event_date: new Date().toISOString().split('T')[0],
+                event_date: (document.getElementById('ccDate')?.value) || new Date().toISOString().split('T')[0],
+                location_en: document.getElementById('ccLocation')?.value?.trim() || null,
+                image_url: ccPhotos[0] || null,
+                image_urls: ccPhotos.slice(),
                 city_id: activeCityId,
                 published: false
+            });
+            if (error) throw error;
+        } else if (contentType === 'Civic Alert') {
+            // (was silently unsaved before — alerts draft as inactive)
+            const { error } = await sbClient.from('alerts').insert({
+                title_en: titleEn,
+                title_es: titleEs || null,
+                message_en: bodyEn || titleEn,
+                message_es: bodyEs || titleEs || null,
+                severity: (document.getElementById('contentSeverity')?.value?.split(' ')[0]?.toLowerCase()) || 'low',
+                active: false,
+                city_id: activeCityId,
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+            });
+            if (error) throw error;
+        } else if (contentType === 'Council Meeting') {
+            const { error } = await sbClient.from('meeting_records').insert({
+                title: titleEn,
+                public_summary: bodyEn || null,
+                meeting_date: (document.getElementById('ccDate')?.value) || new Date().toISOString().split('T')[0],
+                location: document.getElementById('ccLocation')?.value?.trim() || null,
+                meeting_type: 'council',
+                is_public: false,
+                city_id: activeCityId
             });
             if (error) throw error;
         }
@@ -8112,6 +8185,7 @@ async function saveDraft() {
         showToast('Draft saved', 'success');
         closeModal();
         await fetchAllData();
+        updateContentPage();
     } catch(e) {
         showToast('Failed to save draft: ' + e.message, 'error');
     }
@@ -8121,7 +8195,7 @@ async function saveDraft() {
 async function togglePublish(table, id, currentlyPublished) {
     if (!sbClient) return;
 
-    const field = table === 'alerts' ? 'active' : 'published';
+    const field = table === 'alerts' ? 'active' : (table === 'meeting_records' ? 'is_public' : 'published');
     const newValue = !currentlyPublished;
 
     try {
@@ -8134,6 +8208,7 @@ async function togglePublish(table, id, currentlyPublished) {
 
         showToast(newValue ? 'Published' : 'Unpublished', 'success');
         await fetchAllData();
+        updateContentPage();
     } catch(e) {
         showToast('Failed to toggle publish: ' + e.message, 'error');
     }
