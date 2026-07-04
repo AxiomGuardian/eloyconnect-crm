@@ -4271,18 +4271,15 @@ textarea.form-input {
         </div>
 
         <div id="ccPhotoWrap" style="margin-bottom: 14px;">
-            <label class="form-label">Photo <span style="color: var(--text-tertiary); font-weight: 400; text-transform: none;">(news &amp; events)</span></label>
-            <div style="display:flex; gap:12px; align-items:flex-start; margin-top: 4px;">
-                <div id="ccImagePreview" style="width:96px; height:72px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:11px; flex-shrink:0;">No photo</div>
-                <div style="flex:1;">
-                    <input class="form-input" id="ccImage" type="url" placeholder="Paste an image link, or upload below" oninput="ccUpdateImagePreview()">
-                    <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
-                        <input id="ccImageFile" type="file" accept="image/*" style="display:none;" onchange="ccUploadImage(this.files[0])">
-                        <button class="btn btn-secondary" onclick="document.getElementById('ccImageFile').click()" style="font-size:12px; padding:7px 14px;">Upload from computer</button>
-                        <span id="ccImageStatus" style="font-size:11px; color:var(--text-tertiary);"></span>
-                    </div>
-                </div>
+            <label class="form-label">Photos <span style="color: var(--text-tertiary); font-weight: 400; text-transform: none;">(news &amp; events — the first photo is the cover)</span></label>
+            <div id="ccPhotoThumbs" style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;"></div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <input id="ccImageFile" type="file" accept="image/*" multiple style="display:none;" onchange="ccUploadImages(this.files); this.value='';">
+                <button class="btn btn-secondary" onclick="document.getElementById('ccImageFile').click()" style="font-size:12px; padding:7px 14px; white-space:nowrap;">Upload photos</button>
+                <input class="form-input" id="ccImage" type="url" placeholder="...or paste an image link" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault(); ccAddPhotoUrl();}">
+                <button class="btn btn-secondary" onclick="ccAddPhotoUrl()" style="font-size:12px; padding:7px 14px;">Add</button>
             </div>
+            <div id="ccImageStatus" style="font-size:11px; color:var(--text-tertiary); margin-top:6px;"></div>
         </div>
 
         <div style="padding: 12px; background: rgba(63, 224, 232, 0.06); border: 1px solid rgba(63, 224, 232, 0.15); border-radius: var(--radius-sm); margin-bottom: 14px;">
@@ -4551,43 +4548,78 @@ function openContentDetail(kind, id) {
     document.getElementById('contentEditModal').classList.add('open');
 }
 
-// Shared uploader: sends a file to the content-images bucket, writes the public
-// URL into `urlInputId`, reports progress in `statusId`.
-async function uploadContentImage(file, urlInputId, statusId, folder, onDone) {
-    if (!file || !sbClient) return;
+// Core uploader: sends one file to the content-images bucket, returns the
+// public URL (or null on failure). Progress/errors go to `statusId`.
+async function uploadImageGetUrl(file, folder, statusId) {
+    if (!file || !sbClient) return null;
     const status = document.getElementById(statusId);
-    if (file.size > 8 * 1024 * 1024) { status.textContent = 'Too big — keep it under 8 MB.'; return; }
-    status.textContent = 'Uploading…';
+    if (file.size > 8 * 1024 * 1024) { status.textContent = file.name + ' is too big — keep it under 8 MB.'; return null; }
+    status.textContent = 'Uploading ' + file.name + '…';
     try {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const path = folder + '/' + Date.now() + '_' + safeName;
         const { error } = await sbClient.storage.from('content-images').upload(path, file, { cacheControl: '3600', upsert: false });
         if (error) throw error;
-        const { data } = sbClient.storage.from('content-images').getPublicUrl(path);
-        document.getElementById(urlInputId).value = data.publicUrl;
-        if (onDone) onDone();
-        status.textContent = 'Uploaded.';
+        status.textContent = '';
+        return sbClient.storage.from('content-images').getPublicUrl(path).data.publicUrl;
     } catch (err) {
         status.textContent = 'Upload failed: ' + (err.message || 'unknown error');
+        return null;
     }
 }
 
-function ceUploadImage(file) {
-    uploadContentImage(file, 'ceImage', 'ceImageStatus', ceCurrent?.kind || 'content', ceUpdateImagePreview);
+// Edit-modal (single cover photo) helper — kept on the shared core
+async function ceUploadImage(file) {
+    const url = await uploadImageGetUrl(file, ceCurrent?.kind || 'content', 'ceImageStatus');
+    if (url) {
+        document.getElementById('ceImage').value = url;
+        ceUpdateImagePreview();
+        document.getElementById('ceImageStatus').textContent = 'Uploaded — save changes to publish it.';
+    }
 }
 
-// Create-content modal photo helpers
-function ccUploadImage(file) {
-    const type = document.getElementById('contentType')?.value === 'Community Event' ? 'events' : 'news';
-    uploadContentImage(file, 'ccImage', 'ccImageStatus', type, ccUpdateImagePreview);
+// ===== Create-content modal: MULTI-PHOTO gallery =====
+let ccPhotos = [];
+
+function ccRenderPhotos() {
+    const box = document.getElementById('ccPhotoThumbs');
+    if (!box) return;
+    box.innerHTML = ccPhotos.length
+        ? ccPhotos.map((url, i) => `
+            <div style="position:relative; width:84px; height:64px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
+                <img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.opacity='0.2'">
+                <button onclick="ccRemovePhoto(${i})" title="Remove photo" style="position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; border:none; cursor:pointer; background:rgba(6,10,18,0.85); color:#EAF1FB; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center;">&#10005;</button>
+                ${i === 0 ? '<span style="position:absolute; bottom:3px; left:3px; font-size:9px; font-weight:700; letter-spacing:0.5px; padding:1px 6px; border-radius:999px; background:rgba(63,224,232,0.9); color:#04121A;">COVER</span>' : ''}
+            </div>`).join('')
+        : '<div style="font-size:11px; color:var(--text-tertiary); padding:6px 0;">No photos yet — upload or paste a link below.</div>';
 }
 
-function ccUpdateImagePreview() {
-    const url = document.getElementById('ccImage').value.trim();
-    const box = document.getElementById('ccImagePreview');
-    box.innerHTML = url
-        ? `<img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.textContent='Bad link'">`
-        : 'No photo';
+function ccRemovePhoto(i) { ccPhotos.splice(i, 1); ccRenderPhotos(); }
+
+function ccAddPhotoUrl() {
+    const input = document.getElementById('ccImage');
+    const v = input.value.trim();
+    if (!v) return;
+    ccPhotos.push(v);
+    input.value = '';
+    ccRenderPhotos();
+}
+
+async function ccUploadImages(files) {
+    const folder = document.getElementById('contentType')?.value === 'Community Event' ? 'events' : 'news';
+    for (const f of Array.from(files || [])) {
+        const url = await uploadImageGetUrl(f, folder, 'ccImageStatus');
+        if (url) { ccPhotos.push(url); ccRenderPhotos(); }
+    }
+}
+
+function ccResetPhotos() {
+    ccPhotos = [];
+    const input = document.getElementById('ccImage');
+    if (input) input.value = '';
+    const status = document.getElementById('ccImageStatus');
+    if (status) status.textContent = '';
+    ccRenderPhotos();
 }
 
 function ceUpdateImagePreview() {
@@ -6138,6 +6170,9 @@ function filterContent(type, btn) {
 // MODAL
 // ============================================
 function openModal(type) {
+    // Fresh start every time — a photo from the last post must never
+    // silently ride along on the next one.
+    ccResetPhotos();
     document.getElementById('contentModal').classList.add('open');
 }
 
@@ -7906,7 +7941,10 @@ async function _publishContentImpl() {
     const bodyEn = document.getElementById('contentBody')?.value?.trim();
     const category = document.getElementById('contentCategory')?.value || 'General';
     const severity = document.getElementById('contentSeverity')?.value?.split(' ')[0]?.toLowerCase() || 'low';
-    const imageUrl = document.getElementById('ccImage')?.value?.trim() || null;
+    // Gallery: first photo = cover (image_url, what the app shows today);
+    // full ordered list goes to image_urls for the future carousel.
+    const imageUrl = ccPhotos[0] || null;
+    const imageUrls = ccPhotos.slice();
     const titleEs = contentTranslations.title_es;
     const bodyEs = contentTranslations.body_es;
 
@@ -7928,6 +7966,7 @@ async function _publishContentImpl() {
                 body_es: bodyEs || null,
                 category: category,
                 image_url: imageUrl,
+                image_urls: imageUrls,
                 published: true,
                 city_id: activeCityId,
                 published_at: new Date().toISOString()
@@ -7945,6 +7984,7 @@ async function _publishContentImpl() {
                 start_time: '9:00 AM',
                 category: category,
                 image_url: imageUrl,
+                image_urls: imageUrls,
                 city_id: activeCityId,
                 published: true
             }).select();
@@ -7995,7 +8035,8 @@ async function _publishContentImpl() {
                     title: titleEn,
                     body: notifMessage.substring(0, 150),
                     broadcast: true,
-                    data: { type: notifType }
+                    // id lets the app deep-link straight to this post when tapped
+                    data: { type: notifType, id: (result && result[0] && result[0].id) ? String(result[0].id) : '' }
                 })
             });
             const pushResult = await pushResp.json().catch(() => ({}));
@@ -8015,6 +8056,7 @@ async function _publishContentImpl() {
         // Clear form
         document.getElementById('contentTitle').value = '';
         document.getElementById('contentBody').value = '';
+        ccResetPhotos();
         document.getElementById('translationPreview').style.display = 'none';
         contentTranslations = { title_es: null, title_zh: null, title_de: null, body_es: null, body_zh: null, body_de: null };
 
