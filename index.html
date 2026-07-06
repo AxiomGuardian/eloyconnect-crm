@@ -1263,6 +1263,42 @@ input[type="checkbox"].bulk-check:checked::after {
     color: var(--warm-accent); margin-bottom: 8px;
 }
 
+/* Per-type aura variants — news blue, event green, alert red, council gold */
+.aura-host { position: relative; overflow: hidden; --aura: 246,196,69; }
+.aura-host.aura-blue  { --aura: 59,158,245; }
+.aura-host.aura-green { --aura: 52,211,153; }
+.aura-host.aura-red   { --aura: 244,63,94; }
+.aura-host.aura-gold  { --aura: 246,196,69; }
+.aura-host {
+    border: 1px solid rgba(var(--aura), 0.28) !important;
+    animation: auraBreathe 4.5s ease-in-out infinite;
+}
+@keyframes auraBreathe {
+    0%, 100% { box-shadow: 0 0 30px rgba(var(--aura), 0.10), 0 24px 60px rgba(0,0,0,0.5); }
+    50%      { box-shadow: 0 0 54px rgba(var(--aura), 0.22), 0 24px 60px rgba(0,0,0,0.5); }
+}
+.aura-glow {
+    position: absolute; top: 0; left: 0; right: 0; height: 150px; pointer-events: none;
+    background: radial-gradient(ellipse at 50% -20%, rgba(var(--aura), 0.20), transparent 70%);
+}
+.aura-line {
+    position: absolute; top: 0; left: -40%; width: 40%; height: 2px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(var(--aura), 0.9), transparent);
+    animation: mtgSweep 3.2s ease-in-out infinite;
+}
+/* Pulsing live dot (replaces the generic emoji) */
+.live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success); margin-right: 2px; vertical-align: middle;
+    box-shadow: 0 0 0 0 rgba(52,211,153,0.6);
+    animation: liveDotPulse 1.8s ease-out infinite;
+}
+@keyframes liveDotPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+}
+
 
 @keyframes pageIn {
     from { opacity: 0; transform: translateY(8px); }
@@ -3736,7 +3772,7 @@ input[type="checkbox"].bulk-check:checked::after {
 
                 <div style="padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; margin-bottom:20px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:12px;">📡</span> MEETING INTELLIGENCE — COMING SOON
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE — COMING SOON
                     </div>
                     <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
                         Connect Zoom, Google Meet, or Teams → Eloy Connect transcribes the meeting live,
@@ -3757,7 +3793,7 @@ input[type="checkbox"].bulk-check:checked::after {
                 <div class="mtg-aurora"></div>
                 <div class="mtg-sweep"></div>
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; position:relative;">
-                    <span class="mtg-chip" style="margin-bottom:14px;"><span>🏛</span> CITY COUNCIL</span>
+                    <span class="mtg-chip" style="margin-bottom:14px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M3 21h18M4 8h16M6 8v10M10 8v10M14 8v10M18 8v10M12 2l8 5H4z"/></svg> CITY COUNCIL</span>
                     <button class="btn btn-ghost" style="font-size:16px; padding:6px 12px;" onclick="closeMtgDetail()">✕</button>
                 </div>
                 <h2 id="mdTitle" style="font-size:26px; font-weight:700; line-height:1.25; margin-bottom:14px; position:relative;">—</h2>
@@ -3767,7 +3803,7 @@ input[type="checkbox"].bulk-check:checked::after {
 
                 <div style="margin-top:20px; padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:12px;">📡</span> MEETING INTELLIGENCE — COMING SOON
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE — COMING SOON
                     </div>
                     <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
                         Live stream + real-time transcription land here: residents watch from their phones while AI
@@ -4544,8 +4580,10 @@ input[type="checkbox"].bulk-check:checked::after {
 
 <!-- CONTENT CREATION MODAL -->
 <div class="modal-overlay" id="contentModal">
-    <div class="modal">
-        <div class="modal-title">Create New Content</div>
+    <div class="modal aura-host aura-blue" id="contentModalCard">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+        <div class="modal-title" style="position:relative;">Create New Content</div>
 
         <div style="margin-bottom: 14px;">
             <label class="form-label">Content Type</label>
@@ -4695,7 +4733,9 @@ input[type="checkbox"].bulk-check:checked::after {
 
 <!-- CONTENT DETAIL / EDIT MODAL -->
 <div class="modal-overlay" id="contentEditModal" onclick="if(event.target===this)closeContentDetail()">
-    <div class="modal" style="width: 560px; max-height: 82vh; overflow-y: auto; padding: 28px;">
+    <div class="modal aura-host aura-blue" style="width: 560px; max-height: 82vh; overflow-y: auto; padding: 28px;" id="contentEditCard">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span class="tag" id="ceTypeTag" style="background: rgba(63,224,232,0.15); color: var(--accent);">Post</span>
             <button class="btn btn-ghost" onclick="closeContentDetail()" style="font-size: 16px; padding: 4px 10px;">&#10005;</button>
@@ -4869,6 +4909,7 @@ function openContentDetail(kind, id) {
         }[kind];
         tag.textContent = cfg.label;
         tag.style.cssText = 'background: ' + cfg.color + ';';
+        setAura('contentEditCard', kind === 'events' ? 'green' : kind === 'alerts' ? 'red' : 'blue');
         heading.textContent = 'Edit ' + cfg.label.toLowerCase();
         document.getElementById('ceTitle').value = item.title_en || '';
         document.getElementById('ceBody').value = cfg.body || '';
@@ -6786,6 +6827,16 @@ function ccTypeChanged() {
     const whenWhere = document.getElementById('ccWhenWhereWrap');
     if (photos) photos.style.display = (t === 'News Article' || t === 'Community Event') ? 'block' : 'none';
     if (whenWhere) whenWhere.style.display = (t === 'Community Event' || t === 'Council Meeting') ? 'grid' : 'none';
+    // Each type wears its own aura: news blue, event green, alert red.
+    setAura('contentModalCard', t === 'Community Event' ? 'green' : t === 'Civic Alert' ? 'red' : 'blue');
+}
+
+// Swap the aura color class on a modal card.
+function setAura(cardId, color) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    card.classList.remove('aura-blue', 'aura-green', 'aura-red', 'aura-gold');
+    card.classList.add('aura-' + color);
 }
 
 function openModal(type) {
@@ -9051,6 +9102,21 @@ async function saveMeeting(publish) {
     } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
 }
 
+// Crisp inline SVG icons — no generic emojis.
+function svgIco(name, color) {
+    const c = color || 'currentColor';
+    const base = `width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"`;
+    const paths = {
+        calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/>',
+        pin: '<path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+        eyeOff: '<path d="M3 3l18 18M10.5 5.2A9.8 9.8 0 0 1 12 5c7 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.1 6.1A16.9 16.9 0 0 0 2 12s3 7 10 7c1.8 0 3.4-.5 4.8-1.2"/>',
+        radio: '<circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/>',
+        play: '<polygon points="6 4 20 12 6 20 6 4" fill="' + c + '" stroke="none"/>',
+        columns: '<path d="M3 21h18M4 8h16M6 8v10M10 8v10M14 8v10M18 8v10M12 2l8 5H4z"/>'
+    };
+    return `<svg ${base}>${paths[name] || ''}</svg>`;
+}
+
 // ============================================
 // COUNCIL MEETING DETAIL — the living view
 // ============================================
@@ -9063,9 +9129,11 @@ async function openCouncilMeeting(id) {
     document.getElementById('mdTitle').textContent = m.title || 'Council meeting';
 
     const chips = [];
-    if (m.meeting_date) chips.push(`<span class="mtg-chip">📅 ${escapeHtml(m.meeting_date)}</span>`);
-    if (m.location) chips.push(`<span class="mtg-chip">📍 ${escapeHtml(m.location)}</span>`);
-    chips.push(`<span class="mtg-chip">${m.is_public === false ? '🕶 Hidden from app' : '🟢 Live in app'}</span>`);
+    if (m.meeting_date) chips.push(`<span class="mtg-chip">${svgIco('calendar')} ${escapeHtml(m.meeting_date)}</span>`);
+    if (m.location) chips.push(`<span class="mtg-chip">${svgIco('pin')} ${escapeHtml(m.location)}</span>`);
+    chips.push(m.is_public === false
+        ? `<span class="mtg-chip">${svgIco('eyeOff')} Hidden from app</span>`
+        : `<span class="mtg-chip" style="color:var(--success); border-color:rgba(52,211,153,0.35); background:rgba(52,211,153,0.08);"><span class="live-dot"></span> Live in app</span>`);
     document.getElementById('mdChips').innerHTML = chips.join('');
 
     const parts = [];
@@ -9082,7 +9150,7 @@ async function openCouncilMeeting(id) {
     };
     tryTags(m.topics_discussed, 'TOPICS ON THE TABLE');
     tryTags(m.key_decisions, 'KEY DECISIONS');
-    if (m.video_url) parts.push(`<a href="${escapeHtml(m.video_url)}" target="_blank" style="color:var(--accent); font-size:14px;">▶ Watch the meeting video</a>`);
+    if (m.video_url) parts.push(`<a href="${escapeHtml(m.video_url)}" target="_blank" style="color:var(--accent); font-size:14px;">${svgIco('play', '#3FE0E8')} Watch the meeting video</a>`);
     if (!parts.length) parts.push('<div style="color:var(--text-tertiary); font-size:13px;">No agenda published yet — edit coming with the Meeting Intelligence build.</div>');
     document.getElementById('mdBody').innerHTML = parts.join('');
 
