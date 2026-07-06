@@ -8472,6 +8472,18 @@ async function notifyReporter(newStatus) {
             sent: result.sent || 0, failed: result.failed || 0,
             data: { report_id: report.id, status: newStatus }
         });
+        // Bell inbox: PERSONAL row for the reporting resident only
+        // (user_id set → other residents never see it).
+        try {
+            await sbClient.from('notifications').insert({
+                user_id: report.user_id,
+                title, message: body,
+                type: 'report_update',
+                read: false,
+                related_id: report.id,
+                city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+            });
+        } catch (e) { /* inbox row is best-effort */ }
     } catch (e) { /* best-effort — never block the status change */ }
 }
 
