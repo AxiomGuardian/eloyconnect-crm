@@ -2805,7 +2805,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="nav-item" data-page="grok" onclick="navigateTo('grok')">AI Briefing <span class="badge badge-info">New</span></div>
         <div class="nav-item" data-page="directory" onclick="navigateTo('directory')">Business Directory</div>
         <div class="nav-item" data-page="enforcement" onclick="navigateTo('enforcement')">Code Enforcement</div>
-        <div class="nav-item" data-page="notifications" onclick="navigateTo('notifications')">Notifications</div>
+        <div class="nav-item" data-page="notifications" onclick="navigateTo('notifications')">Messages</div>
 
         <div class="nav-group-divider"></div>
 
@@ -3590,8 +3590,8 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="page" id="page-notifications">
             <div class="section-header">
                 <div>
-                    <h3>Push Notifications</h3>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Broadcast alerts and updates to Eloy Connect users</p>
+                    <h3>Messages</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">The city's send record — plus a direct line for urgent broadcasts</p>
                 </div>
             </div>
 
@@ -3618,6 +3618,31 @@ input[type="checkbox"].bulk-check:checked::after {
                 </div>
             </div>
 
+            <!-- MESSAGE HISTORY — the audit trail: every push, every sender -->
+            <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.07);">
+                    <div>
+                        <div style="font-size:13px; font-weight:700;">Message History</div>
+                        <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">Everything sent to phones — content publishes, report updates, crew dispatches, and direct pushes</div>
+                    </div>
+                    <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px;" onclick="loadPushHistory()">Refresh</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Kind</th>
+                            <th>Message</th>
+                            <th>Audience</th>
+                            <th>Delivered</th>
+                            <th>When</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pushHistoryBody">
+                        <tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
             <div class="composer-grid">
                 <div>
                     <!-- MODERN COMPOSE AREA -->
@@ -3625,8 +3650,8 @@ input[type="checkbox"].bulk-check:checked::after {
                         <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
                             <div style="width:36px; height:36px; border-radius:var(--radius-sm); background:rgba(63,224,232,0.12); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--accent); font-weight:700;">N</div>
                             <div>
-                                <h4 style="font-size: 15px; font-weight: 600;">Compose Notification</h4>
-                                <p style="font-size:11px; color:var(--text-tertiary);">The direct line — operational messages straight to phones. Use Content for news residents browse.</p>
+                                <h4 style="font-size: 15px; font-weight: 600;">Emergency Direct Push</h4>
+                                <p style="font-size:11px; color:var(--text-tertiary);">Straight to every lock screen, nothing posted in the app. For news, events &amp; alerts use <a href="#" onclick="navigateTo('content'); return false;" style="color:var(--accent);">Content</a> — it posts AND pushes.</p>
                             </div>
                         </div>
 
@@ -4513,7 +4538,7 @@ var pages = {
     grok: { title: 'AI Briefing', subtitle: 'AI-powered city assistant' },
     directory: { title: 'Business Directory', subtitle: 'Manage local business listings' },
     enforcement: { title: 'Code Enforcement', subtitle: 'Violations & compliance tracking' },
-    notifications: { title: 'Notifications', subtitle: 'Broadcast & manage alerts' },
+    notifications: { title: 'Messages', subtitle: 'Every push the city sends — on the record' },
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
     staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' }
 };
@@ -6273,6 +6298,9 @@ function navigateTo(page) {
             if (reportsMap) reportsMap.invalidateSize();
         }, 60);
     }
+
+    // Messages: refresh the send record whenever the tab opens.
+    if (page === 'notifications') loadPushHistory();
 }
 
 // Alias — some buttons use navigateToPage, make sure it works identically
@@ -6658,6 +6686,13 @@ async function sendPushNotification() {
                     sent_at: isScheduled ? data.scheduled_at : new Date().toISOString()
                 });
             }
+
+            // Messages history: direct/emergency broadcast, on the record.
+            logPushSend({
+                kind: 'direct', title, body,
+                audience: audienceValue || 'All users',
+                sent: result.sent || 0, failed: result.failed || 0
+            });
 
             // Clear the form
             document.querySelector('#notifTitle').value = '';
@@ -8325,6 +8360,70 @@ async function updateReportStatus(newStatus) {
     }
 }
 
+// ---- MESSAGE HISTORY — render the audit trail on the Messages tab ----
+async function loadPushHistory() {
+    const tbody = document.getElementById('pushHistoryBody');
+    if (!tbody || !sbClient) return;
+    try {
+        const { data: log, error } = await sbClient
+            .from('push_log').select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+
+        const kinds = {
+            direct:        { label: 'Direct Push',   color: 'var(--warm-accent)' },
+            content:       { label: 'Content',       color: 'var(--info)' },
+            report_update: { label: 'Report Update', color: 'var(--success)' },
+            crew_dispatch: { label: 'Crew Dispatch', color: '#8B7CF6' }
+        };
+
+        // Honest "sent" stat: total deliveries on record.
+        const totalSent = (log || []).reduce((s, r) => s + (r.sent || 0), 0);
+        const ns = document.getElementById('notif-sent-count');
+        if (ns) ns.textContent = totalSent.toLocaleString();
+
+        if (!log || !log.length) return;   // keep the empty-state row
+        tbody.innerHTML = log.map(r => {
+            const k = kinds[r.kind] || kinds.direct;
+            const when = r.created_at
+                ? new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                : '—';
+            const delivered = (r.failed || 0) > 0
+                ? `<span style="color:var(--success);">${r.sent || 0}</span> <span style="color:var(--warning); font-size:11px;">(${r.failed} failed)</span>`
+                : `<span style="color:var(--success);">${r.sent || 0}</span>`;
+            return `<tr>
+                <td><span class="tag" style="color:${k.color};">${k.label}</span></td>
+                <td>
+                    <div style="font-weight:500;">${escapeHtml(r.title || '')}</div>
+                    ${r.body ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:2px; max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(r.body)}</div>` : ''}
+                </td>
+                <td style="color:var(--text-secondary); font-size:12px;">${escapeHtml(r.audience || 'All users')}</td>
+                <td>${delivered}</td>
+                <td style="color:var(--text-tertiary); font-size:12px;">${when}</td>
+            </tr>`;
+        }).join('');
+    } catch (e) { /* table may not exist yet in a fresh env — stay quiet */ }
+}
+
+// ---- PUSH AUDIT LOG — every send, on the record (Messages tab) ----
+async function logPushSend(entry) {
+    try {
+        if (!sbClient) return;
+        await sbClient.from('push_log').insert({
+            kind: entry.kind || 'direct',
+            title: entry.title || '(no title)',
+            body: (entry.body || '').substring(0, 500),
+            audience: entry.audience || 'All users',
+            sent: entry.sent || 0,
+            failed: entry.failed || 0,
+            data: entry.data || null,
+            city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+        });
+        if (typeof loadPushHistory === 'function') loadPushHistory();
+    } catch (e) { /* audit is best-effort, never blocks a send */ }
+}
+
 // Tell the RESIDENT who filed the report that their city is on it / fixed it.
 // Targeted push (user_ids) with a report_update deep link into the app.
 async function notifyReporter(newStatus) {
@@ -8365,6 +8464,12 @@ async function notifyReporter(newStatus) {
         if (resp.ok && result.sent > 0) {
             showToast('Resident notified on their phone', 'success');
         }
+        logPushSend({
+            kind: 'report_update', title, body,
+            audience: 'Reporting resident',
+            sent: result.sent || 0, failed: result.failed || 0,
+            data: { report_id: report.id, status: newStatus }
+        });
     } catch (e) { /* best-effort — never block the status change */ }
 }
 
@@ -8478,6 +8583,14 @@ async function assignReport() {
                     );
                     const r = await resp.json().catch(() => ({}));
                     if (resp.ok && r.sent > 0) showToast('Crew iPad notified', 'success');
+                    logPushSend({
+                        kind: 'crew_dispatch',
+                        title: 'New job dispatched',
+                        body: rep?.title || 'Work order',
+                        audience: assigneeName || 'Assigned crew',
+                        sent: r.sent || 0, failed: r.failed || 0,
+                        data: { report_id: currentReportId, assigned_to: assigneeId }
+                    });
                 } catch (e) { /* push is best-effort */ }
             })();
         } catch (taskErr) {
@@ -8714,6 +8827,14 @@ async function _publishContentImpl() {
             } else if (pushResult.error || pushResult.error_sample) {
                 console.warn('Push delivery issue:', pushResult);
             }
+            logPushSend({
+                kind: 'content',
+                title: titleEn,
+                body: notifMessage.substring(0, 200),
+                audience: 'All users',
+                sent: pushResult.sent || 0, failed: pushResult.failed || 0,
+                data: { content_type: notifType }
+            });
         } catch (pushErr) {
             console.warn('Push send failed (non-blocking):', pushErr.message);
         }
