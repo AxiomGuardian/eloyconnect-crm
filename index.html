@@ -7243,8 +7243,8 @@ async function runContentAI(mode) {
     resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);"><span class="ai-typing-dots"><span></span><span></span><span></span></span> Working on it...</div>';
 
     const prompts = {
-        topics: 'Based on current citizen reports, active alerts, and city data, suggest 5 content topics that would be valuable to publish as news articles or alerts in the Eloy Connect app. For each topic, explain why it\'s relevant right now. Consider what residents are reporting and what information gaps exist.',
-        headlines: 'Draft 5 engaging headlines for news articles or alerts that would be relevant to City of Eloy residents right now. Base these on current report data, active alerts, and seasonal relevance. Make them clear and informative, suitable for a civic app.',
+        topics: 'Based on current citizen reports, active alerts, and city data, suggest 5 content topics that would be valuable to publish in the Eloy Connect app. Respond with ONLY a JSON array, no other text, in this exact shape: [{"title": "short topic title", "why": "one sentence on why this matters right now, citing the live data"}]',
+        headlines: 'Draft 5 engaging, civic-toned headlines relevant to City of Eloy residents right now, based on current report data, active alerts, and season. Respond with ONLY a JSON array, no other text, in this exact shape: [{"title": "the headline", "why": "one sentence on why"}]',
         keywords: 'Analyze the current CRM data (reports, alerts, events) and suggest 10-15 relevant keywords/tags that should be used for content in the Eloy Connect app. Group them by category (infrastructure, community, safety, services, etc.).'
     };
 
@@ -7264,10 +7264,98 @@ async function runContentAI(mode) {
     try {
         aiQueryCount++;
         const result = await callGrokAI(prompts[mode], 'Context: This is the Content page AI Helper. The user is managing content for the Eloy Connect app.');
+
+        // Topics/headlines: structured suggestions with action buttons
+        if (mode === 'topics' || mode === 'headlines') {
+            const parsed = aiExtractJsonArray(result);
+            if (parsed && parsed.length) {
+                aiSuggestions = parsed;
+                resultEl.innerHTML = parsed.map((s, i) => `
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <div style="flex:1;">
+                            <div style="font-weight:600; color:var(--text-primary); font-size:13px;">${escapeHtml(s.title || '')}</div>
+                            <div style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">${escapeHtml(s.why || '')}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-shrink:0;">
+                            <button class="ai-assist-btn" style="font-size:11px; padding:5px 10px;" onclick="aiWritePost(${i})">Write the post</button>
+                            <button class="ai-assist-btn" style="font-size:11px; padding:5px 10px;" onclick="aiUseTitle(${i})">Use title</button>
+                        </div>
+                    </div>`).join('');
+                updateActivityStats();
+                return;
+            }
+            // JSON didn't parse — fall through to plain rendering
+        }
+
         resultEl.innerHTML = parseAIResponse(result);
         updateActivityStats();
     } catch (err) {
         resultEl.innerHTML = '<span style="color:var(--warning);">Content AI failed: ' + escapeHtml(err.message) + '</span>';
+    }
+}
+
+// ===== AI Helper v3: actionable suggestions =====
+let aiSuggestions = [];
+
+// Pull the first JSON array out of an AI response (models sometimes wrap it in prose)
+function aiExtractJsonArray(text) {
+    try {
+        const start = text.indexOf('[');
+        const end = text.lastIndexOf(']');
+        if (start === -1 || end <= start) return null;
+        const arr = JSON.parse(text.substring(start, end + 1));
+        return Array.isArray(arr) ? arr.filter(x => x && x.title) : null;
+    } catch (e) { return null; }
+}
+
+// "Use title": open the create form with the suggestion as the title
+function aiUseTitle(i) {
+    const s = aiSuggestions[i];
+    if (!s) return;
+    openModal('content');
+    document.getElementById('contentTitle').value = s.title;
+    showToast('Title filled in — write the body or let AI draft it', 'info');
+}
+
+// "Write the post": AI drafts the entire post, prefills the create form for review
+async function aiWritePost(i) {
+    const s = aiSuggestions[i];
+    if (!s) return;
+    const resultEl = document.getElementById('contentAIHelperResult');
+    resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);"><span class="ai-typing-dots"><span></span><span></span><span></span></span> Writing the full post…</div>';
+    try {
+        aiQueryCount++;
+        const result = await callGrokAI(
+            `Write a complete, publish-ready post for the Eloy Connect resident app on this topic: "${s.title}" (${s.why || ''}).\n` +
+            'Requirements: resident-friendly plain English, accurate to the live city data, 2-4 short paragraphs.\n' +
+            'Respond with ONLY a JSON object, no other text, exactly this shape:\n' +
+            '{"type": "News Article" | "Community Event" | "Civic Alert", "title": "...", "body": "...", "category": "General" | "Community Services" | "Public Safety" | "Infrastructure" | "Events"}',
+            'Context: drafting a post the staff member will review and publish from the Create Content form.'
+        );
+        let draft = null;
+        try {
+            const start = result.indexOf('{');
+            const end = result.lastIndexOf('}');
+            if (start !== -1 && end > start) draft = JSON.parse(result.substring(start, end + 1));
+        } catch (e) {}
+        if (!draft || !draft.title) throw new Error('AI returned an unexpected format — try again');
+
+        openModal('content');
+        const typeSel = document.getElementById('contentType');
+        const validTypes = ['News Article', 'Community Event', 'Civic Alert', 'Council Meeting'];
+        typeSel.value = validTypes.includes(draft.type) ? draft.type : 'News Article';
+        ccTypeChanged();
+        document.getElementById('contentTitle').value = draft.title;
+        document.getElementById('contentBody').value = draft.body || '';
+        const catSel = document.getElementById('contentCategory');
+        if (draft.category && [...catSel.options].some(o => o.value === draft.category || o.text === draft.category)) {
+            catSel.value = draft.category;
+        }
+        resultEl.innerHTML = '<span style="color:var(--success);">Draft ready in the form — review it, add photos, and publish.</span>';
+        showToast('AI draft loaded — review before publishing', 'success');
+        updateActivityStats();
+    } catch (err) {
+        resultEl.innerHTML = '<span style="color:var(--warning);">Draft failed: ' + escapeHtml(err.message) + '</span>';
     }
 }
 
