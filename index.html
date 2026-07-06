@@ -4100,6 +4100,10 @@ textarea.form-input {
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Photos</div>
                 <div id="reportPhotos" style="font-size: 14px; font-weight: 500;">No photos</div>
             </div>
+            <div id="reportCrewSection" style="display:none; background: rgba(52,211,153,0.05); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(52,211,153,0.25);">
+                <div style="font-size: 11px; color: var(--success); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Field Crew</div>
+                <div id="reportCrewBody" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;"></div>
+            </div>
             <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Description</div>
                 <div id="reportDescription" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">No description provided.</div>
@@ -7717,6 +7721,35 @@ async function openReportDetail(idOrUuid) {
         const statusSelect = document.getElementById('reportStatusSelect');
         if (statusSelect) statusSelect.value = report.status || 'submitted';
         updateAssignBtnLabel();
+
+        // Field-crew story: task status, completion notes, and proof photos
+        // written back from the Public Works app.
+        (async () => {
+            const crewSection = document.getElementById('reportCrewSection');
+            const crewBody = document.getElementById('reportCrewBody');
+            if (!crewSection || !crewBody) return;
+            crewSection.style.display = 'none';
+            try {
+                const { data: task, error } = await sbClient.rpc('pilot_report_task', { p_report_id: report.id });
+                if (error || !task) return;
+                const statusLabels = { pending: 'Dispatched — awaiting crew', in_progress: 'Crew on it', completed: 'Completed by crew', cancelled: 'Cancelled' };
+                let html = `<div style="font-weight:600; color:var(--text-primary);">${escapeHtml(statusLabels[task.status] || task.status || '')}` +
+                    (task.completed_at ? ` <span style="font-weight:400; color:var(--text-tertiary);">· ${new Date(task.completed_at).toLocaleString()}</span>` : '') + '</div>';
+                if (task.completion_notes) {
+                    html += `<div style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(task.completion_notes)}</div>`;
+                }
+                const proofs = Array.isArray(task.proof_photos) ? task.proof_photos : [];
+                if (proofs.length) {
+                    window.__crewProofPhotos = proofs;
+                    html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + proofs.map((u, i) =>
+                        `<div class="report-photo-thumb" onclick="openPhotoLightbox(window.__crewProofPhotos, ${i})" style="width:72px; height:56px; border-radius:8px; overflow:hidden; border:1px solid rgba(52,211,153,0.4); cursor:pointer;">
+                            <img src="${escapeHtml(u)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.opacity='0.2'">
+                        </div>`).join('') + '</div>';
+                }
+                crewBody.innerHTML = html;
+                crewSection.style.display = 'block';
+            } catch (e) { /* no task yet — section stays hidden */ }
+        })();
 
         // Populate the assignee dropdown with REAL staff accounts
         const assignSel = document.getElementById('reportAssignSelect');
