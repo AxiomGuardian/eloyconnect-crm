@@ -8031,7 +8031,19 @@ async function assignReport() {
 
         if (error) throw error;
 
-        showToast(`Report assigned to ${assigneeName} and set to ${statusLabels[selectedStatus] || selectedStatus}`, 'success');
+        // Dispatch to the Public Works app: create/refresh the crew task so the
+        // job shows on the field iPad (completes the report→crew half of the loop)
+        try {
+            await sbClient.rpc('pilot_assign_task', {
+                p_report_id: currentReportId,
+                p_assigned_to: assigneeId,
+                p_instructions: notes || null
+            });
+        } catch (taskErr) {
+            console.warn('Task dispatch to worker app failed (non-blocking):', taskErr);
+        }
+
+        showToast(`Report assigned to ${assigneeName} and set to ${statusLabels[selectedStatus] || selectedStatus} — dispatched to the field app`, 'success');
         await fetchAllData();
         closeDetail();
     } catch(e) {
