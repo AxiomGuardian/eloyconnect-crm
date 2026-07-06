@@ -3597,9 +3597,16 @@ input[type="checkbox"].bulk-check:checked::after {
                 <button class="filter-tab" onclick="switchArchiveTab('messages', this)">Messages</button>
             </div>
             <div class="glass-card" style="padding: 0; overflow: hidden;">
+                <div id="archBulkBar" style="display:none; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <span id="archBulkCount" style="font-size:13px; font-weight:600; color:var(--text-primary);"></span>
+                    <button class="btn btn-secondary" style="font-size:12px; padding:6px 14px;" onclick="bulkRestoreArchive()">Restore Selected</button>
+                    <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; color:var(--warning);" onclick="bulkDeleteArchive()">Delete Selected</button>
+                    <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; margin-left:auto;" onclick="clearArchiveSelection()">Clear</button>
+                </div>
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th style="width:36px;"><input type="checkbox" class="bulk-check" id="archSelectAll" onclick="toggleSelectAllArchive(this.checked)" style="cursor:pointer;"></th>
                             <th>Kind</th>
                             <th>Title</th>
                             <th>Details</th>
@@ -3608,7 +3615,7 @@ input[type="checkbox"].bulk-check:checked::after {
                         </tr>
                     </thead>
                     <tbody id="archiveTableBody">
-                        <tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived yet.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived yet.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3652,11 +3659,19 @@ input[type="checkbox"].bulk-check:checked::after {
                         <div style="font-size:13px; font-weight:700;">Message History</div>
                         <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">Everything sent to phones — content publishes, report updates, crew dispatches, and direct pushes</div>
                     </div>
-                    <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px;" onclick="loadPushHistory()">Refresh</button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span id="msgBulkBar" style="display:none; align-items:center; gap:8px;">
+                            <span id="msgBulkCount" style="font-size:12px; font-weight:600;"></span>
+                            <button class="btn btn-secondary" style="font-size:11px; padding:5px 12px;" onclick="bulkArchiveMsgs()">Archive</button>
+                            <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px; color:var(--warning);" onclick="bulkDeleteMsgs()">Delete</button>
+                        </span>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px;" onclick="loadPushHistory()">Refresh</button>
+                    </div>
                 </div>
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th style="width:36px;"><input type="checkbox" class="bulk-check" id="msgSelectAll" onclick="toggleSelectAllMsgs(this.checked)" style="cursor:pointer;"></th>
                             <th>Kind</th>
                             <th>Message</th>
                             <th>Audience</th>
@@ -3666,7 +3681,7 @@ input[type="checkbox"].bulk-check:checked::after {
                         </tr>
                     </thead>
                     <tbody id="pushHistoryBody">
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
+                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -8422,7 +8437,12 @@ async function loadPushHistory() {
         const ns = document.getElementById('notif-sent-count');
         if (ns) ns.textContent = totalSent.toLocaleString();
 
-        if (!log || !log.length) return;   // keep the empty-state row
+        if (!log || !log.length) {
+            // CLEAR the table — a stale last row must not haunt the log.
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>';
+            updateMsgBulkBar();
+            return;
+        }
         tbody.innerHTML = log.map(r => {
             const k = kinds[r.kind] || kinds.direct;
             const when = r.created_at
@@ -8432,6 +8452,7 @@ async function loadPushHistory() {
                 ? `<span style="color:var(--success);">${r.sent || 0}</span> <span style="color:var(--warning); font-size:11px;">(${r.failed} failed)</span>`
                 : `<span style="color:var(--success);">${r.sent || 0}</span>`;
             return `<tr>
+                <td><input type="checkbox" class="bulk-check msg-select" data-id="${r.id}" onchange="updateMsgBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="color:${k.color};">${k.label}</span></td>
                 <td>
                     <div style="font-weight:500;">${escapeHtml(r.title || '')}</div>
@@ -8472,6 +8493,47 @@ async function deletePushLog(id) {
     } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
 }
 
+// ---- Messages history multi-select ----
+function updateMsgBulkBar() {
+    const n = document.querySelectorAll('.msg-select:checked').length;
+    const bar = document.getElementById('msgBulkBar');
+    const count = document.getElementById('msgBulkCount');
+    if (!bar || !count) return;
+    bar.style.display = n ? 'inline-flex' : 'none';
+    count.textContent = `${n} selected`;
+}
+
+function toggleSelectAllMsgs(checked) {
+    document.querySelectorAll('.msg-select').forEach(cb => cb.checked = checked);
+    updateMsgBulkBar();
+}
+
+async function bulkArchiveMsgs() {
+    const ids = [...document.querySelectorAll('.msg-select:checked')].map(cb => cb.dataset.id);
+    if (!ids.length) return;
+    try {
+        await sbClient.from('push_log').update({ archived: true }).in('id', ids);
+        showToast(`${ids.length} message${ids.length === 1 ? '' : 's'} archived`, 'success');
+        loadPushHistory();
+    } catch (e) { showToast('Archive failed: ' + e.message, 'error'); }
+}
+
+async function bulkDeleteMsgs() {
+    const ids = [...document.querySelectorAll('.msg-select:checked')].map(cb => cb.dataset.id);
+    if (!ids.length) return;
+    const confirmed = await showConfirmDialog({
+        title: `Delete ${ids.length} message record${ids.length === 1 ? '' : 's'}?`,
+        message: 'Removed from the log permanently. Archiving keeps them.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete', confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        await sbClient.from('push_log').delete().in('id', ids);
+        showToast(`${ids.length} deleted`, 'success');
+        loadPushHistory();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
 // ============================================
 // ARCHIVE PAGE — closed reports, retired posts, archived messages
 // ============================================
@@ -8494,6 +8556,7 @@ async function loadArchivePage() {
     if (archiveTab === 'reports') {
         (liveData.reports || []).filter(r => r.status === 'closed').forEach(r => {
             rows.push(`<tr>
+                <td><input type="checkbox" class="bulk-check arch-select" data-kind="report" data-id="${esc(r.id)}" onchange="updateArchiveBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag">Report</span></td>
                 <td style="font-weight:500;">${esc(r.title || 'Untitled')}</td>
                 <td style="color:var(--text-secondary); font-size:12px;">${esc(r.category || '')}</td>
@@ -8514,6 +8577,7 @@ async function loadArchivePage() {
         kinds.forEach(([table, list, label, titleKey]) => {
             (list || []).filter(i => i.archived).forEach(i => {
                 rows.push(`<tr>
+                    <td><input type="checkbox" class="bulk-check arch-select" data-kind="content" data-table="${table}" data-id="${esc(i.id)}" onchange="updateArchiveBulkBar()" style="cursor:pointer;"></td>
                     <td><span class="tag">${label}</span></td>
                     <td style="font-weight:500;">${esc(i[titleKey] || 'Untitled')}</td>
                     <td style="color:var(--text-secondary); font-size:12px;">${esc(i.category || i.meeting_type || '')}</td>
@@ -8531,6 +8595,7 @@ async function loadArchivePage() {
                 .eq('archived', true).order('created_at', { ascending: false }).limit(100);
             (log || []).forEach(r => {
                 rows.push(`<tr>
+                    <td><input type="checkbox" class="bulk-check arch-select" data-kind="message" data-id="${esc(r.id)}" onchange="updateArchiveBulkBar()" style="cursor:pointer;"></td>
                     <td><span class="tag">${esc(r.kind || 'direct')}</span></td>
                     <td style="font-weight:500;">${esc(r.title || '')}</td>
                     <td style="color:var(--text-secondary); font-size:12px;">${esc(r.audience || '')} · ${r.sent || 0} delivered</td>
@@ -8545,7 +8610,8 @@ async function loadArchivePage() {
     }
 
     tbody.innerHTML = rows.length ? rows.join('')
-        : '<tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived here yet.</td></tr>';
+        : '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived here yet.</td></tr>';
+    updateArchiveBulkBar();
 }
 
 async function archiveRestoreReport(id) {
@@ -8599,6 +8665,84 @@ async function archiveRestoreMsg(id) {
         showToast('Message restored to history', 'success');
         loadArchivePage(); loadPushHistory();
     } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
+}
+
+// ---- Archive multi-select: restore or delete many at once ----
+function updateArchiveBulkBar() {
+    const n = document.querySelectorAll('.arch-select:checked').length;
+    const bar = document.getElementById('archBulkBar');
+    const count = document.getElementById('archBulkCount');
+    if (!bar || !count) return;
+    bar.style.display = n ? 'flex' : 'none';
+    count.textContent = `${n} selected`;
+}
+
+function toggleSelectAllArchive(checked) {
+    document.querySelectorAll('.arch-select').forEach(cb => cb.checked = checked);
+    updateArchiveBulkBar();
+}
+
+function clearArchiveSelection() {
+    document.querySelectorAll('.arch-select:checked').forEach(cb => cb.checked = false);
+    const all = document.getElementById('archSelectAll');
+    if (all) all.checked = false;
+    updateArchiveBulkBar();
+}
+
+function collectArchiveSelection() {
+    const sel = { report: [], message: [], content: {} };
+    document.querySelectorAll('.arch-select:checked').forEach(cb => {
+        if (cb.dataset.kind === 'content') {
+            (sel.content[cb.dataset.table] = sel.content[cb.dataset.table] || []).push(cb.dataset.id);
+        } else {
+            sel[cb.dataset.kind].push(cb.dataset.id);
+        }
+    });
+    return sel;
+}
+
+async function bulkRestoreArchive() {
+    const sel = collectArchiveSelection();
+    try {
+        if (sel.report.length) {
+            await sbClient.from('reports').update({ status: 'resolved', updated_at: new Date().toISOString() }).in('id', sel.report);
+        }
+        for (const [table, ids] of Object.entries(sel.content)) {
+            await sbClient.from(table).update({ archived: false }).in('id', ids);
+        }
+        if (sel.message.length) {
+            await sbClient.from('push_log').update({ archived: false }).in('id', sel.message);
+        }
+        showToast('Restored', 'success');
+        await fetchAllData(); updateContentPage(); loadPushHistory(); loadArchivePage();
+    } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
+}
+
+async function bulkDeleteArchive() {
+    const sel = collectArchiveSelection();
+    const total = sel.report.length + sel.message.length +
+        Object.values(sel.content).reduce((s, a) => s + a.length, 0);
+    if (!total) return;
+    const confirmed = await showConfirmDialog({
+        title: `Delete ${total} item${total === 1 ? '' : 's'} permanently?`,
+        message: 'These records are gone forever.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete Forever', confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        if (sel.report.length) {
+            await sbClient.from('tasks').delete().in('report_id', sel.report);
+            await sbClient.from('reports').delete().in('id', sel.report);
+        }
+        for (const [table, ids] of Object.entries(sel.content)) {
+            await sbClient.from(table).delete().in('id', ids);
+        }
+        if (sel.message.length) {
+            await sbClient.from('push_log').delete().in('id', sel.message);
+        }
+        showToast(`${total} deleted`, 'success');
+        await fetchAllData(); updateContentPage(); loadPushHistory(); loadArchivePage();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
 }
 
 // ---- PUSH AUDIT LOG — every send, on the record (Messages tab) ----
