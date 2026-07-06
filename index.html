@@ -3049,6 +3049,7 @@ textarea.form-input {
                     <option>Under Review</option>
                     <option>In Progress</option>
                     <option>Resolved</option>
+                    <option>Closed</option>
                 </select>
                 <select class="form-input" style="width: 150px;" id="reportsCategoryFilter" onchange="filterReportRows()">
                     <option>All Categories</option>
@@ -3057,6 +3058,14 @@ textarea.form-input {
                     <option>All Staff</option>
                     <option>Unassigned</option>
                 </select>
+            </div>
+
+            <!-- BULK ACTIONS BAR — appears when reports are selected -->
+            <div id="reportBulkBar" style="display:none; align-items:center; gap:12px; margin-bottom:14px; padding:12px 16px; background:rgba(63,224,232,0.06); border:1px solid rgba(63,224,232,0.3); border-radius:12px;">
+                <span id="reportBulkCount" style="font-size:13px; font-weight:600; color:var(--text-primary);"></span>
+                <button class="btn btn-secondary" style="font-size:12px; padding:6px 14px;" onclick="bulkArchiveReports()">Archive (Close)</button>
+                <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; color:var(--warning);" onclick="bulkDeleteReports()">Delete Permanently</button>
+                <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; margin-left:auto;" onclick="clearReportSelection()">Clear</button>
             </div>
 
             <!-- LIVE CITY MAP — every report pinned, colored by status -->
@@ -3079,6 +3088,7 @@ textarea.form-input {
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th style="width:36px;"><input type="checkbox" id="reportSelectAll" onclick="toggleSelectAllReports(this.checked)" style="cursor:pointer;"></th>
                             <th>ID</th>
                             <th>Description</th>
                             <th>Category</th>
@@ -3089,7 +3099,7 @@ textarea.form-input {
                         </tr>
                     </thead>
                     <tbody id="reportsTableBody">
-                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading reports…</td></tr>
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading reports…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -3147,9 +3157,15 @@ textarea.form-input {
             </div>
 
             <div class="glass-card" style="padding: 0; overflow: hidden;">
+                <div id="contentBulkBar" style="display:none; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <span id="contentBulkCount" style="font-size:13px; font-weight:600; color:var(--text-primary);"></span>
+                    <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; color:var(--warning);" onclick="bulkDeleteContent()">Delete Selected</button>
+                    <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; margin-left:auto;" onclick="clearContentSelection()">Clear</button>
+                </div>
                 <table class="data-table" id="content-table">
                     <thead>
                         <tr>
+                            <th style="width:36px;"><input type="checkbox" id="contentSelectAll" onclick="toggleSelectAllContent(this.checked)" style="cursor:pointer;"></th>
                             <th>Type</th>
                             <th>Title</th>
                             <th>Status</th>
@@ -3159,7 +3175,7 @@ textarea.form-input {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading content…</td></tr>
+                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">Loading content…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -5761,6 +5777,7 @@ function updateReportsTable() {
         const resident = r.user_id && profileMap[r.user_id] ? profileMap[r.user_id] : (r.address ? r.address.split(',')[0] : 'Anonymous');
 
         return `<tr onclick="openReportDetail('${escapeHtml(r.id)}')" style="cursor:pointer">
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="report-select" data-id="${escapeHtml(r.id)}" onchange="updateReportBulkBar()" style="cursor:pointer;"></td>
             <td style="font-weight: 500; color: var(--accent);">RPT-${escapeHtml(r.id.substring(0,4).toUpperCase())}</td>
             <td>${escapeHtml(r.title || 'Untitled')}</td>
             <td><span class="tag">${escapeHtml(r.category || 'General')}</span></td>
@@ -5795,6 +5812,7 @@ function updateContentPage() {
         liveData.news.forEach(item => {
             const date = item.published_at ? new Date(item.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
             rows.push(`<tr data-type="news" onclick="openContentDetail('news','${escapeHtml(item.id)}')" style="cursor:pointer;">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="news" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(59,158,245,0.15); color: var(--info);">News</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'General')}</td>
@@ -5825,6 +5843,7 @@ function updateContentPage() {
                 : 'background: rgba(34,212,126,0.15); color: var(--success);';
             const rowOpacity = isPast ? 'opacity: 0.5;' : '';
             rows.push(`<tr data-type="event" onclick="openContentDetail('events','${escapeHtml(item.id)}')" style="cursor:pointer; ${rowOpacity}">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="events" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="${tagStyle}">${isPast ? 'Past Event' : 'Event'}</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'Community')}</td>
@@ -5843,6 +5862,7 @@ function updateContentPage() {
         liveData.alerts.forEach(item => {
             const sevColors = { high: 'var(--warning)', medium: 'var(--warm-accent)', low: 'var(--info)' };
             rows.push(`<tr data-type="alert" onclick="openContentDetail('alerts','${escapeHtml(item.id)}')" style="cursor:pointer;">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="alerts" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(240,72,72,0.15); color: var(--warning);">Alert</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td><span style="color: ${sevColors[item.severity] || 'var(--text-secondary)'}; font-weight: 600; text-transform: uppercase; font-size: 11px;">${escapeHtml(item.severity || 'low')}</span></td>
@@ -5879,6 +5899,7 @@ function updateContentPage() {
                 : (mStatus[item.status] || mStatus.scheduled);
             const typeLabel = (item.meeting_type || 'council').charAt(0).toUpperCase() + (item.meeting_type || 'council').slice(1);
             rows.push(`<tr data-type="meeting" onclick="openContentDetail('meetings','${escapeHtml(item.id)}')" style="cursor:pointer; ${isPast ? 'opacity: 0.6;' : ''}">
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="meeting_records" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">Council</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title || 'Untitled meeting')}${item.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${escapeHtml(item.location)}</div>` : ''}</td>
                 <td>${escapeHtml(typeLabel)}</td>
@@ -5894,7 +5915,7 @@ function updateContentPage() {
 
     tbody.innerHTML = rows.length
         ? rows.join('')
-        : '<tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:32px;">No content yet</td></tr>';
+        : '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No content yet</td></tr>';
 }
 
 // Update residents page with live profile data
@@ -6204,6 +6225,87 @@ function navigateTo(page) {
 // Alias — some buttons use navigateToPage, make sure it works identically
 function navigateToPage(page) {
     navigateTo(page);
+}
+
+// ============================================
+// BULK REPORT ACTIONS — select many, archive or delete together
+// ============================================
+function getSelectedReportIds() {
+    return [...document.querySelectorAll('.report-select:checked')].map(cb => cb.dataset.id);
+}
+
+function updateReportBulkBar() {
+    const ids = getSelectedReportIds();
+    const bar = document.getElementById('reportBulkBar');
+    const count = document.getElementById('reportBulkCount');
+    if (!bar || !count) return;
+    bar.style.display = ids.length ? 'flex' : 'none';
+    count.textContent = `${ids.length} report${ids.length === 1 ? '' : 's'} selected`;
+}
+
+function toggleSelectAllReports(checked) {
+    // Only the rows currently VISIBLE (respects search + filters).
+    document.querySelectorAll('#reportsTableBody tr').forEach(row => {
+        if (row.style.display === 'none') return;
+        const cb = row.querySelector('.report-select');
+        if (cb) cb.checked = checked;
+    });
+    updateReportBulkBar();
+}
+
+function clearReportSelection() {
+    document.querySelectorAll('.report-select:checked').forEach(cb => cb.checked = false);
+    const all = document.getElementById('reportSelectAll');
+    if (all) all.checked = false;
+    updateReportBulkBar();
+}
+
+// Archive = status "closed". The record stays forever — it just leaves
+// the active views. (Use the Closed status filter to see archived.)
+async function bulkArchiveReports() {
+    const ids = getSelectedReportIds();
+    if (!ids.length || !sbClient) return;
+    try {
+        const { error } = await sbClient
+            .from('reports')
+            .update({ status: 'closed', updated_at: new Date().toISOString() })
+            .in('id', ids);
+        if (error) throw error;
+        showToast(`${ids.length} report${ids.length === 1 ? '' : 's'} archived (closed)`, 'success');
+        clearReportSelection();
+        await fetchAllData();
+    } catch (e) {
+        showToast('Archive failed: ' + e.message, 'error');
+    }
+}
+
+// Permanent delete — admin tool, double-confirmed, removes crew tasks too.
+async function bulkDeleteReports() {
+    const ids = getSelectedReportIds();
+    if (!ids.length || !sbClient) return;
+    const confirmed = await showConfirmDialog({
+        title: `Delete ${ids.length} report${ids.length === 1 ? '' : 's'} permanently?`,
+        message: 'This also removes their crew tasks. The records are gone forever — archiving (Close) keeps them.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete Forever',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        // Crew tasks reference reports — clear them first.
+        await sbClient.from('tasks').delete().in('report_id', ids);
+        const { data: deleted, error } = await sbClient
+            .from('reports').delete().in('id', ids).select('id');
+        if (error) throw error;
+        if (!deleted || deleted.length === 0) {
+            showToast('Delete was blocked by database permissions — nothing was removed', 'warning');
+            return;
+        }
+        showToast(`${deleted.length} report${deleted.length === 1 ? '' : 's'} deleted`, 'success');
+        clearReportSelection();
+        await fetchAllData();
+    } catch (e) {
+        showToast('Delete failed: ' + e.message, 'error');
+    }
 }
 
 // ============================================
@@ -7458,11 +7560,12 @@ function filterReportRows() {
 
     document.querySelectorAll('#reportsTableBody tr').forEach(row => {
         const cells = row.querySelectorAll('td');
-        if (cells.length < 7) return; // skip placeholder rows
+        if (cells.length < 8) return; // skip placeholder rows
+        // Cell 0 is the select checkbox — data columns start at 1.
         const text = row.textContent.toLowerCase();
-        const rowStatus = cells[3]?.textContent?.trim() || '';
-        const rowCat = cells[2]?.textContent?.trim() || '';
-        const rowStaff = cells[5]?.textContent?.trim() || '';
+        const rowStatus = cells[4]?.textContent?.trim() || '';
+        const rowCat = cells[3]?.textContent?.trim() || '';
+        const rowStaff = cells[6]?.textContent?.trim() || '';
 
         let show = true;
         if (q && !text.includes(q)) show = false;
@@ -8672,6 +8775,67 @@ async function togglePublish(table, id, currentlyPublished) {
 }
 
 // Delete content item
+// ---- Content bulk selection ----
+function updateContentBulkBar() {
+    const boxes = [...document.querySelectorAll('.content-select:checked')];
+    const bar = document.getElementById('contentBulkBar');
+    const count = document.getElementById('contentBulkCount');
+    if (!bar || !count) return;
+    bar.style.display = boxes.length ? 'flex' : 'none';
+    count.textContent = `${boxes.length} post${boxes.length === 1 ? '' : 's'} selected`;
+}
+
+function toggleSelectAllContent(checked) {
+    document.querySelectorAll('#content-table tbody tr').forEach(row => {
+        if (row.style.display === 'none') return;   // respect the type tabs
+        const cb = row.querySelector('.content-select');
+        if (cb) cb.checked = checked;
+    });
+    updateContentBulkBar();
+}
+
+function clearContentSelection() {
+    document.querySelectorAll('.content-select:checked').forEach(cb => cb.checked = false);
+    const all = document.getElementById('contentSelectAll');
+    if (all) all.checked = false;
+    updateContentBulkBar();
+}
+
+async function bulkDeleteContent() {
+    const boxes = [...document.querySelectorAll('.content-select:checked')];
+    if (!boxes.length || !sbClient) return;
+    const confirmed = await showConfirmDialog({
+        title: `Delete ${boxes.length} post${boxes.length === 1 ? '' : 's'}?`,
+        message: 'Selected news, events, alerts, and meetings will be permanently removed from the app.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+
+    // Group selections by table, delete each group in one query.
+    const byTable = {};
+    boxes.forEach(cb => {
+        (byTable[cb.dataset.table] = byTable[cb.dataset.table] || []).push(cb.dataset.id);
+    });
+    let removed = 0, blocked = 0;
+    for (const [table, ids] of Object.entries(byTable)) {
+        try {
+            const { data: deleted, error } = await sbClient
+                .from(table).delete().in('id', ids).select('id');
+            if (error) throw error;
+            removed += (deleted || []).length;
+            blocked += ids.length - (deleted || []).length;
+        } catch (e) {
+            blocked += ids.length;
+        }
+    }
+    if (removed) showToast(`${removed} post${removed === 1 ? '' : 's'} deleted`, 'success');
+    if (blocked) showToast(`${blocked} could not be deleted (permissions)`, 'warning');
+    clearContentSelection();
+    await fetchAllData();
+    updateContentPage();
+}
+
 async function deleteContent(table, id) {
     if (!sbClient) return;
 
