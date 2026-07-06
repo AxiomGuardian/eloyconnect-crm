@@ -1157,6 +1157,59 @@ textarea.form-input {
 .page { display: none; opacity: 0; }
 .page.active { display: block; opacity: 1; animation: pageIn 0.3s ease; }
 
+/* ============================================
+   MODERN CHECKBOXES — bulk selection (reports + content)
+   Rounded glass square → cyan gradient fill + checkmark that
+   pops in with a springy scale. Hover = soft glow.
+   ============================================ */
+input[type="checkbox"].bulk-check {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 19px;
+    height: 19px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    transition: border-color 0.18s ease, background 0.18s ease,
+                box-shadow 0.18s ease, transform 0.12s ease;
+}
+input[type="checkbox"].bulk-check:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(63,224,232,0.12);
+    transform: scale(1.06);
+}
+input[type="checkbox"].bulk-check:active { transform: scale(0.92); }
+input[type="checkbox"].bulk-check:checked {
+    background: linear-gradient(135deg, var(--accent), #2BB8C4);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(63,224,232,0.45);
+}
+input[type="checkbox"].bulk-check::after {
+    content: '';
+    position: absolute;
+    left: 5.5px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid #06121a;
+    border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg) scale(0);
+    opacity: 0;
+    transition: none;
+}
+input[type="checkbox"].bulk-check:checked::after {
+    opacity: 1;
+    animation: checkPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes checkPop {
+    0%   { transform: rotate(45deg) scale(0); opacity: 0; }
+    60%  { transform: rotate(45deg) scale(1.25); opacity: 1; }
+    100% { transform: rotate(45deg) scale(1); opacity: 1; }
+}
+
 @keyframes pageIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -3088,7 +3141,7 @@ textarea.form-input {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th style="width:36px;"><input type="checkbox" id="reportSelectAll" onclick="toggleSelectAllReports(this.checked)" style="cursor:pointer;"></th>
+                            <th style="width:36px;"><input type="checkbox" class="bulk-check" id="reportSelectAll" onclick="toggleSelectAllReports(this.checked)" style="cursor:pointer;"></th>
                             <th>ID</th>
                             <th>Description</th>
                             <th>Category</th>
@@ -3165,7 +3218,7 @@ textarea.form-input {
                 <table class="data-table" id="content-table">
                     <thead>
                         <tr>
-                            <th style="width:36px;"><input type="checkbox" id="contentSelectAll" onclick="toggleSelectAllContent(this.checked)" style="cursor:pointer;"></th>
+                            <th style="width:36px;"><input type="checkbox" class="bulk-check" id="contentSelectAll" onclick="toggleSelectAllContent(this.checked)" style="cursor:pointer;"></th>
                             <th>Type</th>
                             <th>Title</th>
                             <th>Status</th>
@@ -5777,7 +5830,7 @@ function updateReportsTable() {
         const resident = r.user_id && profileMap[r.user_id] ? profileMap[r.user_id] : (r.address ? r.address.split(',')[0] : 'Anonymous');
 
         return `<tr onclick="openReportDetail('${escapeHtml(r.id)}')" style="cursor:pointer">
-            <td onclick="event.stopPropagation()"><input type="checkbox" class="report-select" data-id="${escapeHtml(r.id)}" onchange="updateReportBulkBar()" style="cursor:pointer;"></td>
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check report-select" data-id="${escapeHtml(r.id)}" onchange="updateReportBulkBar()" style="cursor:pointer;"></td>
             <td style="font-weight: 500; color: var(--accent);">RPT-${escapeHtml(r.id.substring(0,4).toUpperCase())}</td>
             <td>${escapeHtml(r.title || 'Untitled')}</td>
             <td><span class="tag">${escapeHtml(r.category || 'General')}</span></td>
@@ -5812,7 +5865,7 @@ function updateContentPage() {
         liveData.news.forEach(item => {
             const date = item.published_at ? new Date(item.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
             rows.push(`<tr data-type="news" onclick="openContentDetail('news','${escapeHtml(item.id)}')" style="cursor:pointer;">
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="news" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="news" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(59,158,245,0.15); color: var(--info);">News</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'General')}</td>
@@ -5843,7 +5896,7 @@ function updateContentPage() {
                 : 'background: rgba(34,212,126,0.15); color: var(--success);';
             const rowOpacity = isPast ? 'opacity: 0.5;' : '';
             rows.push(`<tr data-type="event" onclick="openContentDetail('events','${escapeHtml(item.id)}')" style="cursor:pointer; ${rowOpacity}">
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="events" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="events" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="${tagStyle}">${isPast ? 'Past Event' : 'Event'}</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td>${escapeHtml(item.category || 'Community')}</td>
@@ -5862,7 +5915,7 @@ function updateContentPage() {
         liveData.alerts.forEach(item => {
             const sevColors = { high: 'var(--warning)', medium: 'var(--warm-accent)', low: 'var(--info)' };
             rows.push(`<tr data-type="alert" onclick="openContentDetail('alerts','${escapeHtml(item.id)}')" style="cursor:pointer;">
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="alerts" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="alerts" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(240,72,72,0.15); color: var(--warning);">Alert</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title_en || 'Untitled')}</td>
                 <td><span style="color: ${sevColors[item.severity] || 'var(--text-secondary)'}; font-weight: 600; text-transform: uppercase; font-size: 11px;">${escapeHtml(item.severity || 'low')}</span></td>
@@ -5899,7 +5952,7 @@ function updateContentPage() {
                 : (mStatus[item.status] || mStatus.scheduled);
             const typeLabel = (item.meeting_type || 'council').charAt(0).toUpperCase() + (item.meeting_type || 'council').slice(1);
             rows.push(`<tr data-type="meeting" onclick="openContentDetail('meetings','${escapeHtml(item.id)}')" style="cursor:pointer; ${isPast ? 'opacity: 0.6;' : ''}">
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="content-select" data-id="${escapeHtml(item.id)}" data-table="meeting_records" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
+                <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="meeting_records" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
                 <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">Council</span></td>
                 <td style="font-weight: 500;">${escapeHtml(item.title || 'Untitled meeting')}${item.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${escapeHtml(item.location)}</div>` : ''}</td>
                 <td>${escapeHtml(typeLabel)}</td>
@@ -6323,7 +6376,17 @@ function initOrUpdateReportsMap() {
             center: [32.7559, -111.5547],   // Eloy, AZ
             zoom: 13,
             zoomControl: true,
-            attributionControl: true
+            attributionControl: true,
+            // Fluid feel: fractional zoom steps + gentle inertia for
+            // trackpads and mouse wheels alike.
+            zoomSnap: 0.25,
+            zoomDelta: 0.5,
+            wheelPxPerZoomLevel: 90,
+            inertia: true,
+            inertiaDeceleration: 2000,
+            zoomAnimation: true,
+            fadeAnimation: true,
+            markerZoomAnimation: true
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; OpenStreetMap &copy; CARTO',
@@ -6368,7 +6431,9 @@ function initOrUpdateReportsMap() {
         ? `${pts.length} report${pts.length === 1 ? '' : 's'} pinned`
         : 'No reports with a location yet';
 
-    if (pts.length) reportsMap.fitBounds(pts, { padding: [30, 30], maxZoom: 15 });
+    // Glide, don't jump — flyToBounds animates the camera like the
+    // assign animation Isaac liked.
+    if (pts.length) reportsMap.flyToBounds(pts, { padding: [30, 30], maxZoom: 15, duration: 0.9 });
 }
 
 // ============================================
