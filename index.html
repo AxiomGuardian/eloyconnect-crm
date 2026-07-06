@@ -3761,6 +3761,10 @@ input[type="checkbox"].bulk-check:checked::after {
                     </div>
                 </div>
                 <div style="margin-bottom:14px;">
+                    <label class="form-label">Meeting Link <span style="color:var(--text-tertiary); font-weight:400;">(Zoom / Google Meet / Teams — powers Meeting Intelligence)</span></label>
+                    <input class="form-input" id="mtgLink" placeholder="https://zoom.us/j/…">
+                </div>
+                <div style="margin-bottom:14px;">
                     <label class="form-label">Agenda / Description</label>
                     <textarea class="form-input" id="mtgBody" rows="4" placeholder="What will the council cover? Residents read this in the app."></textarea>
                 </div>
@@ -3802,12 +3806,16 @@ input[type="checkbox"].bulk-check:checked::after {
                 <div id="mdEngagement" style="margin-top:18px; position:relative;"></div>
 
                 <div style="margin-top:20px; padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; position:relative;">
-                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE — COMING SOON
-                    </div>
-                    <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-                        Live stream + real-time transcription land here: residents watch from their phones while AI
-                        explains what it means for them.
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <div>
+                            <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE
+                            </div>
+                            <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+                                Capture the meeting live — AI transcribes and residents follow the recap in the app.
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="mdConsoleBtn" style="white-space:nowrap;">Open Console</button>
                     </div>
                 </div>
 
@@ -3815,6 +3823,55 @@ input[type="checkbox"].bulk-check:checked::after {
                     <button class="btn btn-ghost" id="mdArchiveBtn" style="color:var(--text-secondary);">Archive</button>
                     <button class="btn btn-ghost" id="mdDeleteBtn" style="color:var(--warning);">Delete</button>
                     <button class="btn btn-primary" id="mdPublishBtn">Publish</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MEETING INTELLIGENCE CONSOLE — the engine's cockpit -->
+        <div class="mtg-overlay" id="micModal">
+            <div class="mtg-card aura-host aura-gold" style="width:min(900px,94vw);">
+                <div class="aura-glow"></div>
+                <div class="aura-line"></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; position:relative;">
+                    <div>
+                        <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg>
+                            MEETING INTELLIGENCE
+                        </div>
+                        <h3 id="micTitle" style="font-size:19px; font-weight:700;">—</h3>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span id="micStatus" class="mtg-chip">Idle</span>
+                        <button class="btn btn-ghost" style="font-size:16px; padding:6px 12px;" onclick="micClose()">✕</button>
+                    </div>
+                </div>
+                <p style="font-size:12px; color:var(--text-tertiary); margin-bottom:16px; position:relative;">
+                    Join the meeting in another tab (Zoom / Meet / Teams web), then press Start and choose that tab — <strong>check "Also share tab audio."</strong>
+                    Everything transcribes here and residents get the live recap in the app.
+                </p>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; position:relative;">
+                    <div>
+                        <div class="mtg-section-label">LIVE TRANSCRIPT</div>
+                        <div id="micTranscript" style="height:280px; overflow-y:auto; padding:12px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; font-size:12.5px; line-height:1.6; color:var(--text-secondary);">
+                            <span style="color:var(--text-tertiary);">Waiting for audio…</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mtg-section-label">WHAT RESIDENTS SEE — LIVE RECAP</div>
+                        <div id="micRecap" style="height:280px; overflow-y:auto; padding:12px 14px; background:rgba(246,196,69,0.05); border:1px solid rgba(246,196,69,0.25); border-radius:12px; font-size:13px; line-height:1.65; color:var(--text-primary);">
+                            <span style="color:var(--text-tertiary);">The AI recap appears here about two minutes in — and on every resident's phone.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-top:18px; position:relative;">
+                    <div style="font-size:11px; color:var(--text-tertiary);" id="micMeta">0 segments · 0 min</div>
+                    <div style="display:flex; gap:10px;">
+                        <a id="micJoinLink" href="#" target="_blank" class="btn btn-secondary" style="display:none; text-decoration:none;">Open Meeting Link</a>
+                        <button class="btn btn-primary" id="micStartBtn" onclick="micStart()">Start Capture</button>
+                        <button class="btn btn-ghost" id="micStopBtn" onclick="micStop()" style="display:none; color:var(--warning);">End Meeting</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -9021,7 +9078,7 @@ let mtgTagList = [];
 function openNewMeeting() {
     mtgTagList = [];
     renderMtgTags();
-    ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput'].forEach(id => {
+    ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput', 'mtgLink'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
     const d = document.getElementById('mtgDate');
@@ -9056,11 +9113,13 @@ async function saveMeeting(publish) {
     const body = document.getElementById('mtgBody')?.value?.trim();
     if (!title || !date) { showToast('Title and date are required', 'warning'); return; }
     try {
+        const meetingUrl = document.getElementById('mtgLink')?.value?.trim();
         const { data: created, error } = await sbClient.from('meeting_records').insert({
             meeting_type: 'council',
             title,
             meeting_date: date,
             location: location || null,
+            meeting_url: meetingUrl || null,
             status: 'scheduled',
             public_summary: body || null,
             topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null,
@@ -9204,12 +9263,171 @@ async function openCouncilMeeting(id) {
         } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
     };
 
+    const consoleBtn = document.getElementById('mdConsoleBtn');
+    if (consoleBtn) consoleBtn.onclick = () => { closeMtgDetail(); openMicConsole(m.id); };
+
     document.getElementById('mtgDetailModal').classList.add('open');
 }
 
 function closeMtgDetail() {
     document.getElementById('mtgDetailModal').classList.remove('open');
     mdCurrentId = null;
+}
+
+// ============================================
+// MEETING INTELLIGENCE CONSOLE — Phase 1 engine
+// Tab audio → Deepgram chunks → transcript → Grok recap → residents, live.
+// ============================================
+let mic = { meetingId: null, stream: null, recorder: null, seq: 0, startedAt: null,
+            recapTimer: null, transcriptBuf: [], running: false };
+
+function openMicConsole(meetingId) {
+    const m = (liveData.meetings || []).find(x => String(x.id) === String(meetingId));
+    if (!m) { showToast('Meeting not found', 'warning'); return; }
+    mic.meetingId = meetingId;
+    document.getElementById('micTitle').textContent = m.title || 'Council meeting';
+    const link = document.getElementById('micJoinLink');
+    if (m.meeting_url) { link.style.display = 'inline-flex'; link.href = m.meeting_url; }
+    else link.style.display = 'none';
+    document.getElementById('micModal').classList.add('open');
+}
+
+function micClose() {
+    if (mic.running) { showToast('End the meeting first', 'warning'); return; }
+    document.getElementById('micModal').classList.remove('open');
+}
+
+function micSetStatus(label, live) {
+    const el = document.getElementById('micStatus');
+    el.innerHTML = live ? '<span class="live-dot"></span> ' + label : label;
+    if (live) { el.style.color = 'var(--success)'; el.style.borderColor = 'rgba(52,211,153,0.35)'; el.style.background = 'rgba(52,211,153,0.08)'; }
+    else { el.style.cssText = ''; el.className = 'mtg-chip'; }
+}
+
+async function micStart() {
+    if (mic.running) return;
+    try {
+        // The whole trick: capture a tab WITH its audio.
+        mic.stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: { echoCancellation: false, noiseSuppression: false }
+        });
+        if (!mic.stream.getAudioTracks().length) {
+            mic.stream.getTracks().forEach(t => t.stop());
+            showToast('No tab audio — pick the meeting tab and check "Also share tab audio"', 'warning');
+            return;
+        }
+    } catch (e) { showToast('Capture cancelled', 'info'); return; }
+
+    mic.running = true; mic.seq = 0; mic.startedAt = Date.now(); mic.transcriptBuf = [];
+    document.getElementById('micTranscript').innerHTML = '';
+    document.getElementById('micStartBtn').style.display = 'none';
+    document.getElementById('micStopBtn').style.display = 'inline-flex';
+    micSetStatus('LIVE', true);
+
+    // Mark the meeting LIVE — residents' apps light up.
+    await sbClient.from('meeting_records').update({
+        live_status: 'live', status: 'in_progress', live_updated_at: new Date().toISOString()
+    }).eq('id', mic.meetingId);
+
+    // Audio-only recorder, 6-second chunks.
+    const audioStream = new MediaStream(mic.stream.getAudioTracks());
+    mic.recorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+    mic.recorder.ondataavailable = async (ev) => {
+        if (!ev.data || ev.data.size < 2000) return;   // skip silence-sized blobs
+        const mySeq = ++mic.seq;
+        try {
+            const { data: { session } } = await sbClient.auth.getSession();
+            const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/deepgram-transcribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'audio/webm',
+                    'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_KEY)
+                },
+                body: ev.data
+            });
+            const r = await resp.json().catch(() => ({}));
+            const text = (r.transcript || '').trim();
+            if (!text) return;
+            mic.transcriptBuf.push(text);
+            // Show + persist
+            const pane = document.getElementById('micTranscript');
+            const p = document.createElement('div');
+            p.style.marginBottom = '8px';
+            p.textContent = text;
+            pane.appendChild(p);
+            pane.scrollTop = pane.scrollHeight;
+            sbClient.from('meeting_transcripts').insert({
+                meeting_id: mic.meetingId, seq: mySeq, text
+            }).then(() => {});
+            const mins = Math.round((Date.now() - mic.startedAt) / 60000);
+            document.getElementById('micMeta').textContent = `${mic.seq} segments · ${mins} min`;
+        } catch (e) { /* one lost chunk never stops the meeting */ }
+    };
+    // Restarting per-chunk gives every blob a valid webm header.
+    mic.recorder.start();
+    mic.chunkTimer = setInterval(() => {
+        if (mic.recorder && mic.recorder.state === 'recording') {
+            mic.recorder.stop();
+            mic.recorder.start();
+        }
+    }, 6000);
+    mic.recorder.onstop = () => {};
+
+    // If the user stops sharing from the browser UI, end gracefully.
+    mic.stream.getVideoTracks()[0].addEventListener('ended', () => { if (mic.running) micStop(); });
+
+    // Grok recap loop — every 2 minutes, refresh what residents see.
+    mic.recapTimer = setInterval(micRecap, 120000);
+    showToast('Meeting Intelligence is LIVE — residents can follow along in the app', 'success');
+}
+
+async function micRecap(finalPass = false) {
+    const fresh = mic.transcriptBuf.join(' ').trim();
+    if (!fresh && !finalPass) return;
+    if (!finalPass) mic.transcriptBuf = [];
+    try {
+        const prev = document.getElementById('micRecap').dataset.recap || '';
+        const prompt = finalPass
+            ? `A city council meeting in Eloy, Arizona just ended. Here is the running recap so far:\n${prev}\n\nAnd the final transcript portion:\n${fresh}\n\nWrite the FINAL meeting summary for residents: 2-3 plain-language paragraphs covering what was decided and what it means for residents. No jargon.`
+            : `You are recapping a LIVE city council meeting in Eloy, Arizona for residents following on their phones. Prior recap:\n${prev || '(meeting just started)'}\n\nNew transcript segment:\n${fresh}\n\nUpdate the recap: 1-2 short plain-language paragraphs on what is being discussed RIGHT NOW and what it means for residents. Keep it under 150 words. No preamble.`;
+        const { data, error } = await sbClient.functions.invoke('grok-chat', {
+            body: { messages: [{ role: 'user', content: prompt }] }
+        });
+        if (error) throw error;
+        const recap = (data?.choices?.[0]?.message?.content || data?.reply || '').trim();
+        if (!recap) return;
+        const pane = document.getElementById('micRecap');
+        pane.textContent = recap;
+        pane.dataset.recap = recap;
+        await sbClient.from('meeting_records').update({
+            live_recap: recap, live_updated_at: new Date().toISOString()
+        }).eq('id', mic.meetingId);
+    } catch (e) { /* next cycle retries */ }
+}
+
+async function micStop() {
+    if (!mic.running) return;
+    mic.running = false;
+    clearInterval(mic.chunkTimer); clearInterval(mic.recapTimer);
+    try { mic.recorder?.state === 'recording' && mic.recorder.stop(); } catch (e) {}
+    mic.stream?.getTracks().forEach(t => t.stop());
+    micSetStatus('Wrapping up…', false);
+
+    // Final pass: full summary written into the permanent record.
+    await micRecap(true);
+    const finalRecap = document.getElementById('micRecap').dataset.recap || null;
+    await sbClient.from('meeting_records').update({
+        live_status: 'ended', status: 'completed',
+        public_summary: finalRecap || undefined,
+        live_updated_at: new Date().toISOString()
+    }).eq('id', mic.meetingId);
+
+    micSetStatus('Ended', false);
+    document.getElementById('micStartBtn').style.display = 'inline-flex';
+    document.getElementById('micStopBtn').style.display = 'none';
+    showToast('Meeting ended — final summary published to residents', 'success');
+    await fetchAllData(); loadCouncilPage();
 }
 
 // ---- Archive multi-select: restore or delete many at once ----
