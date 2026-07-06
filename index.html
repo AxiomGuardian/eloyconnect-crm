@@ -3526,7 +3526,7 @@ textarea.form-input {
                             <div style="width:36px; height:36px; border-radius:var(--radius-sm); background:rgba(63,224,232,0.12); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--accent); font-weight:700;">N</div>
                             <div>
                                 <h4 style="font-size: 15px; font-weight: 600;">Compose Notification</h4>
-                                <p style="font-size:11px; color:var(--text-tertiary);">Message editor</p>
+                                <p style="font-size:11px; color:var(--text-tertiary);">The direct line — operational messages straight to phones. Use Content for news residents browse.</p>
                             </div>
                         </div>
 
@@ -3545,23 +3545,17 @@ textarea.form-input {
                                 <label class="form-label">Audience</label>
                                 <select class="form-input" id="notifAudience">
                                     <option>All Users</option>
-                                    <option>English Speakers</option>
-                                    <option>Spanish Speakers</option>
-                                    <option>Chinese Speakers</option>
-                                    <option>German Speakers</option>
                                 </select>
+                                <div style="font-size:11px; color:var(--text-tertiary); margin-top:4px;">Language + neighborhood targeting: coming with beta</div>
                             </div>
-                            <div>
-                                <label class="form-label">Priority</label>
+                            <div style="display:none;"><!-- Priority hidden until APNs priority levels are wired -->
                                 <select class="form-input" id="notifPriority">
                                     <option value="normal">Normal</option>
-                                    <option value="high">High — Sound + Badge</option>
-                                    <option value="critical">Critical — Override DND</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 14px;">
+                        <div style="margin-bottom: 14px; display:none;"><!-- Schedule hidden until a real send-later queue exists (backend ignores scheduled_at) -->
                             <label class="form-label">Schedule</label>
                             <div class="flex gap-8" style="margin-bottom:10px;">
                                 <button class="filter-tab active" id="schedNowBtn" onclick="toggleScheduleMode('now')">Send Now</button>
