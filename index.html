@@ -5991,6 +5991,26 @@ function updateResidentsPage() {
 // ============================================
 const onlineUsers = new Set(); // Track which user IDs are currently online
 
+// ---- New-report chime (two-tone ding via WebAudio — no sound file needed) ----
+let crmAudioCtx = null;
+function playReportDing() {
+    try {
+        crmAudioCtx = crmAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (crmAudioCtx.state === 'suspended') crmAudioCtx.resume();
+        const t = crmAudioCtx.currentTime;
+        [[880, 0], [1318.5, 0.12]].forEach(([freq, dt]) => {
+            const o = crmAudioCtx.createOscillator();
+            const g = crmAudioCtx.createGain();
+            o.type = 'sine'; o.frequency.value = freq;
+            g.gain.setValueAtTime(0.0001, t + dt);
+            g.gain.exponentialRampToValueAtTime(0.2, t + dt + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.6);
+            o.connect(g); g.connect(crmAudioCtx.destination);
+            o.start(t + dt); o.stop(t + dt + 0.65);
+        });
+    } catch (e) { /* audio blocked until first click — the toast still shows */ }
+}
+
 function setupRealtime() {
     if (!sbClient) return;
 
@@ -6000,6 +6020,12 @@ function setupRealtime() {
         sbClient.channel(`realtime-${table}`)
             .on('postgres_changes', { event: '*', schema: 'public', table }, async (payload) => {
                 console.log(`Realtime: ${table} ${payload.eventType}`, payload.new?.id || payload.old?.id || '');
+
+                // DING — a brand-new resident report just landed.
+                if (table === 'reports' && payload.eventType === 'INSERT') {
+                    playReportDing();
+                    showToast(`📋 New report: ${payload.new?.title || 'Resident report received'}`, 'success');
+                }
                 // Re-fetch just this table for efficiency
                 try {
                     let query;
@@ -7900,6 +7926,11 @@ async function openReportDetail(idOrUuid) {
         const prioritySelect = document.getElementById('reportPrioritySelect');
         if (prioritySelect) prioritySelect.value = report.priority || 0;
 
+        // Internal notes are PER-REPORT: clear the previous report's draft
+        // so notes never bleed from one report into another.
+        const reportNotesEl = document.getElementById('reportNotes');
+        if (reportNotesEl) reportNotesEl.value = '';
+
         // Look up submitter name + avatar from profiles
         const submittedByEl = document.getElementById('reportSubmittedBy');
         if (submittedByEl && report.user_id) {
@@ -8245,11 +8276,42 @@ async function assignReport() {
         // Dispatch to the Public Works app: create/refresh the crew task so the
         // job shows on the field iPad (completes the report→crew half of the loop)
         try {
-            await sbClient.rpc('pilot_assign_task', {
+            const { data: dispatchedTaskId } = await sbClient.rpc('pilot_assign_task', {
                 p_report_id: currentReportId,
                 p_assigned_to: assigneeId,
                 p_instructions: notes || null
             });
+
+            // Ring the crew's iPad: real APNs push with a job deep link
+            // (tap opens the exact work order). Best-effort, never blocking.
+            (async () => {
+                try {
+                    const rep = (liveData.reports || []).find(r => r.id === currentReportId);
+                    let token = null;
+                    if (sbClient?.auth) {
+                        const session = await sbClient.auth.getSession();
+                        token = session?.data?.session?.access_token;
+                    }
+                    const resp = await fetch(
+                        'https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-worker-push',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token || SUPABASE_KEY}`
+                            },
+                            body: JSON.stringify({
+                                title: 'New job dispatched',
+                                body: (rep?.title || 'New work order') + (rep?.address ? ' — ' + rep.address : ''),
+                                worker_ids: [assigneeId],
+                                data: { type: 'job', id: String(dispatchedTaskId || '') }
+                            })
+                        }
+                    );
+                    const r = await resp.json().catch(() => ({}));
+                    if (resp.ok && r.sent > 0) showToast('Crew iPad notified', 'success');
+                } catch (e) { /* push is best-effort */ }
+            })();
         } catch (taskErr) {
             console.warn('Task dispatch to worker app failed (non-blocking):', taskErr);
         }
