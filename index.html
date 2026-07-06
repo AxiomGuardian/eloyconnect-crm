@@ -10,6 +10,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ============================================
@@ -2861,6 +2863,19 @@ textarea.form-input {
                 </div>
             </div>
 
+            <!-- FIELD OPERATIONS TODAY — live roll-up from the Public Works app -->
+            <div id="fieldOpsCard" style="display:none; margin-bottom:24px; padding:16px 20px; background:rgba(52,211,153,0.05); border:1px solid rgba(52,211,153,0.25); border-radius:14px;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <div style="font-size:11px; font-weight:700; letter-spacing:1px; color:var(--success);">FIELD OPERATIONS TODAY</div>
+                    <div style="font-size:11px; color:var(--text-tertiary);" id="fieldOpsCrews"></div>
+                </div>
+                <div style="display:flex; gap:28px; margin-top:10px; flex-wrap:wrap;">
+                    <div><span id="fieldOpsMiles" style="font-size:22px; font-weight:700; color:var(--text-primary);">—</span> <span style="font-size:12px; color:var(--text-tertiary);">miles driven</span></div>
+                    <div><span id="fieldOpsHours" style="font-size:22px; font-weight:700; color:var(--text-primary);">—</span> <span style="font-size:12px; color:var(--text-tertiary);">crew hours</span></div>
+                    <div><span id="fieldOpsJobs" style="font-size:22px; font-weight:700; color:var(--success);">—</span> <span style="font-size:12px; color:var(--text-tertiary);">jobs completed</span></div>
+                </div>
+            </div>
+
             <!-- AI ANALYTICS — DASHBOARD (live) — "what should I do today", front and center -->
             <div class="ai-panel" style="margin-bottom: 24px;">
                 <div class="ai-panel-header">
@@ -3042,6 +3057,22 @@ textarea.form-input {
                     <option>All Staff</option>
                     <option>Unassigned</option>
                 </select>
+            </div>
+
+            <!-- LIVE CITY MAP — every report pinned, colored by status -->
+            <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: 16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding: 12px 16px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; font-weight:700; letter-spacing:0.8px; color:var(--text-secondary);">CITY MAP</span>
+                        <span id="reportsMapCount" style="font-size:11px; color:var(--text-tertiary);"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:14px; font-size:11px; color:var(--text-tertiary);">
+                        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#F6C445;margin-right:5px;"></span>Open</span>
+                        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3FE0E8;margin-right:5px;"></span>In Progress</span>
+                        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#34D399;margin-right:5px;"></span>Resolved</span>
+                    </div>
+                </div>
+                <div id="reportsMap" style="height: 340px; width: 100%; background: #0a0f1a;"></div>
             </div>
 
             <div class="glass-card" style="padding: 0; overflow: hidden;">
@@ -5290,6 +5321,25 @@ function updateDashboardWithLiveData() {
         const dr = document.getElementById('dashResolved'); if (dr) dr.textContent = resolved.toLocaleString();
         const dt = document.getElementById('dashTotalReports'); if (dt) dt.textContent = reps.length.toLocaleString();
 
+        // Keep city-map pins in sync whenever data refreshes.
+        if (reportsMap) initOrUpdateReportsMap();
+
+        // Field Operations Today — crews' miles/hours/jobs from the Public Works app.
+        (async () => {
+            try {
+                const { data: fs, error } = await sbClient.rpc('pilot_field_stats');
+                const card = document.getElementById('fieldOpsCard');
+                if (!card || error || !fs || !fs.crews) return;
+                document.getElementById('fieldOpsMiles').textContent = Number(fs.miles || 0).toFixed(1);
+                document.getElementById('fieldOpsHours').textContent = Number(fs.hours || 0).toFixed(1);
+                document.getElementById('fieldOpsJobs').textContent = String(fs.jobs || 0);
+                const names = Array.isArray(fs.names) ? fs.names : [];
+                document.getElementById('fieldOpsCrews').textContent =
+                    `${fs.crews} crew${fs.crews === 1 ? '' : 's'} on shift` + (names.length ? ` — ${names.join(', ')}` : '');
+                card.style.display = 'block';
+            } catch (e) { /* stays hidden until a crew signs in */ }
+        })();
+
         const ns = document.getElementById('notif-sent-count'); if (ns) ns.textContent = (liveData.notifications || []).length.toLocaleString();
         const na = document.getElementById('notif-active-alerts'); if (na) na.textContent = (liveData.alerts || []).length.toLocaleString();
         const nt = document.getElementById('notif-total-users'); if (nt) nt.textContent = (liveData.profiles || []).length.toLocaleString();
@@ -6114,11 +6164,83 @@ function navigateTo(page) {
     // Scroll to top
     const contentArea = document.querySelector('.content');
     if (contentArea) contentArea.scrollTop = 0;
+
+    // City map: (re)draw once the page is visible — Leaflet can't size
+    // itself inside a display:none container.
+    if (page === 'reports') {
+        setTimeout(() => {
+            initOrUpdateReportsMap();
+            if (reportsMap) reportsMap.invalidateSize();
+        }, 60);
+    }
 }
 
 // Alias — some buttons use navigateToPage, make sure it works identically
 function navigateToPage(page) {
     navigateTo(page);
+}
+
+// ============================================
+// LIVE CITY MAP (Reports page) — Leaflet + dark tiles
+// ============================================
+let reportsMap = null;
+let reportsMapPins = null;
+
+function initOrUpdateReportsMap() {
+    const el = document.getElementById('reportsMap');
+    if (!el || typeof L === 'undefined') return;
+
+    if (!reportsMap) {
+        reportsMap = L.map('reportsMap', {
+            center: [32.7559, -111.5547],   // Eloy, AZ
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true
+        });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(reportsMap);
+        reportsMapPins = L.layerGroup().addTo(reportsMap);
+    }
+
+    reportsMapPins.clearLayers();
+    const statusColor = (s) => {
+        if (s === 'resolved' || s === 'closed') return '#34D399';
+        if (s === 'in_progress' || s === 'assigned') return '#3FE0E8';
+        return '#F6C445'; // submitted / under_review
+    };
+    const statusLabels = {
+        submitted: 'Open', under_review: 'In Review', assigned: 'Assigned',
+        in_progress: 'In Progress', resolved: 'Resolved', closed: 'Closed'
+    };
+
+    const pts = [];
+    (liveData.reports || []).forEach(r => {
+        const lat = Number(r.latitude), lng = Number(r.longitude);
+        if (!isFinite(lat) || !isFinite(lng) || (lat === 0 && lng === 0)) return;
+        const color = statusColor(r.status);
+        const marker = L.circleMarker([lat, lng], {
+            radius: 8, color, weight: 2, fillColor: color, fillOpacity: 0.45
+        });
+        marker.bindPopup(
+            `<div style="min-width:180px; font-family:inherit;">
+                <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(r.title || 'Report')}</div>
+                <div style="font-size:12px; color:${color}; margin-bottom:8px;">${statusLabels[r.status] || escapeHtml(r.status || '')}</div>
+                <button onclick="openReportDetail('${escapeHtml(r.id)}')"
+                    style="background:${color}; color:#0a0f1a; border:none; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">
+                    Open Report</button>
+            </div>`);
+        reportsMapPins.addLayer(marker);
+        pts.push([lat, lng]);
+    });
+
+    const countEl = document.getElementById('reportsMapCount');
+    if (countEl) countEl.textContent = pts.length
+        ? `${pts.length} report${pts.length === 1 ? '' : 's'} pinned`
+        : 'No reports with a location yet';
+
+    if (pts.length) reportsMap.fitBounds(pts, { padding: [30, 30], maxZoom: 15 });
 }
 
 // ============================================
@@ -7738,6 +7860,18 @@ async function openReportDetail(idOrUuid) {
                 if (task.completion_notes) {
                     html += `<div style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(task.completion_notes)}</div>`;
                 }
+                // Crew member (from profiles) + GPS check-in from the field.
+                const crewProfile = task.assigned_to ? (liveData.profiles || []).find(p => p.id === task.assigned_to) : null;
+                if (crewProfile) {
+                    html += `<div style="margin-top:6px; font-size:12px; color:var(--text-tertiary);">Crew: <span style="color:var(--success);">${escapeHtml(crewProfile.display_name || crewProfile.email || 'Staff')}</span></div>`;
+                }
+                if (typeof task.gps_lat === 'number' && typeof task.gps_lng === 'number') {
+                    const mapsUrl = `https://maps.google.com/?q=${task.gps_lat},${task.gps_lng}`;
+                    const when = task.gps_at ? ` · ${new Date(task.gps_at).toLocaleString()}` : '';
+                    html += `<div style="margin-top:6px; font-size:12px; color:var(--text-tertiary);">📍 Crew check-in: ` +
+                        `<a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:none;">` +
+                        `${task.gps_lat.toFixed(5)}, ${task.gps_lng.toFixed(5)}</a>${escapeHtml(when)}</div>`;
+                }
                 const proofs = Array.isArray(task.proof_photos) ? task.proof_photos : [];
                 if (proofs.length) {
                     window.__crewProofPhotos = proofs;
@@ -7975,6 +8109,7 @@ async function updateReportStatus(newStatus) {
         if (error) throw error;
 
         showToast(`Report status updated to "${newStatus.replace('_', ' ')}"`, 'success');
+        notifyReporter(newStatus); // Close the loop with the resident (best-effort)
         await fetchAllData(); // Refresh dashboard
 
         // Update the detail panel status badge
@@ -7989,6 +8124,49 @@ async function updateReportStatus(newStatus) {
     } catch(e) {
         showToast('Failed to update status: ' + e.message, 'error');
     }
+}
+
+// Tell the RESIDENT who filed the report that their city is on it / fixed it.
+// Targeted push (user_ids) with a report_update deep link into the app.
+async function notifyReporter(newStatus) {
+    try {
+        if (!['in_progress', 'resolved'].includes(newStatus)) return;
+        const report = (liveData.reports || []).find(r => r.id === currentReportId);
+        if (!report || !report.user_id) return;
+
+        const title = newStatus === 'resolved'
+            ? 'Your report has been resolved'
+            : 'Crews are working on your report';
+        const body = newStatus === 'resolved'
+            ? `"${report.title || 'Your report'}" has been fixed. Thank you for helping keep Eloy moving!`
+            : `The City of Eloy is actively working on "${report.title || 'your report'}".`;
+
+        let token = null;
+        if (sbClient?.auth) {
+            const session = await sbClient.auth.getSession();
+            token = session?.data?.session?.access_token;
+        }
+        const resp = await fetch(
+            'https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-push-notification',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token || SUPABASE_KEY}`
+                },
+                body: JSON.stringify({
+                    title, body,
+                    broadcast: false,
+                    user_ids: [report.user_id],
+                    data: { type: 'report_update', id: String(report.id) }
+                })
+            }
+        );
+        const result = await resp.json().catch(() => ({}));
+        if (resp.ok && result.sent > 0) {
+            showToast('Resident notified on their phone', 'success');
+        }
+    } catch (e) { /* best-effort — never block the status change */ }
 }
 
 // Update report priority
