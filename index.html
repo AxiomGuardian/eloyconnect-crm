@@ -2749,7 +2749,7 @@ textarea.form-input {
         <!-- Tools group -->
         <div class="nav-item" data-page="grok" onclick="navigateTo('grok')">AI Briefing <span class="badge badge-info">New</span></div>
         <div class="nav-item" data-page="directory" onclick="navigateTo('directory')">Business Directory</div>
-        <div class="nav-item" data-page="enforcement" onclick="navigateTo('enforcement')">Code Enforcement <span class="badge">5</span></div>
+        <div class="nav-item" data-page="enforcement" onclick="navigateTo('enforcement')">Code Enforcement</div>
         <div class="nav-item" data-page="notifications" onclick="navigateTo('notifications')">Notifications</div>
 
         <div class="nav-group-divider"></div>
@@ -2767,44 +2767,15 @@ textarea.form-input {
 
         <!-- Role Switcher -->
         <div class="topnav-role-switcher" id="roleSwitcher">
-            <button class="topnav-role-btn" onclick="toggleRoleDropdown()">
+            <button class="topnav-role-btn" style="cursor: default;">
                 <div class="topnav-role-avatar" id="sidebarUserAvatar">—</div>
                 <div class="topnav-role-text">
                     <span class="topnav-role-name" id="sidebarUserName">City Staff</span>
                     <span class="topnav-role-label" id="sidebarRoleBadge">City Staff</span>
                 </div>
-                <span class="topnav-role-chevron">&#9662;</span>
+
             </button>
-            <div class="topnav-role-dropdown" id="roleDropdown">
-                <div class="role-option active" data-role="mayor" onclick="switchRoleFromDropdown('mayor')">
-                    <div class="role-option-avatar">—</div>
-                    <div class="role-option-info">
-                        <div class="role-option-name">City Staff</div>
-                        <div class="role-option-title">Mayor / City Manager</div>
-                    </div>
-                </div>
-                <div class="role-option" data-role="chambers" onclick="switchRoleFromDropdown('chambers')">
-                    <div class="role-option-avatar">AR</div>
-                    <div class="role-option-info">
-                        <div class="role-option-name">Angela Reyes</div>
-                        <div class="role-option-title">Chambers of Commerce</div>
-                    </div>
-                </div>
-                <div class="role-option" data-role="code_enforcement" onclick="switchRoleFromDropdown('code_enforcement')">
-                    <div class="role-option-avatar">PW</div>
-                    <div class="role-option-info">
-                        <div class="role-option-name">P. Wilson</div>
-                        <div class="role-option-title">Code Enforcement</div>
-                    </div>
-                </div>
-                <div class="role-option" data-role="department_staff" onclick="switchRoleFromDropdown('department_staff')">
-                    <div class="role-option-avatar">SK</div>
-                    <div class="role-option-info">
-                        <div class="role-option-name">S. Kim</div>
-                        <div class="role-option-title">Department Staff</div>
-                    </div>
-                </div>
-            </div>
+            <div class="topnav-role-dropdown" id="roleDropdown" style="display:none;"></div>
         </div>
     </div>
 </nav>
@@ -3056,27 +3027,19 @@ textarea.form-input {
             </div>
 
             <div class="flex gap-8 mb-16">
-                <input class="form-input" placeholder="Search by ID, description, or resident..." style="max-width: 360px;">
-                <select class="form-input" style="width: 150px;">
+                <input class="form-input" id="reportsSearchInput" placeholder="Search by ID, description, or resident..." style="max-width: 360px;" oninput="filterReportRows()">
+                <select class="form-input" style="width: 150px;" id="reportsStatusFilter" onchange="filterReportRows()">
                     <option>All Statuses</option>
                     <option>Open</option>
+                    <option>Under Review</option>
                     <option>In Progress</option>
                     <option>Resolved</option>
                 </select>
-                <select class="form-input" style="width: 150px;">
+                <select class="form-input" style="width: 150px;" id="reportsCategoryFilter" onchange="filterReportRows()">
                     <option>All Categories</option>
-                    <option>Roads</option>
-                    <option>Water</option>
-                    <option>Parks</option>
-                    <option>Streetlights</option>
-                    <option>Other</option>
                 </select>
-                <select class="form-input" style="width: 150px;">
+                <select class="form-input" style="width: 150px;" id="reportsStaffFilter" onchange="filterReportRows()">
                     <option>All Staff</option>
-                    <option>J. Martinez</option>
-                    <option>T. Nguyen</option>
-                    <option>R. Gomez</option>
-                    <option>P. Wilson</option>
                     <option>Unassigned</option>
                 </select>
             </div>
@@ -3131,6 +3094,7 @@ textarea.form-input {
                         <button class="ai-assist-btn" onclick="runContentAI('topics')">Suggest Topics</button>
                         <button class="ai-assist-btn" onclick="runContentAI('headlines')">Draft Headlines</button>
                         <button class="ai-assist-btn" onclick="runContentAI('keywords')">Suggest Keywords</button>
+                        <button class="ai-assist-btn" onclick="runContentAI('week')">Plan the Week</button>
                     </div>
                     <div id="contentDraftReview" style="display:none; margin-bottom:12px;">
                         <textarea id="contentDraftBox" rows="4" placeholder="Paste or write your draft here — title, body, or both. The AI reviews it against live city data and suggests a tighter version." style="width:100%; padding:12px 14px; background:rgba(6,10,18,0.5); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; resize:vertical; line-height:1.5;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
@@ -4065,10 +4029,6 @@ textarea.form-input {
                 <label class="form-label">Assigned Inspector</label>
                 <select class="form-input" id="ceInspector">
                     <option value="">-- Select --</option>
-                    <option value="P. Wilson">P. Wilson — Planning & Zoning</option>
-                    <option value="J. Martinez">J. Martinez — Public Works</option>
-                    <option value="R. Gomez">R. Gomez — Public Works</option>
-                    <option value="T. Nguyen">T. Nguyen — Community Services</option>
                 </select>
             </div>
         </div>
@@ -4185,11 +4145,7 @@ textarea.form-input {
         <div style="margin-bottom: 20px;">
             <label class="form-label">Assign to Staff</label>
             <select class="form-input" id="reportAssignSelect">
-                <option>— Select —</option>
-                <option>J. Martinez — Public Works</option>
-                <option>T. Nguyen — Community Services</option>
-                <option>R. Gomez — Public Works</option>
-                <option>P. Wilson — Planning & Zoning</option>
+                <option value="">— Select —</option>
             </select>
         </div>
 
@@ -4206,6 +4162,7 @@ textarea.form-input {
 
         <div class="flex gap-8">
             <button class="btn btn-primary" style="flex: 1;" id="assignBtn" onclick="assignReport()">Assign & Set In Progress</button>
+            <button class="btn btn-secondary" style="flex: 1;" onclick="aiCloseLoopPost()" title="AI drafts a good-news post about this report being handled">Draft good-news post</button>
             <button class="btn btn-success" onclick="resolveReport()">Quick Resolve</button>
         </div>
     </div>
@@ -4416,18 +4373,15 @@ textarea.form-input {
             </div>
 
             <div id="ceImageWrap" style="display:none; margin-bottom:20px;">
-                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Photo</label>
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <div id="ceImagePreview" style="width:96px; height:72px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:11px; flex-shrink:0;">No photo</div>
-                    <div style="flex:1;">
-                        <input id="ceImage" type="url" placeholder="Paste an image link, or upload below" oninput="ceUpdateImagePreview()" style="width:100%; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none;" onfocus="this.style.borderColor='rgba(63,224,232,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
-                        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
-                            <input id="ceImageFile" type="file" accept="image/*" style="display:none;" onchange="ceUploadImage(this.files[0])">
-                            <button class="btn btn-secondary" onclick="document.getElementById('ceImageFile').click()" style="font-size:12px; padding:7px 14px;">Upload from computer</button>
-                            <span id="ceImageStatus" style="font-size:11px; color:var(--text-tertiary);"></span>
-                        </div>
-                    </div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Photos <span style="color:var(--text-tertiary);">(first = cover)</span></label>
+                <div id="cePhotoThumbs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input id="ceImageFile" type="file" accept="image/*" multiple style="display:none;" onchange="ceUploadImages(this.files); this.value='';">
+                    <button class="btn btn-secondary" onclick="document.getElementById('ceImageFile').click()" style="font-size:12px; padding:7px 14px; white-space:nowrap;">Upload photos</button>
+                    <input id="ceImage" type="url" placeholder="...or paste an image link" style="flex:1; padding:11px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:var(--text-primary); font-size:13px; font-family:inherit; outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault(); ceAddPhotoUrl();}">
+                    <button class="btn btn-secondary" onclick="ceAddPhotoUrl()" style="font-size:12px; padding:7px 14px;">Add</button>
                 </div>
+                <div id="ceImageStatus" style="font-size:11px; color:var(--text-tertiary); margin-top:6px;"></div>
             </div>
 
             <div style="display:flex; gap:12px; justify-content:flex-end;">
@@ -4544,13 +4498,16 @@ function openContentDetail(kind, id) {
         }
         if (cfg.showSev) document.getElementById('cePostSeverity').value = item.severity || 'low';
         if (cfg.showDate) document.getElementById('ceDate').value = item.event_date || '';
-        // Photo (news + events have image_url)
+        // Photos (news + events carry a gallery)
         const imgWrap = document.getElementById('ceImageWrap');
         const locWrap = document.getElementById('ceLocationWrap');
         if (kind === 'news' || kind === 'events') {
             imgWrap.style.display = 'block';
-            document.getElementById('ceImage').value = item.image_url || '';
-            ceUpdateImagePreview();
+            cePhotos = Array.isArray(item.image_urls) && item.image_urls.length
+                ? item.image_urls.slice()
+                : (item.image_url ? [item.image_url] : []);
+            document.getElementById('ceImage').value = '';
+            ceRenderPhotos();
         } else { imgWrap.style.display = 'none'; }
         if (kind === 'events') {
             locWrap.style.display = 'block';
@@ -4580,14 +4537,40 @@ async function uploadImageGetUrl(file, folder, statusId) {
     }
 }
 
-// Edit-modal (single cover photo) helper — kept on the shared core
-async function ceUploadImage(file) {
-    const url = await uploadImageGetUrl(file, ceCurrent?.kind || 'content', 'ceImageStatus');
-    if (url) {
-        document.getElementById('ceImage').value = url;
-        ceUpdateImagePreview();
-        document.getElementById('ceImageStatus').textContent = 'Uploaded — save changes to publish it.';
+// ===== Edit modal: MULTI-PHOTO gallery (mirrors the create modal) =====
+let cePhotos = [];
+
+function ceRenderPhotos() {
+    const box = document.getElementById('cePhotoThumbs');
+    if (!box) return;
+    box.innerHTML = cePhotos.length
+        ? cePhotos.map((url, i) => `
+            <div style="position:relative; width:84px; height:64px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
+                <img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.opacity='0.2'">
+                <button onclick="ceRemovePhoto(${i})" title="Remove photo" style="position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; border:none; cursor:pointer; background:rgba(6,10,18,0.85); color:#EAF1FB; font-size:11px; line-height:1; display:flex; align-items:center; justify-content:center;">&#10005;</button>
+                ${i === 0 ? '<span style="position:absolute; bottom:3px; left:3px; font-size:9px; font-weight:700; letter-spacing:0.5px; padding:1px 6px; border-radius:999px; background:rgba(63,224,232,0.9); color:#04121A;">COVER</span>' : ''}
+            </div>`).join('')
+        : '<div style="font-size:11px; color:var(--text-tertiary); padding:4px 0;">No photos.</div>';
+}
+
+function ceRemovePhoto(i) { cePhotos.splice(i, 1); ceRenderPhotos(); }
+
+function ceAddPhotoUrl() {
+    const input = document.getElementById('ceImage');
+    const v = input.value.trim();
+    if (!v) return;
+    cePhotos.push(v);
+    input.value = '';
+    ceRenderPhotos();
+}
+
+async function ceUploadImages(files) {
+    for (const f of Array.from(files || [])) {
+        const url = await uploadImageGetUrl(f, ceCurrent?.kind || 'content', 'ceImageStatus');
+        if (url) { cePhotos.push(url); ceRenderPhotos(); }
     }
+    const status = document.getElementById('ceImageStatus');
+    if (status && cePhotos.length) status.textContent = 'Save changes to publish the gallery.';
 }
 
 // ===== Create-content modal: MULTI-PHOTO gallery =====
@@ -4634,14 +4617,6 @@ function ccResetPhotos() {
     ccRenderPhotos();
 }
 
-function ceUpdateImagePreview() {
-    const url = document.getElementById('ceImage').value.trim();
-    const box = document.getElementById('ceImagePreview');
-    box.innerHTML = url
-        ? `<img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.textContent='Bad link'">`
-        : 'No photo';
-}
-
 function closeContentDetail() {
     document.getElementById('contentEditModal').classList.remove('open');
     ceCurrent = null;
@@ -4659,11 +4634,13 @@ async function saveContentEdit() {
         update.body_en = body || null;
         update.excerpt_en = body ? body.substring(0, 200) : null;
         update.category = document.getElementById('ceCategory').value || 'General';
-        update.image_url = document.getElementById('ceImage').value.trim() || null;
+        update.image_url = cePhotos[0] || null;
+        update.image_urls = cePhotos.slice();
     } else if (kind === 'events') {
         update.description_en = body || null;
         update.category = document.getElementById('ceCategory').value || 'Community';
-        update.image_url = document.getElementById('ceImage').value.trim() || null;
+        update.image_url = cePhotos[0] || null;
+        update.image_urls = cePhotos.slice();
         update.location_en = document.getElementById('ceLocation').value.trim() || null;
         const d = document.getElementById('ceDate').value;
         if (d) update.event_date = d;
@@ -5225,6 +5202,7 @@ async function fetchAllData() {
         updateDashboardWithLiveData();
         try { updateGrowthCharts(); } catch(e) { console.warn('growth charts:', e); }
         try { updateFeatureAdoption(); } catch(e) { console.warn('feature adoption:', e); }
+        try { populateStaffSelects(); } catch(e) { console.warn('staff selects:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -7245,7 +7223,8 @@ async function runContentAI(mode) {
     const prompts = {
         topics: 'Based on current citizen reports, active alerts, and city data, suggest 5 content topics that would be valuable to publish in the Eloy Connect app. Respond with ONLY a JSON array, no other text, in this exact shape: [{"title": "short topic title", "why": "one sentence on why this matters right now, citing the live data"}]',
         headlines: 'Draft 5 engaging, civic-toned headlines relevant to City of Eloy residents right now, based on current report data, active alerts, and season. Respond with ONLY a JSON array, no other text, in this exact shape: [{"title": "the headline", "why": "one sentence on why"}]',
-        keywords: 'Analyze the current CRM data (reports, alerts, events) and suggest 10-15 relevant keywords/tags that should be used for content in the Eloy Connect app. Group them by category (infrastructure, community, safety, services, etc.).'
+        keywords: 'Analyze the current CRM data (reports, alerts, events) and suggest 10-15 relevant keywords/tags that should be used for content in the Eloy Connect app. Group them by category (infrastructure, community, safety, services, etc.).',
+        week: 'Build a simple content plan for the City of Eloy for the coming week, based on the live data: upcoming events to promote, open report follow-ups worth a public update, seasonal reminders for Arizona in this month, and one community-engagement idea. Format as a short day-by-day checklist (Mon-Fri), each item one line with the suggested post type in parentheses. Keep it practical — this is a to-do list for city staff.'
     };
 
     // Draft review mode: analyze what the user actually wrote
@@ -7294,6 +7273,63 @@ async function runContentAI(mode) {
     }
 }
 
+// Fill every staff dropdown + the category filter from LIVE data
+function populateStaffSelects() {
+    const staffRoles = ['staff', 'admin', 'super_admin', 'public_works_manager', 'worker', 'field_worker'];
+    const staff = (liveData.profiles || []).filter(p => staffRoles.includes((p.role || '').toLowerCase()));
+
+    const filterSel = document.getElementById('reportsStaffFilter');
+    if (filterSel) {
+        const keep = filterSel.value;
+        filterSel.innerHTML = '<option>All Staff</option>' +
+            staff.map(p => `<option>${escapeHtml(p.display_name || p.email || 'Staff')}</option>`).join('') +
+            '<option>Unassigned</option>';
+        if ([...filterSel.options].some(o => o.value === keep)) filterSel.value = keep;
+    }
+
+    const inspSel = document.getElementById('ceInspector');
+    if (inspSel) {
+        inspSel.innerHTML = '<option value="">-- Select --</option>' +
+            staff.map(p => `<option value="${escapeHtml(p.display_name || p.email || 'Staff')}">${escapeHtml(p.display_name || p.email || 'Staff')}${p.role ? ' — ' + escapeHtml(p.role.replace(/_/g, ' ')) : ''}</option>`).join('');
+    }
+
+    // Category filter mirrors the categories that actually exist in the data
+    const catSel = document.getElementById('reportsCategoryFilter');
+    if (catSel) {
+        const keep = catSel.value;
+        const cats = [...new Set((liveData.reports || []).map(r => r.category).filter(Boolean))].sort();
+        catSel.innerHTML = '<option>All Categories</option>' + cats.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+        if ([...catSel.options].some(o => o.value === keep)) catSel.value = keep;
+    }
+}
+
+// Real filtering for the reports table (search + status + category + staff)
+function filterReportRows() {
+    const q = (document.getElementById('reportsSearchInput')?.value || '').toLowerCase().trim();
+    const status = document.getElementById('reportsStatusFilter')?.value || 'All Statuses';
+    const cat = document.getElementById('reportsCategoryFilter')?.value || 'All Categories';
+    const staff = document.getElementById('reportsStaffFilter')?.value || 'All Staff';
+
+    document.querySelectorAll('#reportsTableBody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 7) return; // skip placeholder rows
+        const text = row.textContent.toLowerCase();
+        const rowStatus = cells[3]?.textContent?.trim() || '';
+        const rowCat = cells[2]?.textContent?.trim() || '';
+        const rowStaff = cells[5]?.textContent?.trim() || '';
+
+        let show = true;
+        if (q && !text.includes(q)) show = false;
+        if (status !== 'All Statuses' && rowStatus !== status) show = false;
+        if (cat !== 'All Categories' && rowCat !== cat) show = false;
+        if (staff !== 'All Staff') {
+            if (staff === 'Unassigned') { if (rowStaff !== 'Unassigned') show = false; }
+            else if (rowStaff !== staff) show = false;
+        }
+        row.style.display = show ? '' : 'none';
+    });
+}
+
 // ===== AI Helper v3: actionable suggestions =====
 let aiSuggestions = [];
 
@@ -7315,6 +7351,48 @@ function aiUseTitle(i) {
     openModal('content');
     document.getElementById('contentTitle').value = s.title;
     showToast('Title filled in — write the body or let AI draft it', 'info');
+}
+
+// "Close the loop": AI drafts a good-news post about a report being handled/resolved.
+// Cities never advertise their wins — this makes it one click.
+async function aiCloseLoopPost() {
+    const report = (liveData.reports || []).find(r => String(r.id) === String(currentReportId));
+    if (!report) { showToast('Open a report first', 'warning'); return; }
+    showToast('AI is drafting the good-news post…', 'info');
+    try {
+        aiQueryCount++;
+        const rptRef = 'RPT-' + String(report.id || '').substring(0, 4).toUpperCase();
+        const status = report.status || 'submitted';
+        const result = await callGrokAI(
+            `Write a short good-news post for the Eloy Connect resident app about this citizen report being ${status === 'resolved' || status === 'closed' ? 'RESOLVED' : 'actively worked on'}:\n` +
+            `Report ${rptRef}: "${(report.title || 'City issue').substring(0, 80)}" — category ${report.category || 'General'}, status ${status}.\n` +
+            'Tone: warm, professional, gives the city credit without bragging, thanks the resident who reported it (no names). 2-3 short paragraphs.\n' +
+            'Respond with ONLY a JSON object: {"title": "...", "body": "...", "category": "General" | "Community Services" | "Public Safety" | "Infrastructure"}',
+            'Context: staff wants to publicly close the loop on a resident report.'
+        );
+        let draft = null;
+        try {
+            const s = result.indexOf('{'); const e = result.lastIndexOf('}');
+            if (s !== -1 && e > s) draft = JSON.parse(result.substring(s, e + 1));
+        } catch (err) {}
+        if (!draft || !draft.title) throw new Error('AI returned an unexpected format — try again');
+
+        closeDetail();
+        navigateTo('content');
+        openModal('content');
+        document.getElementById('contentType').value = 'News Article';
+        ccTypeChanged();
+        document.getElementById('contentTitle').value = draft.title;
+        document.getElementById('contentBody').value = draft.body || '';
+        const catSel = document.getElementById('contentCategory');
+        if (draft.category && [...catSel.options].some(o => o.value === draft.category || o.text === draft.category)) {
+            catSel.value = draft.category;
+        }
+        showToast('Good-news draft ready — review and publish', 'success');
+        updateActivityStats();
+    } catch (err) {
+        showToast('Draft failed: ' + (err.message || 'unknown'), 'error');
+    }
 }
 
 // "Write the post": AI drafts the entire post, prefills the create form for review
@@ -7646,6 +7724,17 @@ async function openReportDetail(idOrUuid) {
         if (statusSelect) statusSelect.value = report.status || 'submitted';
         updateAssignBtnLabel();
 
+        // Populate the assignee dropdown with REAL staff accounts
+        const assignSel = document.getElementById('reportAssignSelect');
+        if (assignSel) {
+            const staffRoles = ['staff', 'admin', 'super_admin', 'public_works_manager', 'worker', 'field_worker'];
+            const staff = (liveData.profiles || []).filter(p => staffRoles.includes((p.role || '').toLowerCase()));
+            const current = report.assigned_to || '';
+            assignSel.innerHTML = '<option value="">— Select —</option>' + staff.map(p =>
+                `<option value="${escapeHtml(p.id)}" ${p.id === current ? 'selected' : ''}>${escapeHtml(p.display_name || p.email || 'Staff')}${p.role ? ' — ' + escapeHtml(p.role.replace(/_/g, ' ')) : ''}</option>`
+            ).join('');
+        }
+
         // Set priority
         const prioritySelect = document.getElementById('reportPrioritySelect');
         if (prioritySelect) prioritySelect.value = report.priority || 0;
@@ -7916,11 +8005,12 @@ async function assignReport() {
     const assignSelect = document.getElementById('reportAssignSelect');
     const statusSelect = document.getElementById('reportStatusSelect');
     const notesField = document.getElementById('reportNotes');
-    const assignee = assignSelect?.value;
+    const assigneeId = assignSelect?.value;
+    const assigneeName = assignSelect?.selectedOptions?.[0]?.textContent?.split(' — ')[0] || 'Staff';
     const notes = notesField?.value;
     const selectedStatus = statusSelect?.value || 'in_progress';
 
-    if (!assignee || assignee === '— Select —') {
+    if (!assigneeId) {
         showToast('Please select a staff member', 'warning');
         return;
     }
@@ -7933,12 +8023,12 @@ async function assignReport() {
     try {
         const updateData = {
             status: selectedStatus,
+            assigned_to: assigneeId, // REAL staff uuid — powers workload stats + the Public Works app
             updated_at: new Date().toISOString()
         };
-        // Note: assigned_to expects a UUID — in production you'd look up the staff UUID
-        // For now we store the name in ai_summary as a workaround
-        if (notes) updateData.ai_summary = `Assigned to: ${assignee}. Notes: ${notes}`;
-        else updateData.ai_summary = `Assigned to: ${assignee}.`;
+        // Readable summary (the reports table + AI context parse this)
+        if (notes) updateData.ai_summary = `Assigned to: ${assigneeName}. Notes: ${notes}`;
+        else updateData.ai_summary = `Assigned to: ${assigneeName}.`;
 
         const { error } = await sbClient
             .from('reports')
@@ -7947,7 +8037,7 @@ async function assignReport() {
 
         if (error) throw error;
 
-        showToast(`Report assigned to ${assignee} and set to ${statusLabels[selectedStatus] || selectedStatus}`, 'success');
+        showToast(`Report assigned to ${assigneeName} and set to ${statusLabels[selectedStatus] || selectedStatus}`, 'success');
         await fetchAllData();
         closeDetail();
     } catch(e) {
