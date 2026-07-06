@@ -2806,6 +2806,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="nav-item" data-page="directory" onclick="navigateTo('directory')">Business Directory</div>
         <div class="nav-item" data-page="enforcement" onclick="navigateTo('enforcement')">Code Enforcement</div>
         <div class="nav-item" data-page="notifications" onclick="navigateTo('notifications')">Messages</div>
+        <div class="nav-item" data-page="archive" onclick="navigateTo('archive')">Archive</div>
 
         <div class="nav-group-divider"></div>
 
@@ -3212,6 +3213,7 @@ input[type="checkbox"].bulk-check:checked::after {
             <div class="glass-card" style="padding: 0; overflow: hidden;">
                 <div id="contentBulkBar" style="display:none; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.08);">
                     <span id="contentBulkCount" style="font-size:13px; font-weight:600; color:var(--text-primary);"></span>
+                    <button class="btn btn-secondary" style="font-size:12px; padding:6px 14px;" onclick="bulkArchiveContent()">Archive Selected</button>
                     <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; color:var(--warning);" onclick="bulkDeleteContent()">Delete Selected</button>
                     <button class="btn btn-ghost" style="font-size:12px; padding:6px 14px; margin-left:auto;" onclick="clearContentSelection()">Clear</button>
                 </div>
@@ -3587,6 +3589,31 @@ input[type="checkbox"].bulk-check:checked::after {
         </div>
 
         <!-- ========== NOTIFICATIONS ========== -->
+        <!-- ========== ARCHIVE — where archived things live ========== -->
+        <div class="page" id="page-archive">
+            <div class="filter-tabs" style="margin-bottom:16px;">
+                <button class="filter-tab active" onclick="switchArchiveTab('reports', this)">Reports</button>
+                <button class="filter-tab" onclick="switchArchiveTab('content', this)">Content</button>
+                <button class="filter-tab" onclick="switchArchiveTab('messages', this)">Messages</button>
+            </div>
+            <div class="glass-card" style="padding: 0; overflow: hidden;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Kind</th>
+                            <th>Title</th>
+                            <th>Details</th>
+                            <th>When</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archiveTableBody">
+                        <tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="page" id="page-notifications">
             <div class="section-header">
                 <div>
@@ -3635,10 +3662,11 @@ input[type="checkbox"].bulk-check:checked::after {
                             <th>Audience</th>
                             <th>Delivered</th>
                             <th>When</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="pushHistoryBody">
-                        <tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -4539,6 +4567,7 @@ var pages = {
     directory: { title: 'Business Directory', subtitle: 'Manage local business listings' },
     enforcement: { title: 'Code Enforcement', subtitle: 'Violations & compliance tracking' },
     notifications: { title: 'Messages', subtitle: 'Every push the city sends — on the record' },
+    archive: { title: 'Archive', subtitle: 'Closed reports, retired posts, archived messages — nothing is ever lost' },
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
     staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' }
 };
@@ -5888,6 +5917,7 @@ function updateContentPage() {
     // News articles
     if (liveData.news) {
         liveData.news.forEach(item => {
+            if (item.archived) return;
             const date = item.published_at ? new Date(item.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
             rows.push(`<tr data-type="news" onclick="openContentDetail('news','${escapeHtml(item.id)}')" style="cursor:pointer;">
                 <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="news" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
@@ -5915,6 +5945,7 @@ function updateContentPage() {
             return aIsPast ? (b.event_date || '').localeCompare(a.event_date || '') : (a.event_date || '').localeCompare(b.event_date || '');
         });
         sortedEvents.forEach(item => {
+            if (item.archived) return;
             const isPast = (item.event_date || '') < today;
             const tagStyle = isPast
                 ? 'background: rgba(255,255,255,0.06); color: var(--text-tertiary);'
@@ -5938,6 +5969,7 @@ function updateContentPage() {
     // Alerts
     if (liveData.alerts) {
         liveData.alerts.forEach(item => {
+            if (item.archived) return;
             const sevColors = { high: 'var(--warning)', medium: 'var(--warm-accent)', low: 'var(--info)' };
             rows.push(`<tr data-type="alert" onclick="openContentDetail('alerts','${escapeHtml(item.id)}')" style="cursor:pointer;">
                 <td onclick="event.stopPropagation()"><input type="checkbox" class="bulk-check content-select" data-id="${escapeHtml(item.id)}" data-table="alerts" onchange="updateContentBulkBar()" style="cursor:pointer;"></td>
@@ -5971,6 +6003,7 @@ function updateContentPage() {
             cancelled: { label: 'Cancelled', cls: 'status-draft' }
         };
         sortedMeetings.forEach(item => {
+            if (item.archived) return;
             const isPast = (item.meeting_date || '') < today;
             const st = item.is_public === false
                 ? { label: 'Draft', cls: 'status-draft' }
@@ -6301,6 +6334,9 @@ function navigateTo(page) {
 
     // Messages: refresh the send record whenever the tab opens.
     if (page === 'notifications') loadPushHistory();
+
+    // Archive: rebuild the current tab's list.
+    if (page === 'archive') loadArchivePage();
 }
 
 // Alias — some buttons use navigateToPage, make sure it works identically
@@ -8369,6 +8405,7 @@ async function loadPushHistory() {
     try {
         const { data: log, error } = await sbClient
             .from('push_log').select('*')
+            .eq('archived', false)
             .order('created_at', { ascending: false })
             .limit(100);
         if (error) throw error;
@@ -8403,9 +8440,165 @@ async function loadPushHistory() {
                 <td style="color:var(--text-secondary); font-size:12px;">${escapeHtml(r.audience || 'All users')}</td>
                 <td>${delivered}</td>
                 <td style="color:var(--text-tertiary); font-size:12px;">${when}</td>
+                <td>
+                    <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" onclick="archivePushLog('${r.id}')">Archive</button>
+                    <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--warning);" onclick="deletePushLog('${r.id}')">Delete</button>
+                </td>
             </tr>`;
         }).join('');
     } catch (e) { /* table may not exist yet in a fresh env — stay quiet */ }
+}
+
+async function archivePushLog(id) {
+    try {
+        await sbClient.from('push_log').update({ archived: true }).eq('id', id);
+        showToast('Message archived — find it in the Archive tab', 'success');
+        loadPushHistory();
+    } catch (e) { showToast('Archive failed: ' + e.message, 'error'); }
+}
+
+async function deletePushLog(id) {
+    const confirmed = await showConfirmDialog({
+        title: 'Delete this message record?',
+        message: 'The send record is removed from the log permanently. Archiving keeps it.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete',
+        confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        await sbClient.from('push_log').delete().eq('id', id);
+        showToast('Message record deleted', 'success');
+        loadPushHistory();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
+// ============================================
+// ARCHIVE PAGE — closed reports, retired posts, archived messages
+// ============================================
+let archiveTab = 'reports';
+
+function switchArchiveTab(tab, btn) {
+    archiveTab = tab;
+    document.querySelectorAll('#page-archive .filter-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    loadArchivePage();
+}
+
+async function loadArchivePage() {
+    const tbody = document.getElementById('archiveTableBody');
+    if (!tbody) return;
+    const esc = escapeHtml;
+    const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+    let rows = [];
+
+    if (archiveTab === 'reports') {
+        (liveData.reports || []).filter(r => r.status === 'closed').forEach(r => {
+            rows.push(`<tr>
+                <td><span class="tag">Report</span></td>
+                <td style="font-weight:500;">${esc(r.title || 'Untitled')}</td>
+                <td style="color:var(--text-secondary); font-size:12px;">${esc(r.category || '')}</td>
+                <td style="color:var(--text-tertiary); font-size:12px;">${fmt(r.updated_at || r.created_at)}</td>
+                <td>
+                    <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" onclick="archiveRestoreReport('${esc(r.id)}')">Restore</button>
+                    <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--warning);" onclick="archiveDeleteReport('${esc(r.id)}')">Delete</button>
+                </td>
+            </tr>`);
+        });
+    } else if (archiveTab === 'content') {
+        const kinds = [
+            ['news', liveData.news, 'News', 'title_en'],
+            ['events', liveData.events, 'Event', 'title_en'],
+            ['alerts', liveData.alerts, 'Alert', 'title_en'],
+            ['meeting_records', liveData.meetings, 'Council', 'title']
+        ];
+        kinds.forEach(([table, list, label, titleKey]) => {
+            (list || []).filter(i => i.archived).forEach(i => {
+                rows.push(`<tr>
+                    <td><span class="tag">${label}</span></td>
+                    <td style="font-weight:500;">${esc(i[titleKey] || 'Untitled')}</td>
+                    <td style="color:var(--text-secondary); font-size:12px;">${esc(i.category || i.meeting_type || '')}</td>
+                    <td style="color:var(--text-tertiary); font-size:12px;">${fmt(i.created_at || i.event_date || i.meeting_date)}</td>
+                    <td>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" onclick="archiveRestoreContent('${table}','${esc(i.id)}')">Restore</button>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--warning);" onclick="archiveDeleteContent('${table}','${esc(i.id)}')">Delete</button>
+                    </td>
+                </tr>`);
+            });
+        });
+    } else if (archiveTab === 'messages') {
+        try {
+            const { data: log } = await sbClient.from('push_log').select('*')
+                .eq('archived', true).order('created_at', { ascending: false }).limit(100);
+            (log || []).forEach(r => {
+                rows.push(`<tr>
+                    <td><span class="tag">${esc(r.kind || 'direct')}</span></td>
+                    <td style="font-weight:500;">${esc(r.title || '')}</td>
+                    <td style="color:var(--text-secondary); font-size:12px;">${esc(r.audience || '')} · ${r.sent || 0} delivered</td>
+                    <td style="color:var(--text-tertiary); font-size:12px;">${fmt(r.created_at)}</td>
+                    <td>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" onclick="archiveRestoreMsg('${esc(r.id)}')">Restore</button>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--warning);" onclick="deletePushLog('${esc(r.id)}').then(loadArchivePage)">Delete</button>
+                    </td>
+                </tr>`);
+            });
+        } catch (e) { /* quiet */ }
+    }
+
+    tbody.innerHTML = rows.length ? rows.join('')
+        : '<tr><td colspan="5" style="text-align:center; color:var(--text-tertiary); padding:32px;">Nothing archived here yet.</td></tr>';
+}
+
+async function archiveRestoreReport(id) {
+    try {
+        await sbClient.from('reports').update({ status: 'resolved', updated_at: new Date().toISOString() }).eq('id', id);
+        showToast('Report restored (set to Resolved)', 'success');
+        await fetchAllData(); loadArchivePage();
+    } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
+}
+
+async function archiveDeleteReport(id) {
+    const confirmed = await showConfirmDialog({
+        title: 'Delete this report permanently?',
+        message: 'Removes the report and its crew task forever.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete Forever', confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        await sbClient.from('tasks').delete().eq('report_id', id);
+        await sbClient.from('reports').delete().eq('id', id);
+        showToast('Report deleted', 'success');
+        await fetchAllData(); loadArchivePage();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
+async function archiveRestoreContent(table, id) {
+    try {
+        await sbClient.from(table).update({ archived: false }).eq('id', id);
+        showToast('Restored to Content as a draft — publish it when ready', 'success');
+        await fetchAllData(); updateContentPage(); loadArchivePage();
+    } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
+}
+
+async function archiveDeleteContent(table, id) {
+    const confirmed = await showConfirmDialog({
+        title: 'Delete permanently?',
+        message: 'This post is removed forever.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete', confirmStyle: 'danger'
+    });
+    if (!confirmed) return;
+    try {
+        await sbClient.from(table).delete().eq('id', id);
+        showToast('Deleted', 'success');
+        await fetchAllData(); updateContentPage(); loadArchivePage();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
+async function archiveRestoreMsg(id) {
+    try {
+        await sbClient.from('push_log').update({ archived: false }).eq('id', id);
+        showToast('Message restored to history', 'success');
+        loadArchivePage(); loadPushHistory();
+    } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
 }
 
 // ---- PUSH AUDIT LOG — every send, on the record (Messages tab) ----
@@ -8999,6 +9192,34 @@ function clearContentSelection() {
     const all = document.getElementById('contentSelectAll');
     if (all) all.checked = false;
     updateContentBulkBar();
+}
+
+// Archive = keep the record, retire it from the app (also unpublishes).
+async function bulkArchiveContent() {
+    const boxes = [...document.querySelectorAll('.content-select:checked')];
+    if (!boxes.length || !sbClient) return;
+    const byTable = {};
+    boxes.forEach(cb => {
+        (byTable[cb.dataset.table] = byTable[cb.dataset.table] || []).push(cb.dataset.id);
+    });
+    const unpublishField = {
+        news: { published: false }, events: { published: false },
+        alerts: { active: false }, meeting_records: { is_public: false }
+    };
+    let archived = 0;
+    for (const [table, ids] of Object.entries(byTable)) {
+        try {
+            const { data, error } = await sbClient.from(table)
+                .update({ archived: true, ...(unpublishField[table] || {}) })
+                .in('id', ids).select('id');
+            if (error) throw error;
+            archived += (data || []).length;
+        } catch (e) { /* per-table best effort */ }
+    }
+    showToast(`${archived} post${archived === 1 ? '' : 's'} archived — see the Archive tab`, 'success');
+    clearContentSelection();
+    await fetchAllData();
+    updateContentPage();
 }
 
 async function bulkDeleteContent() {
