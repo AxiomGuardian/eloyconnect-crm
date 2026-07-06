@@ -2797,6 +2797,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">Dashboard</div>
         <div class="nav-item" data-page="reports" onclick="navigateTo('reports')">Reports <span class="badge" id="navReportsBadge">—</span></div>
         <div class="nav-item" data-page="content" onclick="navigateTo('content')">Content</div>
+        <div class="nav-item" data-page="council" onclick="navigateTo('council')">Council Meetings</div>
         <div class="nav-item" data-page="residents" onclick="navigateTo('residents')">Residents</div>
 
         <div class="nav-group-divider"></div>
@@ -3589,6 +3590,59 @@ input[type="checkbox"].bulk-check:checked::after {
         </div>
 
         <!-- ========== NOTIFICATIONS ========== -->
+        <!-- ========== COUNCIL MEETINGS — the council command center ========== -->
+        <div class="page" id="page-council">
+            <div class="section-header">
+                <div>
+                    <h3>Council Meetings</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Everything the council shares with residents — and how residents respond</p>
+                </div>
+                <button class="btn btn-primary" onclick="openNewMeeting()">+ New Meeting</button>
+            </div>
+
+            <div class="metrics-grid anim-stagger" style="margin-bottom: 24px;">
+                <div class="metric-card" data-accent="orange">
+                    <div class="metric-value" id="councilUpcoming" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Upcoming</div>
+                    <div class="metric-explain">Meetings on the calendar</div>
+                </div>
+                <div class="metric-card" data-accent="teal">
+                    <div class="metric-value" id="councilPast" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Held</div>
+                    <div class="metric-explain">Meetings already completed</div>
+                </div>
+                <div class="metric-card" data-accent="green">
+                    <div class="metric-value" id="councilEngaged" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Residents Engaged</div>
+                    <div class="metric-explain">Attended, watched, or read a summary</div>
+                </div>
+                <div class="metric-card" data-accent="blue">
+                    <div class="metric-value" id="councilNextDate" style="font-size: 22px;">—</div>
+                    <div class="metric-label">Next Meeting</div>
+                    <div class="metric-explain">The date residents see in the app</div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="padding: 0; overflow: hidden;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Meeting</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Visibility</th>
+                            <th>Engagement</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="councilTableBody">
+                        <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No meetings yet — create the first one.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ========== ARCHIVE — where archived things live ========== -->
         <div class="page" id="page-archive">
             <div class="filter-tabs" style="margin-bottom:16px;">
@@ -4583,6 +4637,7 @@ var pages = {
     enforcement: { title: 'Code Enforcement', subtitle: 'Violations & compliance tracking' },
     notifications: { title: 'Messages', subtitle: 'Every push the city sends — on the record' },
     archive: { title: 'Archive', subtitle: 'Closed reports, retired posts, archived messages — nothing is ever lost' },
+    council: { title: 'Council Meetings', subtitle: 'Meetings, summaries, and how residents engage with them' },
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
     staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' }
 };
@@ -6379,6 +6434,9 @@ function navigateTo(page) {
 
     // Archive: rebuild the current tab's list.
     if (page === 'archive') loadArchivePage();
+
+    // Council command center: refresh meetings + engagement.
+    if (page === 'council') loadCouncilPage();
 }
 
 // Alias — some buttons use navigateToPage, make sure it works identically
@@ -8694,6 +8752,87 @@ async function archiveRestoreMsg(id) {
     } catch (e) { showToast('Restore failed: ' + e.message, 'error'); }
 }
 
+// ============================================
+// COUNCIL MEETINGS PAGE — the council command center
+// ============================================
+async function loadCouncilPage() {
+    const tbody = document.getElementById('councilTableBody');
+    if (!tbody) return;
+    const esc = escapeHtml;
+    const meetings = (liveData.meetings || []).filter(m => !m.archived);
+    const today = new Date().toISOString().split('T')[0];
+    const upcoming = meetings.filter(m => (m.meeting_date || '') >= today);
+    const past = meetings.filter(m => (m.meeting_date || '') < today);
+
+    const up = document.getElementById('councilUpcoming'); if (up) up.textContent = upcoming.length;
+    const pa = document.getElementById('councilPast'); if (pa) pa.textContent = past.length;
+    const nx = document.getElementById('councilNextDate');
+    if (nx) {
+        const next = upcoming.sort((a, b) => (a.meeting_date || '').localeCompare(b.meeting_date || ''))[0];
+        nx.textContent = next ? new Date(next.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+    }
+
+    // Engagement: one query, aggregated per meeting.
+    let byMeeting = {}, totalResidents = 0;
+    try {
+        const { data: rows } = await sbClient
+            .from('meeting_attendance')
+            .select('meeting_id, attended_in_person, watched_livestream, read_summary');
+        (rows || []).forEach(r => {
+            const b = byMeeting[r.meeting_id] = byMeeting[r.meeting_id] || { n: 0, inPerson: 0, online: 0, read: 0 };
+            b.n++;
+            if (r.attended_in_person) b.inPerson++;
+            if (r.watched_livestream) b.online++;
+            if (r.read_summary) b.read++;
+        });
+        totalResidents = (rows || []).length;
+    } catch (e) { /* stats stay blank */ }
+    const en = document.getElementById('councilEngaged'); if (en) en.textContent = totalResidents;
+
+    if (!meetings.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No meetings yet — create the first one.</td></tr>';
+        return;
+    }
+
+    const mStatus = {
+        scheduled: { label: 'Scheduled', cls: 'status-open' },
+        in_progress: { label: 'In Session', cls: 'status-progress' },
+        completed: { label: 'Completed', cls: 'status-resolved' },
+        cancelled: { label: 'Cancelled', cls: 'status-draft' }
+    };
+    const sorted = [...meetings].sort((a, b) => (b.meeting_date || '').localeCompare(a.meeting_date || ''));
+    tbody.innerHTML = sorted.map(m => {
+        const isPast = (m.meeting_date || '') < today;
+        const st = m.is_public === false ? { label: 'Draft', cls: 'status-draft' } : (mStatus[m.status] || mStatus.scheduled);
+        const eng = byMeeting[m.id];
+        const engCell = eng
+            ? `<span style="color:var(--success); font-weight:600;">${eng.n}</span> <span style="font-size:11px; color:var(--text-tertiary);">(${eng.inPerson} live · ${eng.online} online · ${eng.read} read)</span>`
+            : '<span style="color:var(--text-tertiary);">—</span>';
+        const typeLabel = (m.meeting_type || 'council').charAt(0).toUpperCase() + (m.meeting_type || 'council').slice(1);
+        return `<tr onclick="openContentDetail('meetings','${esc(m.id)}')" style="cursor:pointer; ${isPast ? 'opacity:0.65;' : ''}">
+            <td style="font-weight:500;">${esc(m.title || 'Untitled meeting')}${m.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${esc(m.location)}</div>` : ''}</td>
+            <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">${esc(typeLabel)}</span></td>
+            <td style="color:var(--text-tertiary);">${m.meeting_date || '—'}</td>
+            <td><span class="status ${st.cls}"><span class="status-dot"></span>${st.label}</span></td>
+            <td><span class="status ${m.is_public === false ? 'status-draft' : 'status-resolved'}"><span class="status-dot"></span>${m.is_public === false ? 'Hidden' : 'Live in app'}</span></td>
+            <td>${engCell}</td>
+            <td>
+                <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" data-id="${esc(m.id)}" onclick="event.stopPropagation(); togglePublish('meeting_records', this.dataset.id, ${m.is_public !== false}).then?.(loadCouncilPage) || setTimeout(loadCouncilPage, 800)">${m.is_public === false ? 'Publish' : 'Unpublish'}</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// "+ New Meeting" — opens the create modal preset to Council Meeting.
+function openNewMeeting() {
+    openModal('content');
+    const sel = document.getElementById('contentType');
+    if (sel) {
+        sel.value = 'Council Meeting';
+        ccTypeChanged();
+    }
+}
+
 // ---- Archive multi-select: restore or delete many at once ----
 function updateArchiveBulkBar() {
     const n = document.querySelectorAll('.arch-select:checked').length;
@@ -10533,7 +10672,7 @@ const roleConfig = {
         label: 'Mayor / City Manager',
         // user/initials/title are unused for display — the real signed-in user
         // populates the header via applyHeaderUser(). Kept only for RBAC page list.
-        pages: ['dashboard', 'reports', 'content', 'residents', 'grok', 'directory', 'enforcement', 'notifications', 'archive', 'leaders', 'staff']
+        pages: ['dashboard', 'reports', 'content', 'council', 'residents', 'grok', 'directory', 'enforcement', 'notifications', 'archive', 'leaders', 'staff']
     },
     chambers: {
         label: 'Chambers of Commerce',
@@ -10554,7 +10693,7 @@ const roleConfig = {
         user: 'S. Kim',
         initials: 'SK',
         title: 'Content Editor',
-        pages: ['dashboard', 'reports', 'content', 'notifications', 'archive']
+        pages: ['dashboard', 'reports', 'content', 'council', 'notifications', 'archive']
     }
 };
 
