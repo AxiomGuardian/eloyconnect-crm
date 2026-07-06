@@ -1210,6 +1210,60 @@ input[type="checkbox"].bulk-check:checked::after {
     100% { transform: rotate(45deg) scale(1); opacity: 1; }
 }
 
+/* ============================================
+   COUNCIL MEETING MODALS — alive, breathing, gold
+   ============================================ */
+.mtg-overlay {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgba(3,6,12,0.72); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+}
+.mtg-overlay.open { display: flex; animation: pageIn 0.25s ease; }
+.mtg-card {
+    position: relative; width: min(680px, 92vw); max-height: 88vh; overflow-y: auto;
+    background: linear-gradient(180deg, rgba(15,22,38,0.98), rgba(8,12,22,0.98));
+    border: 1px solid rgba(246,196,69,0.25); border-radius: 20px;
+    padding: 28px; overflow-x: hidden;
+    animation: mtgBreathe 4.5s ease-in-out infinite;
+}
+@keyframes mtgBreathe {
+    0%, 100% { box-shadow: 0 0 34px rgba(246,196,69,0.10), 0 24px 60px rgba(0,0,0,0.5); }
+    50%      { box-shadow: 0 0 58px rgba(246,196,69,0.22), 0 24px 60px rgba(0,0,0,0.5); }
+}
+.mtg-aurora {
+    position: absolute; top: 0; left: 0; right: 0; height: 160px; pointer-events: none;
+    background: radial-gradient(ellipse at 50% -20%, rgba(246,196,69,0.22), transparent 70%);
+}
+.mtg-sweep {
+    position: absolute; top: 0; left: -40%; width: 40%; height: 2px; pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(246,196,69,0.9), transparent);
+    animation: mtgSweep 3.2s ease-in-out infinite;
+}
+@keyframes mtgSweep {
+    0%   { left: -40%; opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+}
+.mtg-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    background: rgba(246,196,69,0.10); color: var(--warm-accent);
+    border: 1px solid rgba(246,196,69,0.25);
+}
+.mtg-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 999px; font-size: 12px;
+    background: rgba(63,224,232,0.08); color: var(--accent);
+    border: 1px solid rgba(63,224,232,0.25); cursor: pointer;
+}
+.mtg-tag .x { opacity: 0.6; font-weight: 700; }
+.mtg-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.4px;
+    color: var(--warm-accent); margin-bottom: 8px;
+}
+
+
 @keyframes pageIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -3207,7 +3261,6 @@ input[type="checkbox"].bulk-check:checked::after {
                 <button class="filter-tab" onclick="filterContent('news', this)">News</button>
                 <button class="filter-tab" onclick="filterContent('event', this)">Events</button>
                 <button class="filter-tab" onclick="filterContent('alert', this)">Alerts</button>
-                <button class="filter-tab" onclick="filterContent('meeting', this)">Council</button>
                 <button class="filter-tab" onclick="filterContent('draft', this)">Drafts</button>
             </div>
 
@@ -3640,6 +3693,93 @@ input[type="checkbox"].bulk-check:checked::after {
                         <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:32px;">No meetings yet — create the first one.</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- SCHEDULE COUNCIL MEETING modal -->
+        <div class="mtg-overlay" id="mtgModal" onclick="if(event.target===this) closeMtgModal()">
+            <div class="mtg-card">
+                <div class="mtg-aurora"></div>
+                <div class="mtg-sweep"></div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; position:relative;">
+                    <div>
+                        <div class="mtg-section-label">CITY OF ELOY</div>
+                        <h3 style="font-size:20px; font-weight:700;">Schedule Council Meeting</h3>
+                        <p style="font-size:12px; color:var(--text-tertiary); margin-top:4px;">What residents will see in Eloy Connect</p>
+                    </div>
+                    <button class="btn btn-ghost" style="font-size:16px; padding:6px 12px;" onclick="closeMtgModal()">✕</button>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label class="form-label">Meeting Title</label>
+                    <input class="form-input" id="mtgTitle" placeholder="e.g. Regular Council Meeting">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                    <div>
+                        <label class="form-label">Date</label>
+                        <input class="form-input" type="date" id="mtgDate">
+                    </div>
+                    <div>
+                        <label class="form-label">Location <span style="color:var(--text-tertiary); font-weight:400;">(optional)</span></label>
+                        <input class="form-input" id="mtgLocation" placeholder="Council Chambers, 595 N C St">
+                    </div>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="form-label">Agenda / Description</label>
+                    <textarea class="form-input" id="mtgBody" rows="4" placeholder="What will the council cover? Residents read this in the app."></textarea>
+                </div>
+                <div style="margin-bottom:18px;">
+                    <label class="form-label">Topics <span style="color:var(--text-tertiary); font-weight:400;">— what will be talked about (press Enter to add)</span></label>
+                    <input class="form-input" id="mtgTagInput" placeholder="e.g. Water rates, Park development, Budget…" onkeydown="if(event.key==='Enter'){event.preventDefault(); mtgAddTag();}">
+                    <div id="mtgTags" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+                </div>
+
+                <div style="padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; margin-bottom:20px; position:relative;">
+                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:12px;">📡</span> MEETING INTELLIGENCE — COMING SOON
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+                        Connect Zoom, Google Meet, or Teams → Eloy Connect transcribes the meeting live,
+                        and AI tells residents <em>what each decision means for them</em> — all fed back into this CRM.
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; position:relative;">
+                    <button class="btn btn-secondary" onclick="saveMeeting(false)">Save as Draft</button>
+                    <button class="btn btn-primary" onclick="saveMeeting(true)">Publish Meeting</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- COUNCIL MEETING DETAIL modal — alive -->
+        <div class="mtg-overlay" id="mtgDetailModal" onclick="if(event.target===this) closeMtgDetail()">
+            <div class="mtg-card">
+                <div class="mtg-aurora"></div>
+                <div class="mtg-sweep"></div>
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; position:relative;">
+                    <span class="mtg-chip" style="margin-bottom:14px;"><span>🏛</span> CITY COUNCIL</span>
+                    <button class="btn btn-ghost" style="font-size:16px; padding:6px 12px;" onclick="closeMtgDetail()">✕</button>
+                </div>
+                <h2 id="mdTitle" style="font-size:26px; font-weight:700; line-height:1.25; margin-bottom:14px; position:relative;">—</h2>
+                <div id="mdChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; position:relative;"></div>
+                <div id="mdBody" style="position:relative;"></div>
+                <div id="mdEngagement" style="margin-top:18px; position:relative;"></div>
+
+                <div style="margin-top:20px; padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; position:relative;">
+                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:12px;">📡</span> MEETING INTELLIGENCE — COMING SOON
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
+                        Live stream + real-time transcription land here: residents watch from their phones while AI
+                        explains what it means for them.
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; position:relative;">
+                    <button class="btn btn-ghost" id="mdArchiveBtn" style="color:var(--text-secondary);">Archive</button>
+                    <button class="btn btn-ghost" id="mdDeleteBtn" style="color:var(--warning);">Delete</button>
+                    <button class="btn btn-primary" id="mdPublishBtn">Publish</button>
+                </div>
             </div>
         </div>
 
@@ -4413,7 +4553,6 @@ input[type="checkbox"].bulk-check:checked::after {
                 <option>News Article</option>
                 <option>Community Event</option>
                 <option>Civic Alert</option>
-                <option>Council Meeting</option>
             </select>
         </div>
 
@@ -6084,7 +6223,7 @@ function updateContentPage() {
     }
 
     // Council meetings (from meeting_records — Engine 2)
-    if (liveData.meetings) {
+    if (false && liveData.meetings) { // meetings moved to the Council Meetings tab
         const today = new Date().toISOString().split('T')[0];
         // Upcoming first (ascending), then past (most recent first)
         const sortedMeetings = [...liveData.meetings].sort((a, b) => {
@@ -8809,7 +8948,7 @@ async function loadCouncilPage() {
             ? `<span style="color:var(--success); font-weight:600;">${eng.n}</span> <span style="font-size:11px; color:var(--text-tertiary);">(${eng.inPerson} live · ${eng.online} online · ${eng.read} read)</span>`
             : '<span style="color:var(--text-tertiary);">—</span>';
         const typeLabel = (m.meeting_type || 'council').charAt(0).toUpperCase() + (m.meeting_type || 'council').slice(1);
-        return `<tr onclick="openContentDetail('meetings','${esc(m.id)}')" style="cursor:pointer; ${isPast ? 'opacity:0.65;' : ''}">
+        return `<tr onclick="openCouncilMeeting('${esc(m.id)}')" style="cursor:pointer; ${isPast ? 'opacity:0.65;' : ''}">
             <td style="font-weight:500;">${esc(m.title || 'Untitled meeting')}${m.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${esc(m.location)}</div>` : ''}</td>
             <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">${esc(typeLabel)}</span></td>
             <td style="color:var(--text-tertiary);">${m.meeting_date || '—'}</td>
@@ -8823,14 +8962,186 @@ async function loadCouncilPage() {
     }).join('');
 }
 
-// "+ New Meeting" — opens the create modal preset to Council Meeting.
+// ============================================
+// SCHEDULE COUNCIL MEETING — purpose-built modal
+// ============================================
+let mtgTagList = [];
+
 function openNewMeeting() {
-    openModal('content');
-    const sel = document.getElementById('contentType');
-    if (sel) {
-        sel.value = 'Council Meeting';
-        ccTypeChanged();
+    mtgTagList = [];
+    renderMtgTags();
+    ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const d = document.getElementById('mtgDate');
+    if (d) d.value = new Date().toISOString().split('T')[0];
+    document.getElementById('mtgModal').classList.add('open');
+}
+
+function closeMtgModal() { document.getElementById('mtgModal').classList.remove('open'); }
+
+function mtgAddTag() {
+    const input = document.getElementById('mtgTagInput');
+    const v = (input?.value || '').trim();
+    if (!v || mtgTagList.includes(v)) { if (input) input.value = ''; return; }
+    mtgTagList.push(v);
+    if (input) input.value = '';
+    renderMtgTags();
+}
+
+function mtgRemoveTag(i) { mtgTagList.splice(i, 1); renderMtgTags(); }
+
+function renderMtgTags() {
+    const wrap = document.getElementById('mtgTags');
+    if (!wrap) return;
+    wrap.innerHTML = mtgTagList.map((t, i) =>
+        `<span class="mtg-tag" onclick="mtgRemoveTag(${i})">${escapeHtml(t)} <span class="x">✕</span></span>`).join('');
+}
+
+async function saveMeeting(publish) {
+    const title = document.getElementById('mtgTitle')?.value?.trim();
+    const date = document.getElementById('mtgDate')?.value;
+    const location = document.getElementById('mtgLocation')?.value?.trim();
+    const body = document.getElementById('mtgBody')?.value?.trim();
+    if (!title || !date) { showToast('Title and date are required', 'warning'); return; }
+    try {
+        const { data: created, error } = await sbClient.from('meeting_records').insert({
+            meeting_type: 'council',
+            title,
+            meeting_date: date,
+            location: location || null,
+            status: 'scheduled',
+            public_summary: body || null,
+            topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null,
+            is_public: publish,
+            city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+        }).select('id');
+        if (error) throw error;
+        closeMtgModal();
+        showToast(publish ? 'Meeting published — live in the app' : 'Meeting saved as draft', 'success');
+
+        if (publish) {
+            // Residents hear about it: push + bell inbox + audit log.
+            const mid = created?.[0]?.id ? String(created[0].id) : '';
+            const pushBody = (body || `Council meets ${date}${location ? ' at ' + location : ''}.`).substring(0, 150);
+            try {
+                let token = null;
+                if (sbClient?.auth) {
+                    const session = await sbClient.auth.getSession();
+                    token = session?.data?.session?.access_token;
+                }
+                const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-push-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token || SUPABASE_KEY}` },
+                    body: JSON.stringify({ title, body: pushBody, broadcast: true, data: { type: 'meeting', id: mid } })
+                });
+                const r = await resp.json().catch(() => ({}));
+                if (resp.ok && r.sent > 0) showToast(`Push sent to ${r.sent} device${r.sent > 1 ? 's' : ''}`, 'success');
+                logPushSend({ kind: 'content', title, body: pushBody, audience: 'All users', sent: r.sent || 0, failed: r.failed || 0, data: { content_type: 'meeting' } });
+            } catch (e) { /* best-effort */ }
+            try {
+                await sbClient.from('notifications').insert({
+                    title, message: pushBody, type: 'meeting', read: false,
+                    city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+                });
+            } catch (e) { /* best-effort */ }
+        }
+        await fetchAllData();
+        loadCouncilPage();
+    } catch (e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+// ============================================
+// COUNCIL MEETING DETAIL — the living view
+// ============================================
+let mdCurrentId = null;
+
+async function openCouncilMeeting(id) {
+    const m = (liveData.meetings || []).find(x => String(x.id) === String(id));
+    if (!m) { showToast('Meeting not found — try refreshing', 'warning'); return; }
+    mdCurrentId = id;
+    document.getElementById('mdTitle').textContent = m.title || 'Council meeting';
+
+    const chips = [];
+    if (m.meeting_date) chips.push(`<span class="mtg-chip">📅 ${escapeHtml(m.meeting_date)}</span>`);
+    if (m.location) chips.push(`<span class="mtg-chip">📍 ${escapeHtml(m.location)}</span>`);
+    chips.push(`<span class="mtg-chip">${m.is_public === false ? '🕶 Hidden from app' : '🟢 Live in app'}</span>`);
+    document.getElementById('mdChips').innerHTML = chips.join('');
+
+    const parts = [];
+    if (m.public_summary) {
+        parts.push(`<div class="mtg-section-label">AGENDA / SUMMARY</div>
+            <div style="font-size:15px; line-height:1.65; color:var(--text-secondary); border-left:3px solid rgba(246,196,69,0.5); padding-left:14px; margin-bottom:16px;">${escapeHtml(m.public_summary)}</div>`);
     }
+    const tryTags = (raw, label) => {
+        try {
+            const arr = JSON.parse(raw || '[]');
+            if (arr.length) parts.push(`<div class="mtg-section-label">${label}</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">${arr.map(t => `<span class="mtg-tag" style="cursor:default;">${escapeHtml(t)}</span>`).join('')}</div>`);
+        } catch (e) {}
+    };
+    tryTags(m.topics_discussed, 'TOPICS ON THE TABLE');
+    tryTags(m.key_decisions, 'KEY DECISIONS');
+    if (m.video_url) parts.push(`<a href="${escapeHtml(m.video_url)}" target="_blank" style="color:var(--accent); font-size:14px;">▶ Watch the meeting video</a>`);
+    if (!parts.length) parts.push('<div style="color:var(--text-tertiary); font-size:13px;">No agenda published yet — edit coming with the Meeting Intelligence build.</div>');
+    document.getElementById('mdBody').innerHTML = parts.join('');
+
+    // Engagement — live counts, gold panel
+    const eng = document.getElementById('mdEngagement');
+    eng.innerHTML = `<div class="mtg-section-label">RESIDENT ENGAGEMENT</div>
+        <div id="mdEngBody" style="font-size:13px; color:var(--text-secondary); padding:12px 14px; background:rgba(246,196,69,0.05); border:1px solid rgba(246,196,69,0.22); border-radius:10px;">Loading…</div>`;
+    (async () => {
+        try {
+            const { data: rows, error } = await sbClient.from('meeting_attendance')
+                .select('attended_in_person, watched_livestream, read_summary').eq('meeting_id', m.id);
+            if (error) throw error;
+            const el = document.getElementById('mdEngBody');
+            const n = (rows || []).length;
+            if (!n) { el.textContent = 'No resident engagement recorded yet.'; return; }
+            const a = rows.filter(r => r.attended_in_person).length;
+            const w = rows.filter(r => r.watched_livestream).length;
+            const s = rows.filter(r => r.read_summary).length;
+            el.innerHTML = `<span style="font-size:20px; font-weight:700; color:var(--text-primary);">${n}</span> resident${n === 1 ? '' : 's'} engaged
+                &nbsp;—&nbsp; <span style="color:var(--success); font-weight:600;">${a}</span> in person ·
+                <span style="color:var(--accent); font-weight:600;">${w}</span> online ·
+                <span style="color:var(--warm-accent); font-weight:600;">${s}</span> read the summary`;
+        } catch (e) { const el = document.getElementById('mdEngBody'); if (el) el.textContent = 'Engagement data unavailable.'; }
+    })();
+
+    // Action buttons
+    const pubBtn = document.getElementById('mdPublishBtn');
+    pubBtn.textContent = m.is_public === false ? 'Publish' : 'Unpublish';
+    pubBtn.onclick = async () => {
+        await togglePublish('meeting_records', m.id, m.is_public !== false);
+        closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+    };
+    document.getElementById('mdArchiveBtn').onclick = async () => {
+        try {
+            await sbClient.from('meeting_records').update({ archived: true, is_public: false }).eq('id', m.id);
+            showToast('Meeting archived', 'success');
+            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+        } catch (e) { showToast('Archive failed: ' + e.message, 'error'); }
+    };
+    document.getElementById('mdDeleteBtn').onclick = async () => {
+        const ok = await showConfirmDialog({
+            title: 'Delete this meeting?',
+            message: 'Removed from the app and the record permanently. Archiving keeps it.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+            confirmText: 'Delete', confirmStyle: 'danger'
+        });
+        if (!ok) return;
+        try {
+            await sbClient.from('meeting_records').delete().eq('id', m.id);
+            showToast('Meeting deleted', 'success');
+            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+        } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+    };
+
+    document.getElementById('mtgDetailModal').classList.add('open');
+}
+
+function closeMtgDetail() {
+    document.getElementById('mtgDetailModal').classList.remove('open');
+    mdCurrentId = null;
 }
 
 // ---- Archive multi-select: restore or delete many at once ----
