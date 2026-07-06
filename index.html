@@ -4637,7 +4637,34 @@ function openContentDetail(kind, id) {
         tryList(item.topics_discussed, 'Topics discussed');
         if (item.video_url) parts.push(`<div><a href="${escapeHtml(item.video_url)}" target="_blank" style="color:var(--accent);">Watch the meeting video</a></div>`);
         if (parts.length <= 1) parts.push('<div style="color:var(--text-tertiary);">No summary published yet.</div>');
+        // Resident engagement placeholder — filled async below
+        parts.push(`<div id="ceEngagement" style="margin-top:14px; padding:12px 14px; background:rgba(246,196,69,0.05); border:1px solid rgba(246,196,69,0.25); border-radius:10px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.8px; color:var(--warm-accent); margin-bottom:6px;">RESIDENT ENGAGEMENT</div>
+            <div id="ceEngagementBody" style="font-size:12px; color:var(--text-secondary);">Loading…</div>
+        </div>`);
         meetingView.innerHTML = parts.join('');
+
+        // Live counts from the app's "I attended / watched / read" toggles.
+        (async () => {
+            const bodyEl = document.getElementById('ceEngagementBody');
+            if (!bodyEl || !sbClient) return;
+            try {
+                const { data: rows, error } = await sbClient
+                    .from('meeting_attendance').select('attended_in_person, watched_livestream, read_summary')
+                    .eq('meeting_id', item.id);
+                if (error) throw error;
+                const n = (rows || []).length;
+                if (!n) { bodyEl.textContent = 'No resident engagement recorded yet.'; return; }
+                const inPerson = rows.filter(r => r.attended_in_person).length;
+                const online = rows.filter(r => r.watched_livestream).length;
+                const read = rows.filter(r => r.read_summary).length;
+                bodyEl.innerHTML =
+                    `<span style="color:var(--text-primary); font-weight:600;">${n}</span> resident${n === 1 ? '' : 's'} engaged — ` +
+                    `<span style="color:var(--success);">${inPerson}</span> attended in person · ` +
+                    `<span style="color:var(--accent);">${online}</span> watched online · ` +
+                    `<span style="color:var(--warm-accent);">${read}</span> read the summary`;
+            } catch (e) { bodyEl.textContent = 'Engagement data unavailable.'; }
+        })();
     } else {
         editFields.style.display = 'block';
         meetingView.style.display = 'none';
