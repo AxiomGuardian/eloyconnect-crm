@@ -6611,7 +6611,9 @@ async function sendPushNotification() {
     // Build metadata
     const prioritySelect = document.querySelector('#notifPriority');
     const priority = prioritySelect?.value || 'normal';
-    const data = { type: 'alert', priority: priority };
+    // 'message' → the app opens the bell inbox on tap (direct pushes have
+    // no post behind them; the inbox IS their home).
+    const data = { type: 'message', priority: priority };
     if (!isBroadcast) {
         data.audience_filter = audienceValue;
     }
