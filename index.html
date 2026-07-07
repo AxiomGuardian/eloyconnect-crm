@@ -3793,7 +3793,7 @@ input[type="checkbox"].bulk-check:checked::after {
 
         <!-- COUNCIL MEETING DETAIL modal — alive -->
         <div class="mtg-overlay" id="mtgDetailModal" onclick="if(event.target===this) closeMtgDetail()">
-            <div class="mtg-card">
+            <div class="mtg-card" style="width:min(880px,94vw);">
                 <div class="mtg-aurora"></div>
                 <div class="mtg-sweep"></div>
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; position:relative;">
@@ -3837,8 +3837,8 @@ input[type="checkbox"].bulk-check:checked::after {
                         <span id="mdTrLoader" class="aura-loader" style="display:none;"></span>
                         <span id="mdTrLabel">LIVE TRANSCRIPT</span>
                     </div>
-                    <div id="mdRecap" style="display:none; font-size:12.5px; line-height:1.6; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:10px; padding:10px 12px; margin-bottom:10px;"></div>
-                    <div id="mdTranscript" style="max-height:220px; overflow-y:auto; font-size:12.5px; line-height:1.7; color:var(--text-secondary); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px;"></div>
+                    <div id="mdRecap" style="display:none; font-size:13.5px; line-height:1.65; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:12px; padding:14px 16px; margin-bottom:12px;"></div>
+                    <div id="mdTranscript" style="min-height:230px; max-height:46vh; overflow-y:auto; font-size:13.5px; line-height:1.75; color:var(--text-secondary); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px;"></div>
                 </div>
 
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; position:relative;">
@@ -9264,27 +9264,31 @@ async function openCouncilMeeting(id) {
     if (!parts.length) parts.push('<div style="color:var(--text-tertiary); font-size:13px;">No agenda published yet — edit coming with the Meeting Intelligence build.</div>');
     document.getElementById('mdBody').innerHTML = parts.join('');
 
-    // Engagement — live counts, gold panel
+    // Engagement — live counts, refreshed by the same poll as the transcript
     const eng = document.getElementById('mdEngagement');
     eng.innerHTML = `<div class="mtg-section-label">RESIDENT ENGAGEMENT</div>
         <div id="mdEngBody" style="font-size:13px; color:var(--text-secondary); padding:12px 14px; background:rgba(246,196,69,0.05); border:1px solid rgba(246,196,69,0.22); border-radius:10px;">Loading…</div>`;
-    (async () => {
+    async function refreshEngagement() {
         try {
             const { data: rows, error } = await sbClient.from('meeting_attendance')
                 .select('attended_in_person, watched_livestream, read_summary').eq('meeting_id', m.id);
             if (error) throw error;
             const el = document.getElementById('mdEngBody');
+            if (!el) return;
             const n = (rows || []).length;
             if (!n) { el.textContent = 'No resident engagement recorded yet.'; return; }
             const a = rows.filter(r => r.attended_in_person).length;
             const w = rows.filter(r => r.watched_livestream).length;
             const s = rows.filter(r => r.read_summary).length;
-            el.innerHTML = `<span style="font-size:20px; font-weight:700; color:var(--text-primary);">${n}</span> resident${n === 1 ? '' : 's'} engaged
+            el.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--warm-accent)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span style="font-size:21px; font-weight:700; color:var(--text-primary);">${n}</span></span> resident${n === 1 ? '' : 's'} engaged
                 &nbsp;—&nbsp; <span style="color:var(--success); font-weight:600;">${a}</span> in person ·
                 <span style="color:var(--accent); font-weight:600;">${w}</span> online ·
                 <span style="color:var(--warm-accent); font-weight:600;">${s}</span> read the summary`;
         } catch (e) { const el = document.getElementById('mdEngBody'); if (el) el.textContent = 'Engagement data unavailable.'; }
-    })();
+    }
+    refreshEngagement();
 
     // Action buttons
     const pubBtn = document.getElementById('mdPublishBtn');
@@ -9334,13 +9338,9 @@ async function openCouncilMeeting(id) {
             const summarizing = bsNow === 'summarizing';
             const trLoader = document.getElementById('mdTrLoader');
 
-            // Keep the chip + button honest as stages change, without reopening.
-            if (botStates[bsNow]) {
-                botChip.style.display = 'inline-flex';
-                botChip.textContent = botStates[bsNow][0];
-                botChip.style.color = botStates[bsNow][1];
-            }
-            if (summarizing) botBtn.style.display = 'none';
+            // The poll owns the whole panel: chip, button, engagement — no reopening, ever.
+            syncBotControls(bsNow);
+            refreshEngagement();
 
             if ((rows && rows.length) || liveNow || summarizing) {
                 trWrap.style.display = 'block';
@@ -9373,7 +9373,7 @@ async function openCouncilMeeting(id) {
     }
     if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
     loadTranscript();
-    mdTrTimer = setInterval(loadTranscript, 8000);
+    mdTrTimer = setInterval(loadTranscript, 5000);
 
     // Bot dispatch: one click sends the Notetaker to the meeting.
     const botChip = document.getElementById('mdBotChip');
@@ -9385,31 +9385,37 @@ async function openCouncilMeeting(id) {
         summarizing: ['Meeting ended — Eloy AI is writing the summary…', 'var(--warm-accent)'],
         error:       ['Bot hit an error — check the worker logs', 'var(--warning)']
     };
-    const bs = m.bot_status || 'idle';
-    if (botStates[bs]) {
-        botChip.style.display = 'inline-flex';
-        botChip.textContent = botStates[bs][0];
-        botChip.style.color = botStates[bs][1];
-    } else { botChip.style.display = 'none'; }
-    botBtn.style.display = '';
-    if (bs === 'summarizing') {
-        botBtn.style.display = 'none';   // nothing to press — the aura loader owns this moment
-    } else if (bs === 'live' || bs === 'joining' || bs === 'requested') {
-        botBtn.textContent = 'End Meeting for Bot';
-        botBtn.onclick = async () => {
-            await sbClient.from('meeting_records').update({ bot_status: 'ended' }).eq('id', m.id);
-            showToast('Bot told to wrap up — final summary coming', 'success');
-            await fetchAllData(); loadCouncilPage(); openMtgDetail(m.id);
-        };
-    } else {
-        botBtn.textContent = 'Send Eloy Bot';
-        botBtn.onclick = async () => {
-            if (!m.meeting_url) { showToast('Add a meeting link first (edit the meeting)', 'warning'); return; }
-            await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
-            showToast('Eloy Bot dispatched — joining within ~15 seconds. Watch the transcript below.', 'success');
-            await fetchAllData(); loadCouncilPage(); openMtgDetail(m.id);
-        };
+    // ONE source of truth for chip + button — called on open and by the 5s poll.
+    // The modal never needs closing/reopening: every stage change lands in place.
+    function syncBotControls(bs) {
+        if (botStates[bs]) {
+            botChip.style.display = 'inline-flex';
+            botChip.textContent = botStates[bs][0];
+            botChip.style.color = botStates[bs][1];
+        } else { botChip.style.display = 'none'; }
+        botBtn.style.display = '';
+        if (bs === 'summarizing') {
+            botBtn.style.display = 'none';   // nothing to press — the aura loader owns this moment
+        } else if (bs === 'live' || bs === 'joining' || bs === 'requested') {
+            botBtn.textContent = 'End Meeting for Bot';
+            botBtn.onclick = async () => {
+                await sbClient.from('meeting_records').update({ bot_status: 'ended' }).eq('id', m.id);
+                showToast('Bot told to wrap up — the summary is coming', 'success');
+                syncBotControls('summarizing');
+                loadTranscript();
+            };
+        } else {
+            botBtn.textContent = 'Send Eloy Bot';
+            botBtn.onclick = async () => {
+                if (!m.meeting_url) { showToast('Add a meeting link first (edit the meeting)', 'warning'); return; }
+                await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
+                showToast('Eloy Bot dispatched — watch it live below', 'success');
+                syncBotControls('requested');
+                loadTranscript();
+            };
+        }
     }
+    syncBotControls(m.bot_status || 'idle');
 
     document.getElementById('mtgDetailModal').classList.add('open');
 }
