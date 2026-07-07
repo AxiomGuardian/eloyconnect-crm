@@ -9367,8 +9367,9 @@ async function openCouncilMeeting(id) {
                     trRecap.textContent = rec.live_recap;
                 }
             }
-            // Poll until the summary is filed, then rest.
-            if (!liveNow && !summarizing && mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
+            // The modal is ALWAYS live while open — the poller never stops itself.
+            // (It's cleared only by closeMtgDetail. This is what keeps every stage
+            // change landing in place with zero exit-and-reopen.)
         } catch (e) { /* transcript is best-effort; never break the modal */ }
     }
     if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
