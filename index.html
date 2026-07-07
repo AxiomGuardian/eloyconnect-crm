@@ -3838,6 +3838,10 @@ input[type="checkbox"].bulk-check:checked::after {
                         border-color:transparent; box-shadow:0 0 16px rgba(246,196,69,0.4); }
                     @keyframes sumSlide{ from{ opacity:0; transform:translateX(18px);} to{ opacity:1; transform:none;} }
                     .sum-anim{ animation:sumSlide .4s cubic-bezier(.22,.8,.3,1); }
+                    @keyframes sumChipIn{ from{ opacity:0; transform:translateY(10px) scale(.88);} to{ opacity:1; transform:none;} }
+                    .sum-chip.enter{ animation:sumChipIn .5s cubic-bezier(.22,.8,.3,1) both; }
+                    @keyframes sumGlow{ 0%{ box-shadow:0 0 0 rgba(246,196,69,0);} 30%{ box-shadow:0 0 38px rgba(246,196,69,0.55);} 100%{ box-shadow:0 0 0 rgba(246,196,69,0);} }
+                    .sum-arrive{ animation:sumGlow 1.8s ease-out; }
                 </style>
                 <div id="mdTranscriptWrap" style="display:none; margin-top:16px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
@@ -9494,12 +9498,17 @@ function renderSummaryTabs(text) {
     bar.innerHTML = '';
     secs.forEach((s, i) => {
         const b = document.createElement('button');
-        b.className = 'sum-chip';
+        b.className = 'sum-chip enter';
+        b.style.animationDelay = `${180 + i * 160}ms`;   // bam… one, two, three
         b.textContent = s[0];
         b.onclick = () => show(i, true);
         bar.appendChild(b);
     });
     wrap.style.display = 'block';
+    // THE ARRIVAL: aura flash announces "here's your final report."
+    panel.classList.remove('sum-arrive');
+    void panel.offsetWidth;                              // restart the animation
+    panel.classList.add('sum-arrive');
     show(0, false);
     // Gentle carousel: each section takes the stage until the user takes over.
     if (mdSumTimer) clearInterval(mdSumTimer);
