@@ -203,7 +203,7 @@ body {
    follows the mouse and warms up on clickables
    ============================================ */
 .cursor-orb { position: fixed; top: 0; left: 0; width: 26px; height: 26px; border-radius: 50%;
-    pointer-events: none; z-index: 10002; opacity: 0; filter: blur(1px);
+    pointer-events: none; z-index: 1100; opacity: 0; filter: blur(1px);  /* below all modals */
     background: radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(63,224,232,0.16) 55%, transparent 75%);
     mix-blend-mode: screen; transform: translate(-50%, -50%);
     transition: width .18s ease, height .18s ease, opacity .3s ease; }
@@ -3846,9 +3846,8 @@ input[type="checkbox"].bulk-check:checked::after {
                     </div>
                 </div>
                 <p style="font-size:12px; color:var(--text-tertiary); margin-bottom:16px; position:relative;">
-                    <strong>In the room (or testing solo)?</strong> Use Microphone — this computer listens.
-                    <strong>Remote meeting?</strong> Capture Meeting Tab: pick the Zoom/Meet tab and <strong>check "Also share tab audio"</strong> —
-                    note: the tab only carries OTHER participants' voices, never your own.
+                    <strong>Capture Meeting</strong> hears everyone: this room through the microphone AND the Zoom/Meet tab
+                    (pick the meeting tab, <strong>check "Also share tab audio"</strong>). Mic Only / Tab Only are for special cases.
                 </p>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; position:relative;">
@@ -3870,8 +3869,9 @@ input[type="checkbox"].bulk-check:checked::after {
                     <div style="font-size:11px; color:var(--text-tertiary);" id="micMeta">0 segments · 0 min</div>
                     <div style="display:flex; gap:10px;">
                         <a id="micJoinLink" href="#" target="_blank" class="btn btn-secondary" style="display:none; text-decoration:none;">Open Meeting Link</a>
-                        <button class="btn btn-secondary" id="micMicBtn" onclick="micStart('mic')" title="Capture the room through this computer's microphone — for in-person meetings and solo tests">Use Microphone</button>
-                        <button class="btn btn-primary" id="micStartBtn" onclick="micStart('tab')" title="Capture a Zoom / Meet / Teams tab's audio — needs other participants talking">Capture Meeting Tab</button>
+                        <button class="btn btn-secondary" id="micMicBtn" onclick="micStart('mic')" title="This computer's microphone only — solo tests, quick notes">Mic Only</button>
+                        <button class="btn btn-secondary" id="micTabBtn" onclick="micStart('tab')" title="The meeting tab's audio only — remote participants">Tab Only</button>
+                        <button class="btn btn-primary" id="micStartBtn" onclick="micStart('both')" title="Room microphone + meeting tab audio mixed — captures EVERYONE. The mode for real meetings.">Capture Meeting</button>
                         <button class="btn btn-ghost" id="micStopBtn" onclick="micStop()" style="display:none; color:var(--warning);">End Meeting</button>
                     </div>
                 </div>
@@ -9067,6 +9067,8 @@ async function loadCouncilPage() {
             <td>${engCell}</td>
             <td>
                 <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" data-id="${esc(m.id)}" onclick="event.stopPropagation(); togglePublish('meeting_records', this.dataset.id, ${m.is_public !== false}).then?.(loadCouncilPage) || setTimeout(loadCouncilPage, 800)">${m.is_public === false ? 'Publish' : 'Unpublish'}</button>
+                <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px;" data-id="${esc(m.id)}" onclick="event.stopPropagation(); councilArchive(this.dataset.id)">Archive</button>
+                <button class="btn btn-ghost" style="font-size:11px; padding:4px 8px; color:var(--warning);" data-id="${esc(m.id)}" onclick="event.stopPropagation(); councilDelete(this.dataset.id)">Delete</button>
             </td>
         </tr>`;
     }).join('');
@@ -9076,6 +9078,28 @@ async function loadCouncilPage() {
 // SCHEDULE COUNCIL MEETING — purpose-built modal
 // ============================================
 let mtgTagList = [];
+
+async function councilArchive(id) {
+    try {
+        await sbClient.from('meeting_records').update({ archived: true, is_public: false }).eq('id', id);
+        showToast('Meeting archived — see the Archive tab', 'success');
+        await fetchAllData(); loadCouncilPage();
+    } catch (e) { showToast('Archive failed: ' + e.message, 'error'); }
+}
+
+async function councilDelete(id) {
+    const ok = await showConfirmDialog({
+        title: 'Delete this meeting?',
+        message: 'Removed from the app and the record permanently. Archiving keeps it.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
+        confirmText: 'Delete', confirmStyle: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await sbClient.from('meeting_records').delete().eq('id', id);
+        showToast('Meeting deleted', 'success');
+        await fetchAllData(); loadCouncilPage();
+    } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
 
 function openNewMeeting() {
     mtgTagList = [];
@@ -9308,18 +9332,18 @@ function micSetStatus(label, live) {
     else { el.style.cssText = ''; el.className = 'mtg-chip'; }
 }
 
-async function micStart(mode = 'tab') {
+async function micStart(mode = 'both') {
     if (mic.running) return;
     mic.mode = mode;
+    mic.extraStreams = [];
     try {
         if (mode === 'mic') {
-            // In-room mode: this computer's microphone hears the chamber.
+            // Room only: this computer's microphone.
             mic.stream = await navigator.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: true }
             });
-        } else {
-            // Remote mode: capture a tab WITH its audio. Remember — a tab
-            // only outputs OTHER participants' voices, never your own.
+        } else if (mode === 'tab') {
+            // Meeting tab only: remote participants (never your own voice).
             mic.stream = await navigator.mediaDevices.getDisplayMedia({
                 video: true,
                 audio: { echoCancellation: false, noiseSuppression: false }
@@ -9329,6 +9353,37 @@ async function micStart(mode = 'tab') {
                 showToast('No tab audio — pick the meeting TAB (not screen) and check "Also share tab audio"', 'warning');
                 return;
             }
+        } else {
+            // BOTH: the real-meeting mode. Room mic + meeting tab audio,
+            // mixed into one stream — captures everyone on every side.
+            const micStream = await navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: true, noiseSuppression: true }
+            });
+            let tabStream = null;
+            try {
+                tabStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: { echoCancellation: false, noiseSuppression: false }
+                });
+            } catch (e) { /* no tab picked — mic carries the meeting */ }
+
+            if (tabStream && tabStream.getAudioTracks().length) {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const dest = ctx.createMediaStreamDestination();
+                ctx.createMediaStreamSource(micStream).connect(dest);
+                ctx.createMediaStreamSource(new MediaStream(tabStream.getAudioTracks())).connect(dest);
+                mic.audioCtx = ctx;
+                mic.stream = dest.stream;
+                mic.extraStreams = [micStream, tabStream];
+                // Ending the tab share ends the meeting gracefully.
+                const vt = tabStream.getVideoTracks()[0];
+                if (vt) vt.addEventListener('ended', () => { if (mic.running) micStop(); });
+                showToast('Capturing room + meeting audio', 'success');
+            } else {
+                if (tabStream) tabStream.getTracks().forEach(t => t.stop());
+                mic.stream = micStream;
+                showToast('No tab audio shared — capturing the room microphone', 'info');
+            }
         }
     } catch (e) { showToast('Capture cancelled', 'info'); return; }
 
@@ -9337,6 +9392,7 @@ async function micStart(mode = 'tab') {
     document.getElementById('micTranscript').innerHTML = '';
     document.getElementById('micStartBtn').style.display = 'none';
     document.getElementById('micMicBtn').style.display = 'none';
+    document.getElementById('micTabBtn').style.display = 'none';
     document.getElementById('micStopBtn').style.display = 'inline-flex';
     micSetStatus('LIVE', true);
 
@@ -9444,6 +9500,8 @@ async function micStop() {
     clearTimeout(mic.watchdog);
     try { mic.recorder?.state === 'recording' && mic.recorder.stop(); } catch (e) {}
     mic.stream?.getTracks().forEach(t => t.stop());
+    (mic.extraStreams || []).forEach(s => s.getTracks().forEach(t => t.stop()));
+    try { mic.audioCtx?.close(); } catch (e) {}
     micSetStatus('Wrapping up…', false);
 
     // Final pass: full summary written into the permanent record.
@@ -9459,6 +9517,7 @@ async function micStop() {
     micSetStatus('Ended', false);
     document.getElementById('micStartBtn').style.display = 'inline-flex';
     document.getElementById('micMicBtn').style.display = 'inline-flex';
+    document.getElementById('micTabBtn').style.display = 'inline-flex';
     document.getElementById('micStopBtn').style.display = 'none';
     showToast('Meeting ended — final summary published to residents', 'success');
     await fetchAllData(); loadCouncilPage();
