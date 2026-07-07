@@ -3815,7 +3815,13 @@ input[type="checkbox"].bulk-check:checked::after {
                                 Capture the meeting live — AI transcribes and residents follow the recap in the app.
                             </div>
                         </div>
-                        <button class="btn btn-primary" id="mdConsoleBtn" style="white-space:nowrap;">Open Console</button>
+                        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                            <span id="mdBotChip" class="mtg-chip" style="display:none;"></span>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn btn-primary" id="mdBotBtn" style="white-space:nowrap;">Send Eloy Bot</button>
+                                <button class="btn btn-secondary" id="mdConsoleBtn" style="white-space:nowrap;">Manual Console</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -9294,6 +9300,38 @@ async function openCouncilMeeting(id) {
     const consoleBtn = document.getElementById('mdConsoleBtn');
     if (consoleBtn) consoleBtn.onclick = () => { closeMtgDetail(); openMicConsole(m.id); };
 
+    // Bot dispatch: one click sends the Notetaker to the meeting.
+    const botChip = document.getElementById('mdBotChip');
+    const botBtn = document.getElementById('mdBotBtn');
+    const botStates = {
+        requested: ['Bot requested — waiting for the worker…', 'var(--warm-accent)'],
+        joining:   ['Bot joining the meeting…', 'var(--accent)'],
+        live:      ['Bot is IN the meeting — transcribing', 'var(--success)'],
+        error:     ['Bot hit an error — check the worker logs', 'var(--warning)']
+    };
+    const bs = m.bot_status || 'idle';
+    if (botStates[bs]) {
+        botChip.style.display = 'inline-flex';
+        botChip.textContent = botStates[bs][0];
+        botChip.style.color = botStates[bs][1];
+    } else { botChip.style.display = 'none'; }
+    if (bs === 'live' || bs === 'joining' || bs === 'requested') {
+        botBtn.textContent = 'End Meeting for Bot';
+        botBtn.onclick = async () => {
+            await sbClient.from('meeting_records').update({ bot_status: 'ended' }).eq('id', m.id);
+            showToast('Bot told to wrap up — final summary coming', 'success');
+            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+        };
+    } else {
+        botBtn.textContent = 'Send Eloy Bot';
+        botBtn.onclick = async () => {
+            if (!m.meeting_url) { showToast('Add a meeting link first (edit the meeting)', 'warning'); return; }
+            await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
+            showToast('Eloy Bot dispatched — it joins within ~15 seconds once the worker is online', 'success');
+            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+        };
+    }
+
     document.getElementById('mtgDetailModal').classList.add('open');
 }
 
@@ -9475,9 +9513,10 @@ async function micRecap(finalPass = false) {
     if (!finalPass) mic.transcriptBuf = [];
     try {
         const prev = document.getElementById('micRecap').dataset.recap || '';
+        const grounding = 'STRICT RULES: Only report things ACTUALLY SAID in the transcript. Never invent agenda items, decisions, votes, or context that is not in the words. If the transcript is unclear, brief, or off-topic, say plainly that the discussion so far is brief or unclear — do not dress it up as council business.';
         const prompt = finalPass
-            ? `A city council meeting in Eloy, Arizona just ended. Here is the running recap so far:\n${prev}\n\nAnd the final transcript portion:\n${fresh}\n\nWrite the FINAL meeting summary for residents: 2-3 plain-language paragraphs covering what was decided and what it means for residents. No jargon.`
-            : `You are recapping a LIVE city council meeting in Eloy, Arizona for residents following on their phones. Prior recap:\n${prev || '(meeting just started)'}\n\nNew transcript segment:\n${fresh}\n\nUpdate the recap: 1-2 short plain-language paragraphs on what is being discussed RIGHT NOW and what it means for residents. Keep it under 150 words. No preamble.`;
+            ? `A public meeting in Eloy, Arizona just ended. ${grounding}\n\nRunning recap so far:\n${prev}\n\nFinal transcript portion:\n${fresh}\n\nWrite the final summary for residents in 2-3 plain-language paragraphs: strictly what was said and, only if explicitly stated, what was decided. No jargon, no filler.`
+            : `You are recapping a LIVE public meeting in Eloy, Arizona for residents on their phones. ${grounding}\n\nPrior recap:\n${prev || '(meeting just started)'}\n\nNew transcript segment:\n${fresh}\n\nUpdate the recap in 1-2 short plain-language paragraphs: strictly what is being said right now. Under 120 words. No preamble.`;
         const { data, error } = await sbClient.functions.invoke('grok-chat', {
             body: { messages: [{ role: 'user', content: prompt }] }
         });
