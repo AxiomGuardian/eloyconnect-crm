@@ -3825,9 +3825,16 @@ input[type="checkbox"].bulk-check:checked::after {
                 </div>
 
                 <!-- LIVE TRANSCRIPT — what the bot hears, as it hears it -->
+                <style>
+                    .aura-loader{ width:13px; height:13px; border-radius:50%; display:inline-block; flex:0 0 auto;
+                        border:2px solid rgba(246,196,69,0.2); border-top-color:#f6c445;
+                        box-shadow:0 0 12px rgba(246,196,69,0.45); animation:auraSpin .8s linear infinite; }
+                    @keyframes auraSpin{ to{ transform:rotate(360deg); } }
+                </style>
                 <div id="mdTranscriptWrap" style="display:none; margin-top:16px; position:relative;">
-                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
                         <span id="mdTrDot" style="width:7px; height:7px; border-radius:50%; background:var(--success, #4ade80); box-shadow:0 0 8px rgba(74,222,128,0.8);"></span>
+                        <span id="mdTrLoader" class="aura-loader" style="display:none;"></span>
                         <span id="mdTrLabel">LIVE TRANSCRIPT</span>
                     </div>
                     <div id="mdRecap" style="display:none; font-size:12.5px; line-height:1.6; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:10px; padding:10px 12px; margin-bottom:10px;"></div>
@@ -9321,12 +9328,28 @@ async function openCouncilMeeting(id) {
                 .select('seq, text').eq('meeting_id', m.id)
                 .order('seq', { ascending: true }).limit(1000);
             const { data: rec } = await sbClient.from('meeting_records')
-                .select('bot_status, live_recap').eq('id', m.id).single();
-            const liveNow = rec && ['requested', 'joining', 'live'].includes(rec.bot_status);
-            if ((rows && rows.length) || liveNow) {
+                .select('bot_status, live_recap, public_summary').eq('id', m.id).single();
+            const bsNow = rec?.bot_status || 'idle';
+            const liveNow = ['requested', 'joining', 'live'].includes(bsNow);
+            const summarizing = bsNow === 'summarizing';
+            const trLoader = document.getElementById('mdTrLoader');
+
+            // Keep the chip + button honest as stages change, without reopening.
+            if (botStates[bsNow]) {
+                botChip.style.display = 'inline-flex';
+                botChip.textContent = botStates[bsNow][0];
+                botChip.style.color = botStates[bsNow][1];
+            }
+            if (summarizing) botBtn.style.display = 'none';
+
+            if ((rows && rows.length) || liveNow || summarizing) {
                 trWrap.style.display = 'block';
-                trLabel.textContent = liveNow ? 'LIVE TRANSCRIPT' : 'MEETING TRANSCRIPT';
+                trLabel.textContent = summarizing ? 'ELOY AI IS WRITING THE SUMMARY…'
+                                    : liveNow ? 'LIVE TRANSCRIPT' : 'MEETING TRANSCRIPT';
+                trLabel.style.color = summarizing ? 'var(--warm-accent)' : '';
                 trDot.style.display = liveNow ? 'inline-block' : 'none';
+                if (trLoader) trLoader.style.display = summarizing ? 'inline-block' : 'none';
+
                 if (rows && rows.length) {
                     const nearBottom = trBox.scrollHeight - trBox.scrollTop - trBox.clientHeight < 50;
                     trBox.textContent = rows.map(r => r.text).join(' ');
@@ -9334,12 +9357,18 @@ async function openCouncilMeeting(id) {
                 } else {
                     trBox.textContent = 'Listening… words appear here as the bot hears them.';
                 }
-                if (rec && rec.live_recap) {
+
+                // Recap box: live recap while live → final summary once published.
+                if (bsNow === 'ended' && rec?.public_summary) {
+                    trRecap.style.display = 'block';
+                    trRecap.textContent = rec.public_summary;
+                } else if (rec?.live_recap) {
                     trRecap.style.display = 'block';
                     trRecap.textContent = rec.live_recap;
                 }
             }
-            if (!liveNow && mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
+            // Poll until the summary is filed, then rest.
+            if (!liveNow && !summarizing && mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
         } catch (e) { /* transcript is best-effort; never break the modal */ }
     }
     if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
@@ -9350,10 +9379,11 @@ async function openCouncilMeeting(id) {
     const botChip = document.getElementById('mdBotChip');
     const botBtn = document.getElementById('mdBotBtn');
     const botStates = {
-        requested: ['Bot requested — waiting for the worker…', 'var(--warm-accent)'],
-        joining:   ['Bot joining the meeting…', 'var(--accent)'],
-        live:      ['Bot is IN the meeting — transcribing', 'var(--success)'],
-        error:     ['Bot hit an error — check the worker logs', 'var(--warning)']
+        requested:   ['Bot requested — waiting for the worker…', 'var(--warm-accent)'],
+        joining:     ['Bot joining the meeting…', 'var(--accent)'],
+        live:        ['Bot is IN the meeting — transcribing', 'var(--success)'],
+        summarizing: ['Meeting ended — Eloy AI is writing the summary…', 'var(--warm-accent)'],
+        error:       ['Bot hit an error — check the worker logs', 'var(--warning)']
     };
     const bs = m.bot_status || 'idle';
     if (botStates[bs]) {
@@ -9361,7 +9391,10 @@ async function openCouncilMeeting(id) {
         botChip.textContent = botStates[bs][0];
         botChip.style.color = botStates[bs][1];
     } else { botChip.style.display = 'none'; }
-    if (bs === 'live' || bs === 'joining' || bs === 'requested') {
+    botBtn.style.display = '';
+    if (bs === 'summarizing') {
+        botBtn.style.display = 'none';   // nothing to press — the aura loader owns this moment
+    } else if (bs === 'live' || bs === 'joining' || bs === 'requested') {
         botBtn.textContent = 'End Meeting for Bot';
         botBtn.onclick = async () => {
             await sbClient.from('meeting_records').update({ bot_status: 'ended' }).eq('id', m.id);
