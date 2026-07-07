@@ -3830,6 +3830,14 @@ input[type="checkbox"].bulk-check:checked::after {
                         border:2px solid rgba(246,196,69,0.2); border-top-color:#f6c445;
                         box-shadow:0 0 12px rgba(246,196,69,0.45); animation:auraSpin .8s linear infinite; }
                     @keyframes auraSpin{ to{ transform:rotate(360deg); } }
+                    .sum-chip{ padding:7px 15px; border-radius:999px; font-size:10.5px; font-weight:700; letter-spacing:0.08em;
+                        cursor:pointer; border:1px solid rgba(246,196,69,0.3); color:var(--text-secondary);
+                        background:transparent; transition:all .28s ease; }
+                    .sum-chip:hover{ border-color:rgba(246,196,69,0.6); color:var(--text-primary); }
+                    .sum-chip.on{ color:#141414; background:linear-gradient(135deg,#f6c445,#e8a53a);
+                        border-color:transparent; box-shadow:0 0 16px rgba(246,196,69,0.4); }
+                    @keyframes sumSlide{ from{ opacity:0; transform:translateX(18px);} to{ opacity:1; transform:none;} }
+                    .sum-anim{ animation:sumSlide .4s cubic-bezier(.22,.8,.3,1); }
                 </style>
                 <div id="mdTranscriptWrap" style="display:none; margin-top:16px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
@@ -3837,7 +3845,12 @@ input[type="checkbox"].bulk-check:checked::after {
                         <span id="mdTrLoader" class="aura-loader" style="display:none;"></span>
                         <span id="mdTrLabel">LIVE TRANSCRIPT</span>
                     </div>
-                    <div id="mdRecap" style="display:none; font-size:13.5px; line-height:1.65; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:12px; padding:14px 16px; margin-bottom:12px;"></div>
+                    <!-- Premium tabbed summary — parsed from the AI's structured report -->
+                    <div id="mdSumTabs" style="display:none; margin-bottom:12px;">
+                        <div id="mdSumTabBar" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+                        <div id="mdSumPanel" style="font-size:13.5px; line-height:1.7; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.28); border-radius:12px; padding:16px 18px; min-height:96px;"></div>
+                    </div>
+                    <div id="mdRecap" style="display:none; white-space:pre-wrap; font-size:13.5px; line-height:1.65; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:12px; padding:14px 16px; margin-bottom:12px;"></div>
                     <div id="mdTranscript" style="min-height:230px; max-height:46vh; overflow-y:auto; font-size:13.5px; line-height:1.75; color:var(--text-secondary); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px;"></div>
                 </div>
 
@@ -9325,6 +9338,9 @@ async function openCouncilMeeting(id) {
     const trLabel = document.getElementById('mdTrLabel');
     const trDot = document.getElementById('mdTrDot');
     trWrap.style.display = 'none'; trBox.textContent = ''; trRecap.style.display = 'none';
+    const sumWrap = document.getElementById('mdSumTabs');
+    if (sumWrap) { sumWrap.style.display = 'none'; sumWrap.dataset.src = ''; }
+    if (mdSumTimer) { clearInterval(mdSumTimer); mdSumTimer = null; }
 
     async function loadTranscript() {
         try {
@@ -9358,10 +9374,10 @@ async function openCouncilMeeting(id) {
                     trBox.textContent = 'Listening… words appear here as the bot hears them.';
                 }
 
-                // Recap box: live recap while live → final summary once published.
+                // Recap: live recap while live → premium tabbed report once published.
                 if (bsNow === 'ended' && rec?.public_summary) {
-                    trRecap.style.display = 'block';
-                    trRecap.textContent = rec.public_summary;
+                    trRecap.style.display = 'none';
+                    renderSummaryTabs(rec.public_summary);
                 } else if (rec?.live_recap) {
                     trRecap.style.display = 'block';
                     trRecap.textContent = rec.live_recap;
@@ -9425,6 +9441,69 @@ function closeMtgDetail() {
     document.getElementById('mtgDetailModal').classList.remove('open');
     mdCurrentId = null;
     if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
+    if (mdSumTimer) { clearInterval(mdSumTimer); mdSumTimer = null; }
+}
+
+// ============================================
+// PREMIUM SUMMARY TABS — the AI's report, staged
+// Parses the structured summary into animated gold tabs.
+// ============================================
+let mdSumTimer = null;
+
+function renderSummaryTabs(text) {
+    const wrap = document.getElementById('mdSumTabs');
+    const bar = document.getElementById('mdSumTabBar');
+    const panel = document.getElementById('mdSumPanel');
+    if (!wrap || !text) return;
+    if (wrap.dataset.src === text) { wrap.style.display = 'block'; return; }
+    wrap.dataset.src = text;
+
+    const grab = (from, to) => {
+        const i = from ? text.indexOf(from) : 0;
+        if (from && i === -1) return '';
+        const start = from ? i + from.length : 0;
+        const j = to ? text.indexOf(to, start) : -1;
+        return text.slice(start, j === -1 ? undefined : j).trim();
+    };
+    const secs = [
+        ['WHAT WAS SAID', grab('', 'WHAT THIS MEANS FOR YOU') || text.trim()],
+        ['WHAT IT MEANS FOR YOU', grab('WHAT THIS MEANS FOR YOU', 'TOPICS DISCUSSED')],
+        ['TOPICS', grab('TOPICS DISCUSSED', 'DECISIONS')],
+        ['DECISIONS', grab('DECISIONS', null)]
+    ].filter(s => s[1]);
+
+    const fmt = (t) => escapeHtml(t).split('\n').map(l => {
+        l = l.trim();
+        if (!l) return '';
+        if (l.startsWith('•')) {
+            return `<div style="display:flex; gap:10px; margin:8px 0; align-items:flex-start;">
+                <span style="color:var(--warm-accent); font-size:9px; padding-top:5px;">◆</span>
+                <span>${l.slice(1).trim()}</span></div>`;
+        }
+        return `<div style="margin:6px 0;">${l}</div>`;
+    }).join('');
+
+    let idx = 0;
+    const show = (i, byUser) => {
+        idx = i;
+        bar.querySelectorAll('.sum-chip').forEach((c, k) => c.classList.toggle('on', k === i));
+        panel.innerHTML = `<div class="sum-anim">${fmt(secs[i][1])}</div>`;
+        if (byUser && mdSumTimer) { clearInterval(mdSumTimer); mdSumTimer = null; }
+    };
+
+    bar.innerHTML = '';
+    secs.forEach((s, i) => {
+        const b = document.createElement('button');
+        b.className = 'sum-chip';
+        b.textContent = s[0];
+        b.onclick = () => show(i, true);
+        bar.appendChild(b);
+    });
+    wrap.style.display = 'block';
+    show(0, false);
+    // Gentle carousel: each section takes the stage until the user takes over.
+    if (mdSumTimer) clearInterval(mdSumTimer);
+    if (secs.length > 1) mdSumTimer = setInterval(() => show((idx + 1) % secs.length, false), 8000);
 }
 
 // ============================================
