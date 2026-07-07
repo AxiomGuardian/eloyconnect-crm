@@ -3846,8 +3846,9 @@ input[type="checkbox"].bulk-check:checked::after {
                     </div>
                 </div>
                 <p style="font-size:12px; color:var(--text-tertiary); margin-bottom:16px; position:relative;">
-                    Join the meeting in another tab (Zoom / Meet / Teams web), then press Start and choose that tab — <strong>check "Also share tab audio."</strong>
-                    Everything transcribes here and residents get the live recap in the app.
+                    <strong>In the room (or testing solo)?</strong> Use Microphone — this computer listens.
+                    <strong>Remote meeting?</strong> Capture Meeting Tab: pick the Zoom/Meet tab and <strong>check "Also share tab audio"</strong> —
+                    note: the tab only carries OTHER participants' voices, never your own.
                 </p>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; position:relative;">
@@ -3869,7 +3870,8 @@ input[type="checkbox"].bulk-check:checked::after {
                     <div style="font-size:11px; color:var(--text-tertiary);" id="micMeta">0 segments · 0 min</div>
                     <div style="display:flex; gap:10px;">
                         <a id="micJoinLink" href="#" target="_blank" class="btn btn-secondary" style="display:none; text-decoration:none;">Open Meeting Link</a>
-                        <button class="btn btn-primary" id="micStartBtn" onclick="micStart()">Start Capture</button>
+                        <button class="btn btn-secondary" id="micMicBtn" onclick="micStart('mic')" title="Capture the room through this computer's microphone — for in-person meetings and solo tests">Use Microphone</button>
+                        <button class="btn btn-primary" id="micStartBtn" onclick="micStart('tab')" title="Capture a Zoom / Meet / Teams tab's audio — needs other participants talking">Capture Meeting Tab</button>
                         <button class="btn btn-ghost" id="micStopBtn" onclick="micStop()" style="display:none; color:var(--warning);">End Meeting</button>
                     </div>
                 </div>
@@ -9113,7 +9115,9 @@ async function saveMeeting(publish) {
     const body = document.getElementById('mtgBody')?.value?.trim();
     if (!title || !date) { showToast('Title and date are required', 'warning'); return; }
     try {
-        const meetingUrl = document.getElementById('mtgLink')?.value?.trim();
+        // Accept a full pasted Zoom/Meet invitation — extract just the URL.
+        const linkRaw = document.getElementById('mtgLink')?.value?.trim() || '';
+        const meetingUrl = (linkRaw.match(/https?:\/\/[^\s"'<>]+/) || [null])[0];
         const { data: created, error } = await sbClient.from('meeting_records').insert({
             meeting_type: 'council',
             title,
@@ -9304,26 +9308,48 @@ function micSetStatus(label, live) {
     else { el.style.cssText = ''; el.className = 'mtg-chip'; }
 }
 
-async function micStart() {
+async function micStart(mode = 'tab') {
     if (mic.running) return;
+    mic.mode = mode;
     try {
-        // The whole trick: capture a tab WITH its audio.
-        mic.stream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: { echoCancellation: false, noiseSuppression: false }
-        });
-        if (!mic.stream.getAudioTracks().length) {
-            mic.stream.getTracks().forEach(t => t.stop());
-            showToast('No tab audio — pick the meeting tab and check "Also share tab audio"', 'warning');
-            return;
+        if (mode === 'mic') {
+            // In-room mode: this computer's microphone hears the chamber.
+            mic.stream = await navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: true, noiseSuppression: true }
+            });
+        } else {
+            // Remote mode: capture a tab WITH its audio. Remember — a tab
+            // only outputs OTHER participants' voices, never your own.
+            mic.stream = await navigator.mediaDevices.getDisplayMedia({
+                video: true,
+                audio: { echoCancellation: false, noiseSuppression: false }
+            });
+            if (!mic.stream.getAudioTracks().length) {
+                mic.stream.getTracks().forEach(t => t.stop());
+                showToast('No tab audio — pick the meeting TAB (not screen) and check "Also share tab audio"', 'warning');
+                return;
+            }
         }
     } catch (e) { showToast('Capture cancelled', 'info'); return; }
 
     mic.running = true; mic.seq = 0; mic.startedAt = Date.now(); mic.transcriptBuf = [];
+    mic.gotText = false;
     document.getElementById('micTranscript').innerHTML = '';
     document.getElementById('micStartBtn').style.display = 'none';
+    document.getElementById('micMicBtn').style.display = 'none';
     document.getElementById('micStopBtn').style.display = 'inline-flex';
     micSetStatus('LIVE', true);
+
+    // Silence watchdog: 25s with no words = say something helpful.
+    mic.watchdog = setTimeout(() => {
+        if (mic.running && !mic.gotText) {
+            const pane = document.getElementById('micTranscript');
+            pane.innerHTML = '<div style="color:var(--warm-accent);">No speech detected yet. ' +
+                (mic.mode === 'mic'
+                    ? 'Speak near this computer — the microphone is listening.'
+                    : 'Tab audio only carries OTHER participants. Testing alone? End this and use "Use Microphone" instead.') + '</div>';
+        }
+    }, 25000);
 
     // Mark the meeting LIVE — residents' apps light up.
     await sbClient.from('meeting_records').update({
@@ -9350,6 +9376,7 @@ async function micStart() {
             const text = (r.transcript || '').trim();
             if (!text) return;
             mic.transcriptBuf.push(text);
+            mic.gotText = true;
             // Show + persist
             const pane = document.getElementById('micTranscript');
             const p = document.createElement('div');
@@ -9375,7 +9402,8 @@ async function micStart() {
     mic.recorder.onstop = () => {};
 
     // If the user stops sharing from the browser UI, end gracefully.
-    mic.stream.getVideoTracks()[0].addEventListener('ended', () => { if (mic.running) micStop(); });
+    const vTrack = mic.stream.getVideoTracks()[0];
+    if (vTrack) vTrack.addEventListener('ended', () => { if (mic.running) micStop(); });
 
     // Grok recap loop — every 2 minutes, refresh what residents see.
     mic.recapTimer = setInterval(micRecap, 120000);
@@ -9385,6 +9413,9 @@ async function micStart() {
 async function micRecap(finalPass = false) {
     const fresh = mic.transcriptBuf.join(' ').trim();
     if (!fresh && !finalPass) return;
+    const prevRecap = document.getElementById('micRecap').dataset.recap || '';
+    // Nothing was ever said → no AI summary. Silence must not become fiction.
+    if (finalPass && !fresh && !prevRecap) return;
     if (!finalPass) mic.transcriptBuf = [];
     try {
         const prev = document.getElementById('micRecap').dataset.recap || '';
@@ -9410,6 +9441,7 @@ async function micStop() {
     if (!mic.running) return;
     mic.running = false;
     clearInterval(mic.chunkTimer); clearInterval(mic.recapTimer);
+    clearTimeout(mic.watchdog);
     try { mic.recorder?.state === 'recording' && mic.recorder.stop(); } catch (e) {}
     mic.stream?.getTracks().forEach(t => t.stop());
     micSetStatus('Wrapping up…', false);
@@ -9417,14 +9449,16 @@ async function micStop() {
     // Final pass: full summary written into the permanent record.
     await micRecap(true);
     const finalRecap = document.getElementById('micRecap').dataset.recap || null;
-    await sbClient.from('meeting_records').update({
+    const endUpdate = {
         live_status: 'ended', status: 'completed',
-        public_summary: finalRecap || undefined,
         live_updated_at: new Date().toISOString()
-    }).eq('id', mic.meetingId);
+    };
+    if (finalRecap) endUpdate.public_summary = finalRecap;   // silence never overwrites
+    await sbClient.from('meeting_records').update(endUpdate).eq('id', mic.meetingId);
 
     micSetStatus('Ended', false);
     document.getElementById('micStartBtn').style.display = 'inline-flex';
+    document.getElementById('micMicBtn').style.display = 'inline-flex';
     document.getElementById('micStopBtn').style.display = 'none';
     showToast('Meeting ended — final summary published to residents', 'success');
     await fetchAllData(); loadCouncilPage();
