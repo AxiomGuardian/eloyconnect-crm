@@ -3819,10 +3819,19 @@ input[type="checkbox"].bulk-check:checked::after {
                             <span id="mdBotChip" class="mtg-chip" style="display:none;"></span>
                             <div style="display:flex; gap:8px;">
                                 <button class="btn btn-primary" id="mdBotBtn" style="white-space:nowrap;">Send Eloy Bot</button>
-                                <button class="btn btn-secondary" id="mdConsoleBtn" style="white-space:nowrap;">Manual Console</button>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- LIVE TRANSCRIPT — what the bot hears, as it hears it -->
+                <div id="mdTranscriptWrap" style="display:none; margin-top:16px; position:relative;">
+                    <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                        <span id="mdTrDot" style="width:7px; height:7px; border-radius:50%; background:var(--success, #4ade80); box-shadow:0 0 8px rgba(74,222,128,0.8);"></span>
+                        <span id="mdTrLabel">LIVE TRANSCRIPT</span>
+                    </div>
+                    <div id="mdRecap" style="display:none; font-size:12.5px; line-height:1.6; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:10px; padding:10px 12px; margin-bottom:10px;"></div>
+                    <div id="mdTranscript" style="max-height:220px; overflow-y:auto; font-size:12.5px; line-height:1.7; color:var(--text-secondary); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px;"></div>
                 </div>
 
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; position:relative;">
@@ -9214,6 +9223,7 @@ function svgIco(name, color) {
 // COUNCIL MEETING DETAIL — the living view
 // ============================================
 let mdCurrentId = null;
+let mdTrTimer = null;
 
 async function openCouncilMeeting(id) {
     const m = (liveData.meetings || []).find(x => String(x.id) === String(id));
@@ -9297,8 +9307,44 @@ async function openCouncilMeeting(id) {
         } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
     };
 
-    const consoleBtn = document.getElementById('mdConsoleBtn');
-    if (consoleBtn) consoleBtn.onclick = () => { closeMtgDetail(); openMicConsole(m.id); };
+    // LIVE TRANSCRIPT — what the bot hears, straight from meeting_transcripts.
+    const trWrap = document.getElementById('mdTranscriptWrap');
+    const trBox = document.getElementById('mdTranscript');
+    const trRecap = document.getElementById('mdRecap');
+    const trLabel = document.getElementById('mdTrLabel');
+    const trDot = document.getElementById('mdTrDot');
+    trWrap.style.display = 'none'; trBox.textContent = ''; trRecap.style.display = 'none';
+
+    async function loadTranscript() {
+        try {
+            const { data: rows } = await sbClient.from('meeting_transcripts')
+                .select('seq, text').eq('meeting_id', m.id)
+                .order('seq', { ascending: true }).limit(1000);
+            const { data: rec } = await sbClient.from('meeting_records')
+                .select('bot_status, live_recap').eq('id', m.id).single();
+            const liveNow = rec && ['requested', 'joining', 'live'].includes(rec.bot_status);
+            if ((rows && rows.length) || liveNow) {
+                trWrap.style.display = 'block';
+                trLabel.textContent = liveNow ? 'LIVE TRANSCRIPT' : 'MEETING TRANSCRIPT';
+                trDot.style.display = liveNow ? 'inline-block' : 'none';
+                if (rows && rows.length) {
+                    const nearBottom = trBox.scrollHeight - trBox.scrollTop - trBox.clientHeight < 50;
+                    trBox.textContent = rows.map(r => r.text).join(' ');
+                    if (liveNow && nearBottom) trBox.scrollTop = trBox.scrollHeight;
+                } else {
+                    trBox.textContent = 'Listening… words appear here as the bot hears them.';
+                }
+                if (rec && rec.live_recap) {
+                    trRecap.style.display = 'block';
+                    trRecap.textContent = rec.live_recap;
+                }
+            }
+            if (!liveNow && mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
+        } catch (e) { /* transcript is best-effort; never break the modal */ }
+    }
+    if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
+    loadTranscript();
+    mdTrTimer = setInterval(loadTranscript, 8000);
 
     // Bot dispatch: one click sends the Notetaker to the meeting.
     const botChip = document.getElementById('mdBotChip');
@@ -9320,15 +9366,15 @@ async function openCouncilMeeting(id) {
         botBtn.onclick = async () => {
             await sbClient.from('meeting_records').update({ bot_status: 'ended' }).eq('id', m.id);
             showToast('Bot told to wrap up — final summary coming', 'success');
-            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+            await fetchAllData(); loadCouncilPage(); openMtgDetail(m.id);
         };
     } else {
         botBtn.textContent = 'Send Eloy Bot';
         botBtn.onclick = async () => {
             if (!m.meeting_url) { showToast('Add a meeting link first (edit the meeting)', 'warning'); return; }
             await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
-            showToast('Eloy Bot dispatched — it joins within ~15 seconds once the worker is online', 'success');
-            closeMtgDetail(); await fetchAllData(); loadCouncilPage();
+            showToast('Eloy Bot dispatched — joining within ~15 seconds. Watch the transcript below.', 'success');
+            await fetchAllData(); loadCouncilPage(); openMtgDetail(m.id);
         };
     }
 
@@ -9338,6 +9384,7 @@ async function openCouncilMeeting(id) {
 function closeMtgDetail() {
     document.getElementById('mtgDetailModal').classList.remove('open');
     mdCurrentId = null;
+    if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
 }
 
 // ============================================
