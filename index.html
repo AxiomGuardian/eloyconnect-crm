@@ -2842,19 +2842,6 @@ input[type="checkbox"].bulk-check:checked::after {
 
         </form>
 
-        <div style="text-align: center; margin-top: 12px;">
-            <span style="font-size: 12px; color: var(--text-tertiary);">or</span>
-        </div>
-
-        <button type="button" onclick="guestLogin()" style="
-            width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px; cursor: pointer;
-            font-size: 13px; font-weight: 500; font-family: inherit;
-            color: #93A6BC;
-            background: transparent;
-            transition: all 0.15s; margin-top: 8px;
-        " onmouseover="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(255,255,255,0.08)'">Continue as Guest</button>
-
         <p id="loginError" style="
             margin-top: 16px; font-size: 13px; color: var(--warning);
             display: none; line-height: 1.4;
@@ -4344,7 +4331,7 @@ input[type="checkbox"].bulk-check:checked::after {
                     <h3>City Leaders</h3>
                     <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Manage elected officials and city staff profiles shown in the app</p>
                 </div>
-                <button class="btn btn-primary" onclick="openLeaderEditor(null)">+ Add Leader</button>
+                <!-- Add Leader hidden until leaders are wired live (Staff & Settings pass) -->
             </div>
 
             <div class="filter-tabs" style="margin-bottom: 20px;">
@@ -5876,13 +5863,13 @@ function updateDashboardWithLiveData() {
 async function loadEngagementAnalytics() {
     try {
         // Fetch content interactions count
-        const { data: interactions, error: intErr } = await supabase
+        const { data: interactions, error: intErr } = await sbClient
             .from('content_interactions')
             .select('id, interaction_type', { count: 'exact' });
 
         // Fetch session analytics from last 7 days
         const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        const { data: sessions, error: sesErr } = await supabase
+        const { data: sessions, error: sesErr } = await sbClient
             .from('session_analytics')
             .select('*')
             .gte('session_start', weekAgo);
@@ -11191,28 +11178,11 @@ function saveLeader() {
         active: leaderActiveState
     };
 
-    if (editingLeaderId) {
-        // Update existing
-        const idx = cityLeaders.findIndex(l => l.id === editingLeaderId);
-        if (idx !== -1) {
-            cityLeaders[idx] = { ...cityLeaders[idx], ...leaderData };
-        }
-        showToast(`${name} updated successfully`, 'success');
-
-        // In production: save to Supabase
-        // await sbClient.from('city_leaders').update(leaderData).eq('id', editingLeaderId);
-    } else {
-        // Add new
-        leaderData.id = 'ldr-' + Date.now().toString(36);
-        cityLeaders.push(leaderData);
-        showToast(`${name} added to City Leaders`, 'success');
-
-        // In production: insert into Supabase
-        // await sbClient.from('city_leaders').insert(leaderData);
-    }
-
+    // Leader profiles mirror the city's official records. Live editing is
+    // wired in the Staff & Settings pass — until then, be HONEST rather than
+    // faking a save that doesn't persist (and would mislead real officials).
+    showToast('Leader profiles sync from the city’s records — live editing turns on after launch.', 'info');
     closeLeaderModal();
-    renderLeaders();
 }
 
 async function deleteLeader() {
@@ -11228,13 +11198,8 @@ async function deleteLeader() {
     });
     if (!confirmed) return;
 
-    cityLeaders = cityLeaders.filter(l => l.id !== editingLeaderId);
-    showToast(`${leader.name} removed`, 'info');
+    showToast('Leader profiles sync from the city’s records — removal turns on after launch.', 'info');
     closeLeaderModal();
-    renderLeaders();
-
-    // In production: delete from Supabase
-    // await sbClient.from('city_leaders').delete().eq('id', editingLeaderId);
 }
 
 // Close leader modal on overlay click
