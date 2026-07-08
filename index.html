@@ -7862,6 +7862,25 @@ async function loadDashboardAIInsights() {
     const container = document.getElementById('dashboardAIInsights');
     if (!container) return;
 
+    // Don't burn AI tokens (or spin forever) when there's nothing to analyze.
+    // Insights are report/content/meeting-driven — if none exist yet, show a
+    // calm waiting state and STOP. It regenerates automatically once data flows.
+    const dataCount = (liveData.reports || []).length
+        + (liveData.news || []).length
+        + (liveData.events || []).length
+        + (liveData.alerts || []).length
+        + (liveData.meetings || []).length;
+    if (dataCount === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:26px 20px; color:var(--text-tertiary); font-size:13px; line-height:1.6;">
+                <div style="font-size:22px; margin-bottom:8px; opacity:0.55;">✦</div>
+                <div style="font-weight:600; color:var(--text-secondary); margin-bottom:4px;">Waiting for live data</div>
+                Insights generate automatically once residents submit reports and the city posts updates.
+            </div>`;
+        dashboardInsightsLoaded = true;
+        return;
+    }
+
     container.innerHTML = `
         <div style="text-align:center; padding:20px; color:var(--text-tertiary); font-size:13px;">
             <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
