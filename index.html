@@ -875,6 +875,8 @@ body {
     background: rgba(255,255,255,0.02);
     backdrop-filter: blur(10px);
 }
+/* Message History: opaque sticky header so scrolled rows don't bleed through */
+#msgHistoryTable thead th { background: var(--surface); backdrop-filter: none; z-index: 3; }
 
 .data-table tbody tr {
     transition: background 0.15s ease;
@@ -3998,7 +4000,8 @@ input[type="checkbox"].bulk-check:checked::after {
                         <button class="btn btn-ghost" style="font-size:11px; padding:5px 12px;" onclick="loadPushHistory()">Refresh</button>
                     </div>
                 </div>
-                <table class="data-table">
+                <div class="msg-history-scroll" style="max-height:360px; overflow-y:auto;">
+                <table class="data-table" id="msgHistoryTable">
                     <thead>
                         <tr>
                             <th style="width:36px;"><input type="checkbox" class="bulk-check" id="msgSelectAll" onclick="toggleSelectAllMsgs(this.checked)" style="cursor:pointer;"></th>
@@ -4014,6 +4017,7 @@ input[type="checkbox"].bulk-check:checked::after {
                         <tr><td colspan="7" style="text-align:center; color:var(--text-tertiary); padding:28px;">No messages sent yet — the record starts with your first send.</td></tr>
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <div class="composer-grid">
