@@ -7892,10 +7892,15 @@ async function loadDashboardAIInsights() {
 
     try {
         aiQueryCount++;
-        const result = await callGrokAI(
-            'Generate 3-5 short, specific, actionable insights about the current state of the city CRM. Each insight should be 1-2 sentences max. Focus on: report patterns or clusters, staff workload imbalances, content gaps, resident growth trends, or anything anomalous. Start each insight with a bold label like **Label:** followed by the insight. Use [ACTION:navigate:pagename] if relevant.',
-            'Context: This is for the Dashboard AI Insights panel. Keep insights brief and data-driven. Do NOT use markdown headers (##). Just bold labels with ** markers.'
-        );
+        // Hard timeout so the panel can NEVER spin forever if Grok hangs or
+        // credits run out — after 12s it falls through to the data-driven fallback.
+        const result = await Promise.race([
+            callGrokAI(
+                'Generate 3-5 short, specific, actionable insights about the current state of the city CRM. Each insight should be 1-2 sentences max. Focus on: report patterns or clusters, staff workload imbalances, content gaps, resident growth trends, or anything anomalous. Start each insight with a bold label like **Label:** followed by the insight. Use [ACTION:navigate:pagename] if relevant.',
+                'Context: This is for the Dashboard AI Insights panel. Keep insights brief and data-driven. Do NOT use markdown headers (##). Just bold labels with ** markers.'
+            ),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('AI insights timed out')), 12000))
+        ]);
 
         // Parse the response into insight items
         const lines = result.split('\n').filter(l => l.trim().length > 0);
