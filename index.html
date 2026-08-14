@@ -3663,6 +3663,17 @@ input[type="checkbox"].bulk-check:checked::after {
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Top Ask Eloy questions today</div>
                         <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No resident questions logged yet. Ask Eloy queries will rank here as residents use the app.</div>
                     </div>
+
+                    <!-- WHAT RESIDENTS ARE SAYING (Speak to the City inbox) -->
+                    <div class="glass-card" style="margin-top:16px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                            <div style="font-size:14px; font-weight:600;">What residents are saying</div>
+                            <span id="residentVoiceCount" style="font-size:11px; color:var(--text-tertiary);"></span>
+                        </div>
+                        <div id="residentVoiceList" style="display:flex; flex-direction:column; gap:10px; max-height:440px; overflow-y:auto;">
+                            <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No messages yet. When residents use &quot;Speak to the City&quot; in the app, their concerns, ideas, and questions land here.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -5701,7 +5712,8 @@ let liveData = {
     leaders: null,
     profiles: null,
     notifications: null,
-    businesses: null
+    businesses: null,
+    civicVoice: null
 };
 
 // Track which resident detail panel is currently open (for auto-refresh)
@@ -5712,7 +5724,7 @@ async function fetchAllData() {
     if (!sbClient) return;
 
     try {
-        const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses] = await Promise.allSettled([
+        const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses, civicVoice] = await Promise.allSettled([
             scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('news').select('*')).order('published_at', { ascending: false, nullsFirst: false }),
             scopeCity(sbClient.from('alerts').select('*')).order('created_at', { ascending: false }),
@@ -5721,7 +5733,8 @@ async function fetchAllData() {
             scopeCity(sbClient.from('leaders').select('*').eq('active', true)).order('sort_order', { ascending: true }),
             scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50),
-            scopeCity(sbClient.from('businesses').select('*')).order('name', { ascending: true })
+            scopeCity(sbClient.from('businesses').select('*')).order('name', { ascending: true }),
+            scopeCity(sbClient.from('civic_voice_messages').select('*')).order('created_at', { ascending: false })
         ]);
 
         if (reports.status === 'fulfilled' && !reports.value.error) liveData.reports = reports.value.data;
@@ -5733,12 +5746,14 @@ async function fetchAllData() {
         if (profiles.status === 'fulfilled' && !profiles.value.error) liveData.profiles = profiles.value.data;
         if (notifications.status === 'fulfilled' && !notifications.value.error) liveData.notifications = notifications.value.data;
         if (businesses.status === 'fulfilled' && !businesses.value.error) liveData.businesses = businesses.value.data;
+        if (civicVoice.status === 'fulfilled' && !civicVoice.value.error) liveData.civicVoice = civicVoice.value.data;
 
         buildBusinessListings();
         updateDashboardWithLiveData();
         try { updateGrowthCharts(); } catch(e) { console.warn('growth charts:', e); }
         try { updateFeatureAdoption(); } catch(e) { console.warn('feature adoption:', e); }
         try { populateStaffSelects(); } catch(e) { console.warn('staff selects:', e); }
+        try { renderResidentVoice(); } catch(e) { console.warn('resident voice:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -7192,6 +7207,43 @@ function downloadCSV(filename, csvContent) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+// Render the "What residents are saying" inbox — resident concerns/ideas/
+// questions sent via "Speak to the City" (civic_voice_messages).
+function renderResidentVoice() {
+    const listEl = document.getElementById('residentVoiceList');
+    const countEl = document.getElementById('residentVoiceCount');
+    if (!listEl) return;
+    const msgs = liveData.civicVoice || [];
+    if (countEl) countEl.textContent = msgs.length ? `${msgs.length} total` : '';
+    if (!msgs.length) {
+        listEl.innerHTML = `<div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No messages yet. When residents use "Speak to the City" in the app, their concerns, ideas, and questions land here.</div>`;
+        return;
+    }
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const catMeta = {
+        concern:  { label: 'Concern',  color: 'var(--warm-accent)' },
+        idea:     { label: 'Idea',     color: 'var(--success)' },
+        question: { label: 'Question', color: 'var(--accent)' },
+        other:    { label: 'Other',    color: 'var(--text-tertiary)' }
+    };
+    listEl.innerHTML = msgs.slice(0, 60).map(m => {
+        const cat = catMeta[m.category] || catMeta.other;
+        const who = (liveData.profiles || []).find(p => p.id === m.user_id);
+        const name = who ? (who.display_name || 'Resident') : 'Resident';
+        const when = m.created_at ? getTimeAgo(m.created_at) : '';
+        const isNew = (m.status || 'new') === 'new';
+        return `<div style="border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:10px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color};">${cat.label}</span>
+                ${isNew ? '<span style="width:6px;height:6px;border-radius:50%;background:var(--accent);" title="New"></span>' : ''}
+                <span style="margin-left:auto; font-size:11px; color:var(--text-tertiary);">${esc(when)}</span>
+            </div>
+            <div style="font-size:13px; color:var(--text-primary); line-height:1.5;">${esc(m.message || '')}</div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">${esc(name)}</div>
+        </div>`;
+    }).join('');
 }
 
 // Export the currently-open report as a printable, letterheaded PDF
