@@ -4564,7 +4564,10 @@ input[type="checkbox"].bulk-check:checked::after {
             <div style="font-size: 16px; font-weight: 600;" id="detailId">Report</div>
             <div id="reportSubmittedTime" style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;">—</div>
         </div>
-        <button class="btn btn-ghost" onclick="closeDetail()" style="font-size: 20px;" title="Close (Esc)">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-secondary" onclick="exportReportPDF()" title="Export this report as a PDF">Export PDF</button>
+            <button class="btn btn-ghost" onclick="closeDetail()" style="font-size: 20px;" title="Close (Esc)">✕</button>
+        </div>
     </div>
     <div class="detail-body">
         <div style="margin-bottom: 20px;">
@@ -7189,6 +7192,74 @@ function downloadCSV(filename, csvContent) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+// Export the currently-open report as a printable, letterheaded PDF
+// (uses the browser's print-to-PDF — no external libraries).
+function exportReportPDF() {
+    const report = (liveData.reports || []).find(r => String(r.id) === String(currentReportId));
+    if (!report) { showToast('Open a report first', 'error'); return; }
+
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const submitter = (liveData.profiles || []).find(p => p.id === report.user_id);
+    const submitterName = submitter ? (submitter.display_name || 'Resident') : 'Anonymous';
+    const submitterEmail = submitter && submitter.email ? submitter.email : '';
+    const created = report.created_at
+        ? new Date(report.created_at).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })
+        : '—';
+    const statusLabel = (report.status || 'submitted').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const lat = report.latitude ? Number(report.latitude) : null;
+    const lng = report.longitude ? Number(report.longitude) : null;
+    const gps = (lat && lng) ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : '—';
+    const photos = report.photos || [];
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Eloy Report — ${esc(report.title || 'Report')}</title>
+    <style>
+      *{box-sizing:border-box;}
+      body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;margin:0;padding:40px;}
+      .band{background:#0B1220;color:#fff;border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
+      .band h1{margin:0;font-size:18px;letter-spacing:0.4px;}
+      .band .sub{color:#9aa4b2;font-size:12px;margin-top:2px;}
+      .band .right{text-align:right;color:#cbd5e1;font-size:11px;line-height:1.5;}
+      h2{font-size:22px;margin:26px 0 6px;}
+      .meta{color:#6b7280;font-size:13px;margin-bottom:18px;}
+      .status-pill{display:inline-block;padding:4px 12px;border-radius:999px;background:#EAF1FF;color:#0E3E9E;font-weight:600;font-size:12px;}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;}
+      .cell{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;}
+      .label{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
+      .val{font-size:14px;}
+      .desc{border:1px solid #e5e7eb;border-radius:8px;padding:14px;font-size:14px;line-height:1.6;}
+      .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+      .photos img{width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;}
+      .foot{margin-top:30px;border-top:1px solid #e5e7eb;padding-top:12px;color:#9ca3af;font-size:11px;text-align:center;}
+      @media print{body{padding:24px;} .band{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+    </style></head><body>
+      <div class="band">
+        <div><h1>CITY OF ELOY</h1><div class="sub">Eloy Connect &middot; Resident Report</div></div>
+        <div class="right">Generated ${esc(new Date().toLocaleDateString('en-US',{dateStyle:'long'}))}<br>For internal city use</div>
+      </div>
+      <h2>${esc(report.title || 'Report')}</h2>
+      <div class="meta"><span class="status-pill">${esc(statusLabel)}</span> &nbsp; ${esc(report.category || 'General')} &nbsp;&middot;&nbsp; Submitted ${esc(created)}</div>
+      <div class="grid">
+        <div class="cell"><div class="label">Submitted by</div><div class="val">${esc(submitterName)}${submitterEmail ? ' &middot; ' + esc(submitterEmail) : ''}</div></div>
+        <div class="cell"><div class="label">Category</div><div class="val">${esc(report.category || 'General')}</div></div>
+        <div class="cell"><div class="label">Address</div><div class="val">${esc(report.address || '—')}</div></div>
+        <div class="cell"><div class="label">GPS</div><div class="val">${esc(gps)}</div></div>
+      </div>
+      <div class="label">Description</div>
+      <div class="desc">${esc(report.description || 'No description provided.')}</div>
+      ${(report.ai_category || report.ai_summary) ? `<div class="label" style="margin-top:18px;">AI Insights</div><div class="desc">${report.ai_category ? '<strong>'+esc(report.ai_category)+'</strong><br>' : ''}${esc(report.ai_summary || '')}</div>` : ''}
+      ${photos.length ? `<div class="label" style="margin-top:18px;">Photos (${photos.length})</div><div class="photos">${photos.map(u => `<img src="${esc(u)}">`).join('')}</div>` : ''}
+      <div class="foot">Eloy Connect &middot; Omnis Technologies LLC &middot; Generated from the city dashboard</div>
+    </body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) { showToast('Allow pop-ups to export the PDF', 'error'); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => { setTimeout(() => { try { w.print(); } catch (e) {} }, 400); };
+    showToast('Opening print view — choose "Save as PDF"', 'success');
 }
 
 function exportReportsCSV() {
