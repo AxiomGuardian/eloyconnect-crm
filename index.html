@@ -7481,6 +7481,44 @@ async function setVoiceStatus(status) {
         showToast('Marked ' + sm.label.toLowerCase(), 'success');
         renderResidentVoicesPage();
         updateVoicesBadge();
+
+        // Notify the resident on their phone + bell inbox so their "My Messages"
+        // reflects the new status (Under review / Acknowledged).
+        if (m && m.user_id && (status === 'in_review' || status === 'acknowledged')) {
+            const title = status === 'acknowledged'
+                ? 'The city acknowledged your message'
+                : 'The city is reviewing your message';
+            const body = status === 'acknowledged'
+                ? 'Thanks for speaking up — the City of Eloy has acknowledged your message.'
+                : 'The City of Eloy is now reviewing your message.';
+            try {
+                let token = null;
+                if (sbClient?.auth) {
+                    const session = await sbClient.auth.getSession();
+                    token = session?.data?.session?.access_token;
+                }
+                const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-push-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token || SUPABASE_KEY}` },
+                    body: JSON.stringify({
+                        title, body,
+                        broadcast: false,
+                        user_ids: [m.user_id],
+                        data: { type: 'civic_voice_update', id: String(currentVoiceId) }
+                    })
+                });
+                const result = await resp.json().catch(() => ({}));
+                if (resp.ok && result.sent > 0) showToast('Resident notified on their phone', 'success');
+                try { if (typeof logPushSend === 'function') logPushSend({ kind: 'civic_voice_update', title, body, audience: 'Message sender', sent: result.sent || 0, failed: result.failed || 0, data: { civic_voice_id: currentVoiceId, status } }); } catch (e) {}
+                try {
+                    await sbClient.from('notifications').insert({
+                        user_id: m.user_id, title, message: body,
+                        type: 'civic_voice_update', read: false,
+                        city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+                    });
+                } catch (e) {}
+            } catch (e) { /* best-effort — status already saved */ }
+        }
     } catch (e) { showToast('Update failed: ' + (e.message || e), 'error'); }
 }
 
