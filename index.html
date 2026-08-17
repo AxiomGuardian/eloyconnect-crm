@@ -4312,47 +4312,53 @@ input[type="checkbox"].bulk-check:checked::after {
         <!-- ========== CODE ENFORCEMENT ========== -->
         <div class="page" id="page-enforcement">
 
-            <!-- COMING SOON PLACEHOLDER -->
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 40px 20px;">
-                <!-- Animated icon -->
-                <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); display: flex; align-items: center; justify-content: center; margin-bottom: 32px; position: relative;">
-                    <div style="position: absolute; inset: -4px; border-radius: 50%; border: 2px solid transparent; border-top-color: var(--accent); animation: spin 3s linear infinite;"></div>
-                    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <path d="M9 12l2 2 4-4"/>
-                    </svg>
+            <!-- HEADER + ACTIONS -->
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+                <div>
+                    <div style="font-size:15px; font-weight:700;">Violation notices &amp; compliance</div>
+                    <div style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">Issue notices, track deadlines, and review resident proof of compliance.</div>
                 </div>
-
-                <!-- Badge -->
-                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); border: 1px solid rgba(59,130,246,0.2); margin-bottom: 20px;">
-                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite;"></div>
-                    <span style="font-size: 13px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px;">Coming Soon</span>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-secondary" onclick="exportEnforcementCSV()">Export CSV</button>
+                    <button class="btn btn-primary" onclick="openEnforcementModal()">+ Issue Notice</button>
                 </div>
+            </div>
 
-                <!-- Title -->
-                <h2 style="font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Code Enforcement</h2>
-                <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; line-height: 1.6; margin-bottom: 32px;">
-                    Track violation notices, deadlines, and resident compliance. Issue notices, monitor resolution progress, and generate enforcement reports — all from one dashboard.
-                </p>
+            <!-- STATS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:18px;">
+                <div class="glass-card" style="padding:16px;"><div style="font-size:24px; font-weight:700;" id="ce-total-count">0</div><div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">Total notices</div></div>
+                <div class="glass-card" style="padding:16px;"><div style="font-size:24px; font-weight:700; color:var(--warm-accent);" id="ce-pending-count">0</div><div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">Pending</div></div>
+                <div class="glass-card" style="padding:16px;"><div style="font-size:24px; font-weight:700; color:var(--warning);" id="ce-overdue-count">0</div><div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">Overdue</div></div>
+                <div class="glass-card" style="padding:16px;"><div style="font-size:24px; font-weight:700; color:var(--success);" id="ce-resolved-month">0</div><div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">Resolved</div></div>
+                <div class="glass-card" style="padding:16px;"><div style="font-size:24px; font-weight:700; color:var(--accent);" id="ce-compliance-rate">0%</div><div style="font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">Compliance rate</div></div>
+            </div>
 
-                <!-- Feature preview cards -->
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 600px; width: 100%;">
-                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg></div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Notice Tracking</div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Issue and track violations</div>
-                    </div>
-                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Deadline Alerts</div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Automated reminders</div>
-                    </div>
-                    <div style="padding: 20px 16px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); text-align: center;">
-                        <div style="margin-bottom: 10px; display: flex; justify-content: center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H4a1 1 0 01-1-1V3"/><path d="M7 17l4-8 4 4 5-9"/></svg></div>
-                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Compliance Reports</div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Analytics and trends</div>
-                    </div>
-                </div>
+            <!-- FILTERS -->
+            <div id="ce-filter-tabs" style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                <button class="filter-tab active" onclick="filterEnforcement('all', this)">All</button>
+                <button class="filter-tab" onclick="filterEnforcement('pending', this)">Pending</button>
+                <button class="filter-tab" onclick="filterEnforcement('acknowledged', this)">Acknowledged</button>
+                <button class="filter-tab" onclick="filterEnforcement('in_progress', this)">In Progress</button>
+                <button class="filter-tab" onclick="filterEnforcement('overdue', this)">Overdue</button>
+                <button class="filter-tab" onclick="filterEnforcement('resolved', this)">Resolved</button>
+            </div>
+
+            <!-- TABLE -->
+            <div class="glass-card" style="padding:0; overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">
+                            <th style="padding:12px 16px;">Resident</th>
+                            <th style="padding:12px 16px;">Address</th>
+                            <th style="padding:12px 16px;">Type</th>
+                            <th style="padding:12px 16px;">Severity</th>
+                            <th style="padding:12px 16px;">Status</th>
+                            <th style="padding:12px 16px;">Deadline</th>
+                            <th style="padding:12px 16px;">Issued</th>
+                        </tr>
+                    </thead>
+                    <tbody id="enforcementTableBody"></tbody>
+                </table>
             </div>
         </div>
 
@@ -4551,8 +4557,10 @@ input[type="checkbox"].bulk-check:checked::after {
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div>
-                <label class="form-label">Resident Name</label>
-                <input class="form-input" id="ceResidentName" placeholder="Full name...">
+                <label class="form-label">Resident</label>
+                <select class="form-input" id="ceResidentSelect">
+                    <option value="">-- Select resident --</option>
+                </select>
             </div>
             <div>
                 <label class="form-label">Property Address</label>
@@ -4560,28 +4568,30 @@ input[type="checkbox"].bulk-check:checked::after {
             </div>
         </div>
 
+        <div style="margin-bottom: 14px;">
+            <label class="form-label">Notice Title</label>
+            <input class="form-input" id="ceTitle" placeholder="e.g. Front Yard Maintenance Required">
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div>
                 <label class="form-label">Violation Type</label>
                 <select class="form-input" id="ceType">
                     <option value="">-- Select Type --</option>
-                    <option value="Weeds / Vegetation">Weeds / Vegetation</option>
-                    <option value="Property Maintenance">Property Maintenance</option>
-                    <option value="Junk Vehicles">Junk Vehicles</option>
-                    <option value="Illegal Dumping">Illegal Dumping</option>
-                    <option value="Signage / Permits">Signage / Permits</option>
-                    <option value="Noise Violation">Noise Violation</option>
-                    <option value="Zoning Violation">Zoning Violation</option>
-                    <option value="Other">Other</option>
+                    <option value="property_maintenance">Property Maintenance</option>
+                    <option value="tree_trimming">Tree Trimming / Vegetation</option>
+                    <option value="trash_violation">Trash / Illegal Dumping</option>
+                    <option value="building_code">Building Code</option>
+                    <option value="noise">Noise Violation</option>
+                    <option value="other">Other</option>
                 </select>
             </div>
             <div>
                 <label class="form-label">Severity</label>
                 <select class="form-input" id="ceSeverity">
-                    <option value="Low">Low — Advisory</option>
-                    <option value="Medium" selected>Medium — Standard</option>
-                    <option value="High">High — Urgent</option>
-                    <option value="Critical">Critical — Immediate</option>
+                    <option value="low">Low — Advisory</option>
+                    <option value="medium" selected>Medium — Standard</option>
+                    <option value="high">High — Urgent</option>
                 </select>
             </div>
         </div>
@@ -5822,7 +5832,7 @@ async function fetchAllData() {
     if (!sbClient) return;
 
     try {
-        const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses, civicVoice] = await Promise.allSettled([
+        const [reports, news, alerts, events, meetings, leaders, profiles, notifications, businesses, civicVoice, notices] = await Promise.allSettled([
             scopeCity(sbClient.from('reports').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('news').select('*')).order('published_at', { ascending: false, nullsFirst: false }),
             scopeCity(sbClient.from('alerts').select('*')).order('created_at', { ascending: false }),
@@ -5832,7 +5842,8 @@ async function fetchAllData() {
             scopeCity(sbClient.from('profiles').select('*')).order('created_at', { ascending: false }),
             scopeCity(sbClient.from('notifications').select('*')).order('created_at', { ascending: false }).limit(50),
             scopeCity(sbClient.from('businesses').select('*')).order('name', { ascending: true }),
-            scopeCity(sbClient.from('civic_voice_messages').select('*')).order('created_at', { ascending: false })
+            scopeCity(sbClient.from('civic_voice_messages').select('*')).order('created_at', { ascending: false }),
+            sbClient.from('notices').select('*').order('created_at', { ascending: false })
         ]);
 
         if (reports.status === 'fulfilled' && !reports.value.error) liveData.reports = reports.value.data;
@@ -5845,6 +5856,7 @@ async function fetchAllData() {
         if (notifications.status === 'fulfilled' && !notifications.value.error) liveData.notifications = notifications.value.data;
         if (businesses.status === 'fulfilled' && !businesses.value.error) liveData.businesses = businesses.value.data;
         if (civicVoice.status === 'fulfilled' && !civicVoice.value.error) liveData.civicVoice = civicVoice.value.data;
+        if (notices.status === 'fulfilled' && !notices.value.error) liveData.notices = notices.value.data;
 
         buildBusinessListings();
         updateDashboardWithLiveData();
@@ -5854,6 +5866,8 @@ async function fetchAllData() {
         try { renderResidentVoice(); } catch(e) { console.warn('resident voice:', e); }
         try { updateVoicesBadge(); } catch(e) { console.warn('voices badge:', e); }
         try { renderResidentVoicesPage(); } catch(e) { console.warn('voices page:', e); }
+        try { renderEnforcementPage(); } catch(e) { console.warn('enforcement page:', e); }
+        try { populateCEResidents(); } catch(e) { console.warn('ce residents:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -11133,32 +11147,65 @@ async function updateResidentRole(userId, newRole) {
 // CODE ENFORCEMENT
 // ============================================
 
-const enforcementNotices = [
-    { id: 'CE-2026-041', resident: 'Robert Kim', address: '1205 N. Main St', type: 'Weeds / Vegetation', severity: 'Medium', status: 'overdue', deadline: '2026-05-18', issued: '2026-05-04', description: 'Overgrown weeds exceeding 6 inches on front and side yard. Vegetation encroaching onto public sidewalk, obstructing pedestrian access.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-040', resident: 'Maria Garcia', address: '340 W. Houser Rd', type: 'Property Maintenance', severity: 'Low', status: 'resolved', deadline: '2026-05-20', issued: '2026-05-06', description: 'Peeling paint on exterior walls visible from the street. Minor structural damage to front porch railing.', response: 'Painted exterior and repaired railing on May 14.', proofPhoto: true, inspector: 'P. Wilson' },
-    { id: 'CE-2026-039', resident: 'Jose Hernandez', address: '420 E. 4th St', type: 'Weeds / Vegetation', severity: 'High', status: 'overdue', deadline: '2026-05-15', issued: '2026-05-01', description: 'Fourth violation in 6 months for excessive weed growth. Property creates fire hazard with dry vegetation over 12 inches. Repeat offender — accelerated enforcement recommended per Eloy Municipal Code 15-204.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-038', resident: 'Susan Torres', address: '815 E. 5th St', type: 'Junk Vehicles', severity: 'Medium', status: 'pending', deadline: '2026-06-05', issued: '2026-05-22', description: 'Inoperable vehicle (no plates, flat tires) parked in front driveway visible from public right-of-way for 30+ days.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-037', resident: 'Carlos Rodriguez', address: '560 W. Battaglia Dr', type: 'Property Maintenance', severity: 'Medium', status: 'acknowledged', deadline: '2026-06-08', issued: '2026-05-25', description: 'Damaged chain-link fence along property line is leaning into neighboring property. Missing gate on driveway.', response: 'Acknowledged. Will hire contractor to replace fence by deadline.', proofPhoto: false, inspector: 'J. Martinez' },
-    { id: 'CE-2026-036', resident: 'David Lopez', address: '210 S. Toltec Rd', type: 'Illegal Dumping', severity: 'High', status: 'in-progress', deadline: '2026-06-02', issued: '2026-05-19', description: 'Construction debris and household waste dumped on vacant portion of property. Materials include drywall, lumber scraps, and old appliances. Environmental concern due to proximity to drainage channel.', response: 'Hired waste removal service. Scheduled for May 30 pickup.', proofPhoto: false, inspector: 'R. Gomez' },
-    { id: 'CE-2026-035', resident: 'Lisa Mitchell', address: '990 N. Main St', type: 'Signage / Permits', severity: 'Low', status: 'resolved', deadline: '2026-05-25', issued: '2026-05-11', description: 'Temporary business banner displayed without permit for more than 14 days. Banner size exceeds 32 sq ft maximum.', response: 'Removed banner and applied for proper permit.', proofPhoto: true, inspector: 'P. Wilson' },
-    { id: 'CE-2026-034', resident: 'Angela Reyes', address: '145 E. 6th St', type: 'Weeds / Vegetation', severity: 'Medium', status: 'pending', deadline: '2026-06-10', issued: '2026-05-27', description: 'Front yard weeds exceeding 6 inches. Untrimmed shrubs blocking visibility at intersection corner.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-033', resident: 'Michael Tran', address: '630 E. 4th St', type: 'Weeds / Vegetation', severity: 'Low', status: 'overdue', deadline: '2026-05-22', issued: '2026-05-08', description: 'Weeds growing through cracks in driveway and along fence line. First offense.', response: null, proofPhoto: false, inspector: 'T. Nguyen' },
-    { id: 'CE-2026-032', resident: 'Patricia Wells', address: '480 W. Shedd Rd', type: 'Property Maintenance', severity: 'Medium', status: 'pending', deadline: '2026-06-12', issued: '2026-05-29', description: 'Roof shingles missing on south-facing slope. Exposed underlayment visible from street. Potential water damage risk.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-031', resident: 'Frank Morales', address: '725 E. 5th St', type: 'Junk Vehicles', severity: 'High', status: 'overdue', deadline: '2026-05-20', issued: '2026-05-06', description: 'Two inoperable vehicles in rear yard visible from alley. Vehicles have no registration and appear abandoned. Oil leak staining visible on ground.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-030', resident: 'Wei Liu', address: '108 N. Sunshine Blvd', type: 'Signage / Permits', severity: 'Low', status: 'resolved', deadline: '2026-05-18', issued: '2026-05-04', description: 'Home business signage exceeding residential zone limitations. Sign area exceeds 4 sq ft maximum for residential zones.', response: 'Replaced with compliant sign within size requirements.', proofPhoto: true, inspector: 'P. Wilson' },
-    { id: 'CE-2026-029', resident: 'Sandra Price', address: '352 E. 4th St', type: 'Weeds / Vegetation', severity: 'Medium', status: 'pending', deadline: '2026-06-14', issued: '2026-05-31', description: 'Overgrown lot with weeds over 8 inches. Dead tree near sidewalk poses falling hazard. Branches overhanging public walkway.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-028', resident: 'James Cooper', address: '880 W. Battaglia Dr', type: 'Noise Violation', severity: 'Medium', status: 'resolved', deadline: '2026-05-14', issued: '2026-04-30', description: 'Repeated noise complaints from neighbors regarding construction activity outside permitted hours (before 7 AM and after 7 PM).', response: 'Adjusted construction schedule to comply with noise ordinance hours.', proofPhoto: false, inspector: 'J. Martinez' },
-    { id: 'CE-2026-027', resident: 'Ricardo Delgado', address: '515 S. Main St', type: 'Illegal Dumping', severity: 'Critical', status: 'overdue', deadline: '2026-05-12', issued: '2026-04-28', description: 'Large quantity of household waste and tires dumped on vacant lot. Strong odor reported by neighbors. Potential health hazard and mosquito breeding ground.', response: null, proofPhoto: false, inspector: 'R. Gomez' },
-    { id: 'CE-2026-026', resident: 'Nancy Young', address: '670 N. Toltec Rd', type: 'Property Maintenance', severity: 'Low', status: 'resolved', deadline: '2026-05-16', issued: '2026-05-02', description: 'Mailbox post leaning and partially obstructing sidewalk. Broken house numbers not visible from street.', response: 'Replaced mailbox post and installed new house numbers.', proofPhoto: true, inspector: 'T. Nguyen' },
-    { id: 'CE-2026-025', resident: 'Thomas Rivera', address: '290 E. 6th St', type: 'Weeds / Vegetation', severity: 'Medium', status: 'pending', deadline: '2026-06-07', issued: '2026-05-24', description: 'Extensive weed growth in front and back yards. Grass unmowed for 30+ days estimated at 10 inches.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-024', resident: 'Gloria Fuentes', address: '440 W. Houser Rd', type: 'Property Maintenance', severity: 'Medium', status: 'acknowledged', deadline: '2026-06-10', issued: '2026-05-27', description: 'Broken window on ground floor garage. Accumulation of household items visible through open carport.', response: 'Window replacement ordered. Will clean carport this weekend.', proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-023', resident: 'Daniel Ortiz', address: '160 E. 5th St', type: 'Weeds / Vegetation', severity: 'Low', status: 'resolved', deadline: '2026-05-20', issued: '2026-05-06', description: 'Weeds growing along fence line and in tree wells. Minor issue, first notice.', response: 'Cleared all weeds and applied pre-emergent treatment.', proofPhoto: true, inspector: 'P. Wilson' },
-    { id: 'CE-2026-022', resident: 'Karen Smith', address: '805 N. Main St', type: 'Zoning Violation', severity: 'High', status: 'pending', deadline: '2026-06-15', issued: '2026-06-01', description: 'Operating commercial auto repair from residential property. Multiple vehicles being serviced in driveway and side yard. Chemicals and equipment stored outside.', response: null, proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-021', resident: 'Robert Kim', address: '1205 N. Main St', type: 'Weeds / Vegetation', severity: 'Low', status: 'resolved', deadline: '2026-04-15', issued: '2026-04-01', description: 'Previous weed notice — first offense. Weeds in front yard and along sidewalk.', response: 'Cleared weeds on April 10.', proofPhoto: true, inspector: 'P. Wilson' },
-    { id: 'CE-2026-020', resident: 'Eduardo Sanchez', address: '375 W. Shedd Rd', type: 'Junk Vehicles', severity: 'Medium', status: 'pending', deadline: '2026-06-08', issued: '2026-05-25', description: 'Unregistered recreational vehicle parked on front lawn for 45+ days. Vehicle appears to be used as storage.', response: null, proofPhoto: false, inspector: 'J. Martinez' },
-    { id: 'CE-2026-019', resident: 'Amanda Foster', address: '560 E. 4th St', type: 'Property Maintenance', severity: 'Medium', status: 'acknowledged', deadline: '2026-06-05', issued: '2026-05-22', description: 'Graffiti on exterior block wall visible from street. Unsecured trash bins attracting pests.', response: 'Acknowledged. Painting scheduled for this week. Will secure bins.', proofPhoto: false, inspector: 'P. Wilson' },
-    { id: 'CE-2026-018', resident: 'Luis Moreno', address: '920 S. Toltec Rd', type: 'Weeds / Vegetation', severity: 'Medium', status: 'pending', deadline: '2026-06-12', issued: '2026-05-29', description: 'Overgrown vegetation on vacant lot owned by resident. Dead branches and debris creating fire hazard during dry season.', response: null, proofPhoto: false, inspector: 'T. Nguyen' }
+// Live code-enforcement notices — display-shaped rows derived from the
+// Supabase `notices` table by renderEnforcementPage(). No mock data.
+let enforcementNotices = [];
+
+// Type + severity + status maps shared across the enforcement UI.
+const CE_TYPE_OPTS = [
+    { code: 'property_maintenance', label: 'Property Maintenance' },
+    { code: 'tree_trimming',        label: 'Tree Trimming / Vegetation' },
+    { code: 'trash_violation',      label: 'Trash / Illegal Dumping' },
+    { code: 'building_code',        label: 'Building Code' },
+    { code: 'noise',                label: 'Noise Violation' },
+    { code: 'other',                label: 'Other' }
 ];
+function ceTypeLabel(code) { const o = CE_TYPE_OPTS.find(x => x.code === code); return o ? o.label : 'Notice'; }
+const CE_STATUS = {
+    pending:             { label: 'Pending',          css: 'ce-status-pending' },
+    acknowledged:        { label: 'Acknowledged',     css: 'ce-status-acknowledged' },
+    in_progress:         { label: 'In Progress',      css: 'ce-status-inprogress' },
+    extension_requested: { label: 'Extension asked',  css: 'ce-status-inprogress' },
+    overdue:             { label: 'Overdue',           css: 'ce-status-overdue' },
+    resolved:            { label: 'Resolved',          css: 'ce-status-resolved' }
+};
+function ceSeverityLabel(s) { return ({ low: 'Low', medium: 'Medium', high: 'High' }[s] || 'Low'); }
+function ceSeverityColor(s) { return ({ low: 'var(--info)', medium: 'var(--warm-accent)', high: 'var(--warning)' }[s] || 'var(--text-secondary)'); }
+function ceIsOverdue(n) {
+    if (!n.deadline || n.status === 'resolved') return false;
+    return new Date(n.deadline) < new Date();
+}
+
+// Build the display list from the live `notices` table, then render.
+function renderEnforcementPage() {
+    enforcementNotices = (liveData.notices || []).map(n => {
+        const who = (liveData.profiles || []).find(p => p.id === n.resident_id);
+        const effStatus = (n.status !== 'resolved' && ceIsOverdue(n)) ? 'overdue' : (n.status || 'pending');
+        return {
+            id: String(n.id || '').slice(0, 8).toUpperCase(),
+            _dbId: n.id,
+            resident_id: n.resident_id,
+            resident: who ? (who.display_name || who.email || 'Resident') : 'Resident',
+            residentEmail: who ? (who.email || '') : '',
+            address: n.address || '',
+            type: n.title || ceTypeLabel(n.type),
+            typeCode: n.type,
+            severity: ceSeverityLabel(n.severity),
+            severityRaw: n.severity || 'low',
+            status: effStatus,
+            rawStatus: n.status || 'pending',
+            deadline: n.deadline,
+            issued: n.created_at || n.deadline,
+            description: n.description || '',
+            response: n.response || null,
+            proofPhotoUrl: n.proof_photo_url || '',
+            proofPhoto: !!n.proof_photo_url,
+            inspector: n.issued_by_name || 'Code Enforcement'
+        };
+    });
+    renderEnforcementTable(currentCEFilter);
+    updateEnforcementCounts();
+}
 
 function renderEnforcementTable(filter) {
     const tbody = document.getElementById('enforcementTableBody');
@@ -11168,28 +11215,18 @@ function renderEnforcementTable(filter) {
         ? enforcementNotices.filter(n => n.status === filter)
         : enforcementNotices;
 
-    const statusConfig = {
-        'pending':      { label: 'Pending',      css: 'ce-status-pending' },
-        'acknowledged': { label: 'Acknowledged', css: 'ce-status-acknowledged' },
-        'in-progress':  { label: 'In Progress',  css: 'ce-status-inprogress' },
-        'overdue':      { label: 'Overdue',      css: 'ce-status-overdue' },
-        'resolved':     { label: 'Resolved',     css: 'ce-status-resolved' }
-    };
-
-    const severityColors = {
-        'Low':      'var(--info)',
-        'Medium':   'var(--warm-accent)',
-        'High':     'var(--warning)',
-        'Critical': '#FF3B5C'
-    };
+    if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No notices in this view yet. Click &ldquo;Issue Notice&rdquo; to create one.</td></tr>`;
+        return;
+    }
 
     tbody.innerHTML = filtered.map(n => {
-        const sc = statusConfig[n.status] || statusConfig['pending'];
-        const sevColor = severityColors[n.severity] || 'var(--text-secondary)';
+        const sc = CE_STATUS[n.status] || CE_STATUS.pending;
+        const sevColor = ceSeverityColor(n.severityRaw);
         const deadlineDate = new Date(n.deadline);
         const issuedDate = new Date(n.issued);
-        const deadlineStr = deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const issuedStr = issuedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const deadlineStr = isNaN(deadlineDate) ? '—' : deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const issuedStr = isNaN(issuedDate) ? '—' : issuedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         const daysRemaining = Math.ceil((deadlineDate - new Date()) / (1000 * 60 * 60 * 24));
         const daysText = daysRemaining > 0 ? daysRemaining + ' days remaining' : Math.abs(daysRemaining) + ' days overdue';
@@ -11197,26 +11234,27 @@ function renderEnforcementTable(filter) {
         const responseStatus = n.response ? 'Responded' : 'No response yet';
         const responseColor = n.response ? 'var(--success)' : 'var(--text-tertiary)';
 
-        return `<tr onclick="openEnforcementDetail(enforcementNotices.find(x => x.id === '${n.id}'))" style="cursor: pointer; position: relative;">
-            <td style="font-weight: 500;">${n.resident}</td>
-            <td style="color: var(--text-secondary); font-size: 12px;">${n.address}</td>
-            <td><span class="tag" style="background: rgba(142,168,190,0.12); color: var(--text-secondary);">${n.type}</span></td>
-            <td><span style="font-size: 12px; font-weight: 600; color: ${sevColor};">${n.severity}</span></td>
+        return `<tr onclick="openEnforcementDetailById('${n._dbId}')" style="cursor: pointer; position: relative;">
+            <td style="font-weight: 500;">${escapeHtml(n.resident)}</td>
+            <td style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(n.address)}</td>
+            <td><span class="tag" style="background: rgba(142,168,190,0.12); color: var(--text-secondary);">${escapeHtml(n.type)}</span></td>
+            <td><span style="font-size: 12px; font-weight: 600; color: ${sevColor};">${escapeHtml(n.severity)}</span></td>
             <td><span class="status ${sc.css}"><span class="status-dot"></span>${sc.label}</span></td>
             <td style="color: ${n.status === 'overdue' ? 'var(--warning)' : 'var(--text-tertiary)'}; font-size: 12px; font-weight: ${n.status === 'overdue' ? '600' : '400'};">${deadlineStr}</td>
             <td style="color: var(--text-tertiary); font-size: 12px;">${issuedStr}</td>
             <div class="hover-popup" style="left:80px; min-width:300px;">
-                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">${n.id} - ${n.type}</div>
-                <div style="font-size:12px; line-height:1.5; margin-bottom:8px;">${n.description.substring(0, 120)}${n.description.length > 120 ? '...' : ''}</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">${escapeHtml(n.id)} - ${escapeHtml(n.type)}</div>
+                <div style="font-size:12px; line-height:1.5; margin-bottom:8px;">${escapeHtml(n.description.substring(0, 120))}${n.description.length > 120 ? '...' : ''}</div>
                 <div class="popup-line"><span>Deadline</span><span class="popup-val" style="color:${daysColor};">${daysText}</span></div>
                 <div class="popup-line"><span>Resident Response</span><span class="popup-val" style="color:${responseColor};">${responseStatus}</span></div>
-                <div class="popup-line"><span>Inspector</span><span class="popup-val">${n.inspector}</span></div>
+                <div class="popup-line"><span>Inspector</span><span class="popup-val">${escapeHtml(n.inspector)}</span></div>
             </div>
         </tr>`;
     }).join('');
 }
 
 let currentCEFilter = 'all';
+let currentCEDbId = null;
 
 function filterEnforcement(status, btn) {
     currentCEFilter = status;
@@ -11234,8 +11272,14 @@ function filterEnforcement(status, btn) {
     renderEnforcementTable(status);
 }
 
+function openEnforcementDetailById(dbId) {
+    const notice = enforcementNotices.find(x => String(x._dbId) === String(dbId));
+    if (notice) openEnforcementDetail(notice);
+}
+
 function openEnforcementDetail(notice) {
     if (!notice) return;
+    currentCEDbId = notice._dbId;
     const panel = document.getElementById('enforcementDetail');
     const title = document.getElementById('ceDetailTitle');
     const sub = document.getElementById('ceDetailSub');
@@ -11301,37 +11345,37 @@ function openEnforcementDetail(notice) {
             </div>
         </div>`}
 
-        ${notice.proofPhoto ? `
+        ${notice.proofPhotoUrl ? `
         <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 8px;">Proof of Compliance</div>
-            <div style="background: var(--surface); border-radius: var(--radius-md); height: 180px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
-                <div style="text-align: center; color: var(--text-tertiary);">
-                    <div style="font-size: 13px; margin-bottom: 8px; color: var(--accent); font-weight: 600;">PHOTO</div>
-                    <div style="font-size: 13px;">Compliance photo submitted</div>
-                    <div style="font-size: 11px; margin-top: 4px; color: var(--accent);">Click to view full size</div>
-                </div>
-            </div>
+            <a href="${escapeHtml(notice.proofPhotoUrl)}" target="_blank" rel="noopener" style="display:block;">
+                <img src="${escapeHtml(notice.proofPhotoUrl)}" style="width:100%; max-height:260px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--border);">
+            </a>
         </div>` : ''}
 
         <div style="margin-bottom: 20px;">
             <label class="form-label">Update Status</label>
-            <select class="form-input" onchange="updateNoticeStatus('${notice.id}', this.value)">
-                <option value="pending" ${notice.status === 'pending' ? 'selected' : ''}>Pending</option>
-                <option value="acknowledged" ${notice.status === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
-                <option value="in-progress" ${notice.status === 'in-progress' ? 'selected' : ''}>In Progress</option>
-                <option value="overdue" ${notice.status === 'overdue' ? 'selected' : ''}>Overdue</option>
-                <option value="resolved" ${notice.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+            <select class="form-input" onchange="updateNoticeStatus('${notice._dbId}', this.value)">
+                <option value="pending" ${notice.rawStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="acknowledged" ${notice.rawStatus === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
+                <option value="in_progress" ${notice.rawStatus === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="extension_requested" ${notice.rawStatus === 'extension_requested' ? 'selected' : ''}>Extension requested</option>
+                <option value="resolved" ${notice.rawStatus === 'resolved' ? 'selected' : ''}>Resolved</option>
             </select>
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label class="form-label">Internal Notes</label>
-            <textarea class="form-input" rows="3" placeholder="Add a note about this notice..."></textarea>
-        </div>
+        ${notice.rawStatus === 'extension_requested' ? `
+        <div style="margin-bottom:16px; padding:12px 14px; background:rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius:var(--radius-sm);">
+            <div style="font-size:13px; color:var(--info); font-weight:600; margin-bottom:8px;">This resident requested a deadline extension.</div>
+            <div class="flex gap-8">
+                <button class="btn btn-primary" style="flex:1;" onclick="approveNoticeExtension('${notice._dbId}')">Approve +14 days</button>
+                <button class="btn btn-secondary" onclick="updateNoticeStatus('${notice._dbId}','acknowledged')">Deny</button>
+            </div>
+        </div>` : ''}
 
         <div class="flex gap-8">
-            <button class="btn btn-primary" style="flex: 1;" onclick="showToast('Notice updated successfully', 'success'); closeEnforcementDetail();">Save Changes</button>
-            <button class="btn btn-danger" onclick="showToast('Follow-up notice generated', 'info');">Send Follow-up</button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="updateNoticeStatus('${notice._dbId}','resolved')">Mark Resolved</button>
+            <button class="btn btn-secondary" onclick="closeEnforcementDetail()">Close</button>
         </div>
     `;
 
@@ -11343,6 +11387,7 @@ function closeEnforcementDetail() {
 }
 
 function openEnforcementModal() {
+    populateCEResidents();
     document.getElementById('enforcementModal').classList.add('open');
     // Set default deadline to 14 days from today
     const defaultDeadline = new Date();
@@ -11359,57 +11404,112 @@ function saveEnforcementDraft() {
     closeEnforcementModal();
 }
 
-function issueEnforcementNotice() {
-    const name = document.getElementById('ceResidentName').value.trim();
+async function issueEnforcementNotice() {
+    const resSel = document.getElementById('ceResidentSelect');
+    const residentId = resSel ? resSel.value : '';
     const address = document.getElementById('ceAddress').value.trim();
-    const type = document.getElementById('ceType').value;
+    const typeCode = document.getElementById('ceType').value;
+    const title = document.getElementById('ceTitle').value.trim();
     const severity = document.getElementById('ceSeverity').value;
     const description = document.getElementById('ceDescription').value.trim();
     const deadline = document.getElementById('ceDeadline').value;
     const inspector = document.getElementById('ceInspector').value;
 
-    if (!name || !address || !type || !description || !deadline) {
-        showToast('Please fill in all required fields', 'error');
+    if (!residentId || !address || !typeCode || !title || !description || !deadline) {
+        showToast('Please fill in resident, address, type, title, description, and deadline', 'error');
         return;
     }
+    if (!sbClient) { showToast('Not connected', 'error'); return; }
 
-    const newId = 'CE-2026-' + String(enforcementNotices.length + 18 + 1).padStart(3, '0');
-    enforcementNotices.unshift({
-        id: newId,
-        resident: name,
-        address: address,
-        type: type,
-        severity: severity,
-        status: 'pending',
-        deadline: deadline,
-        issued: new Date().toISOString().split('T')[0],
-        description: description,
-        response: null,
-        proofPhoto: false,
-        inspector: inspector || 'Unassigned'
-    });
+    try {
+        const payload = {
+            resident_id: residentId,
+            address, type: typeCode, title, description,
+            severity, status: 'pending', deadline,
+            issued_by_name: inspector || 'Code Enforcement'
+        };
+        const { data, error } = await sbClient.from('notices').insert(payload).select().single();
+        if (error) throw error;
 
-    renderEnforcementTable(currentCEFilter);
-    updateEnforcementCounts();
-    closeEnforcementModal();
-    showToast('Code enforcement notice ' + newId + ' issued to ' + name, 'success');
+        liveData.notices = liveData.notices || [];
+        liveData.notices.unshift(data);
+        renderEnforcementPage();
+        closeEnforcementModal();
 
-    // Clear form
-    document.getElementById('ceResidentName').value = '';
-    document.getElementById('ceAddress').value = '';
-    document.getElementById('ceType').value = '';
-    document.getElementById('ceDescription').value = '';
-    document.getElementById('ceInspector').value = '';
+        const resName = (resSel.options[resSel.selectedIndex] || {}).textContent || 'resident';
+        showToast('Notice issued to ' + resName, 'success');
+        ceNotifyResident(data, 'New notice from Code Enforcement', title);
+
+        // Clear form
+        ['ceAddress', 'ceTitle', 'ceDescription'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.getElementById('ceType').value = '';
+        if (resSel) resSel.selectedIndex = 0;
+    } catch (e) {
+        showToast('Failed to issue notice: ' + (e.message || e), 'error');
+    }
 }
 
-function updateNoticeStatus(noticeId, newStatus) {
-    const notice = enforcementNotices.find(n => n.id === noticeId);
-    if (notice) {
-        notice.status = newStatus;
-        renderEnforcementTable(currentCEFilter);
-        updateEnforcementCounts();
-        showToast('Notice ' + noticeId + ' status updated to ' + newStatus, 'success');
-    }
+async function updateNoticeStatus(dbId, newStatus) {
+    if (!sbClient) return;
+    try {
+        const patch = { status: newStatus, updated_at: new Date().toISOString() };
+        if (newStatus === 'resolved') patch.resolved_at = new Date().toISOString();
+        const { error } = await sbClient.from('notices').update(patch).eq('id', dbId);
+        if (error) throw error;
+        const row = (liveData.notices || []).find(x => String(x.id) === String(dbId));
+        if (row) { row.status = newStatus; if (patch.resolved_at) row.resolved_at = patch.resolved_at; }
+        renderEnforcementPage();
+        openEnforcementDetailById(dbId);
+        showToast('Notice marked ' + (CE_STATUS[newStatus] ? CE_STATUS[newStatus].label.toLowerCase() : newStatus), 'success');
+        if (newStatus === 'resolved' && row) {
+            ceNotifyResident(row, 'Your notice is resolved', 'The City of Eloy has marked your code enforcement notice as resolved. Thank you.');
+        }
+    } catch (e) { showToast('Update failed: ' + (e.message || e), 'error'); }
+}
+
+// Approve a resident's extension request: push the deadline out 14 days.
+async function approveNoticeExtension(dbId) {
+    if (!sbClient) return;
+    const row = (liveData.notices || []).find(x => String(x.id) === String(dbId));
+    if (!row) return;
+    try {
+        const base = row.deadline ? new Date(row.deadline) : new Date();
+        base.setDate(base.getDate() + 14);
+        const newDeadline = base.toISOString().split('T')[0];
+        const { error } = await sbClient.from('notices').update({ status: 'acknowledged', deadline: newDeadline, updated_at: new Date().toISOString() }).eq('id', dbId);
+        if (error) throw error;
+        row.status = 'acknowledged'; row.deadline = newDeadline;
+        renderEnforcementPage();
+        openEnforcementDetailById(dbId);
+        showToast('Extension approved — new deadline ' + newDeadline, 'success');
+        ceNotifyResident(row, 'Extension approved', 'Your deadline extension was approved. New deadline: ' + newDeadline + '.');
+    } catch (e) { showToast('Extension failed: ' + (e.message || e), 'error'); }
+}
+
+// Push + log a notification to the resident a notice belongs to.
+async function ceNotifyResident(row, title, body) {
+    if (!row || !row.resident_id) return;
+    try {
+        let token = null;
+        if (sbClient?.auth) { const s = await sbClient.auth.getSession(); token = s?.data?.session?.access_token; }
+        await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/send-push-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token || SUPABASE_KEY}` },
+            body: JSON.stringify({ title, body, broadcast: false, user_ids: [row.resident_id], data: { type: 'notice_update', id: String(row.id) } })
+        });
+        try { if (typeof logPushSend === 'function') logPushSend({ kind: 'notice_update', title, body, audience: 'Notice recipient', sent: 1, failed: 0, data: { notice_id: row.id } }); } catch (e) {}
+    } catch (e) { /* non-fatal */ }
+}
+
+// Populate the "Issue Notice" resident dropdown from real resident accounts.
+function populateCEResidents() {
+    const sel = document.getElementById('ceResidentSelect');
+    if (!sel) return;
+    const residents = (liveData.profiles || []).filter(p => (p.role || 'resident') === 'resident');
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">-- Select resident --</option>' +
+        residents.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.display_name || p.email || 'Resident')}${p.email ? ' — ' + escapeHtml(p.email) : ''}</option>`).join('');
+    if (keep) sel.value = keep;
 }
 
 function updateEnforcementCounts() {
@@ -11418,14 +11518,14 @@ function updateEnforcementCounts() {
     const overdue = enforcementNotices.filter(n => n.status === 'overdue').length;
     const resolved = enforcementNotices.filter(n => n.status === 'resolved').length;
     const acknowledged = enforcementNotices.filter(n => n.status === 'acknowledged').length;
-    const inProgress = enforcementNotices.filter(n => n.status === 'in-progress').length;
+    const inProgress = enforcementNotices.filter(n => n.status === 'in_progress').length;
 
     const el = id => document.getElementById(id);
     if (el('ce-total-count')) el('ce-total-count').textContent = total;
     if (el('ce-pending-count')) el('ce-pending-count').textContent = pending;
     if (el('ce-overdue-count')) el('ce-overdue-count').textContent = overdue;
     if (el('ce-resolved-month')) el('ce-resolved-month').textContent = resolved;
-    if (el('ce-compliance-rate')) el('ce-compliance-rate').textContent = Math.round((resolved / total) * 100) + '%';
+    if (el('ce-compliance-rate')) el('ce-compliance-rate').textContent = (total ? Math.round((resolved / total) * 100) : 0) + '%';
 
     // Update filter tab counts
     const tabs = document.querySelectorAll('#ce-filter-tabs .filter-tab');
@@ -11455,9 +11555,8 @@ function exportEnforcementCSV() {
     showToast('CSV exported with ' + enforcementNotices.length + ' notices', 'success');
 }
 
-// Initialize enforcement table on load
-renderEnforcementTable('all');
-updateEnforcementCounts();
+// Initialize enforcement page on load (safe with no data yet; fetchAllData re-renders)
+try { renderEnforcementPage(); } catch (e) {}
 
 // ============================================
 // CITY LEADERS MANAGEMENT
