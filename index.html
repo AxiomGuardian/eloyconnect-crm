@@ -5788,7 +5788,7 @@ async function fetchAllData() {
         try { populateStaffSelects(); } catch(e) { console.warn('staff selects:', e); }
         try { renderResidentVoice(); } catch(e) { console.warn('resident voice:', e); }
         try { updateVoicesBadge(); } catch(e) { console.warn('voices badge:', e); }
-        try { if (document.getElementById('page-voices')?.classList.contains('active')) renderResidentVoicesPage(); } catch(e) {}
+        try { renderResidentVoicesPage(); } catch(e) { console.warn('voices page:', e); }
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -7323,33 +7323,40 @@ function renderResidentVoicesPage() {
         question: { label: 'Question', color: 'var(--accent)' },
         other:    { label: 'Other',    color: 'var(--text-tertiary)' }
     };
+    // Safe relative-time — never let a weird timestamp throw and blank the list.
+    const timeAgo = ts => { try { return ts ? getTimeAgo(ts) : ''; } catch (e) { return ''; } };
+
     const msgs = voicesFilter === 'all' ? all : all.filter(m => (m.category || 'other') === voicesFilter);
     if (!msgs.length) {
         listEl.innerHTML = `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
         return;
     }
-    listEl.innerHTML = msgs.map(m => {
-        const cat = catMeta[m.category] || catMeta.other;
-        const who = (liveData.profiles || []).find(p => p.id === m.user_id);
-        const name = who ? (who.display_name || 'Resident') : 'Resident';
-        const email = who && who.email ? who.email : '';
-        const when = m.created_at ? getTimeAgo(m.created_at) : '';
-        const isNew = (m.status || 'new') === 'new';
-        const initial = esc((name[0] || 'R').toUpperCase());
-        return `<div class="glass-card" style="padding:16px 18px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
-                ${isNew ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(63,224,232,0.1); padding:3px 8px; border-radius:999px;">NEW</span>' : ''}
-                <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(when)}</span>
-            </div>
-            <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
-            <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-                <div style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">${initial}</div>
-                <div style="font-size:13px; font-weight:500;">${esc(name)}</div>
-                ${email ? `<div style="font-size:12px; color:var(--text-tertiary);">${esc(email)}</div>` : ''}
-            </div>
-        </div>`;
+    // Build each card in its own try/catch so one bad row can't blank them all.
+    const cards = msgs.map(m => {
+        try {
+            const cat = catMeta[m.category] || catMeta.other;
+            const who = (liveData.profiles || []).find(p => p.id === m.user_id);
+            const name = who ? (who.display_name || 'Resident') : 'Resident';
+            const email = who && who.email ? who.email : '';
+            const when = timeAgo(m.created_at);
+            const isNew = (m.status || 'new') === 'new';
+            const initial = esc((String(name).charAt(0) || 'R').toUpperCase());
+            return `<div class="glass-card" style="padding:16px 18px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                    <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
+                    ${isNew ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(63,224,232,0.1); padding:3px 8px; border-radius:999px;">NEW</span>' : ''}
+                    <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(when)}</span>
+                </div>
+                <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">${initial}</div>
+                    <div style="font-size:13px; font-weight:500;">${esc(name)}</div>
+                    ${email ? `<div style="font-size:12px; color:var(--text-tertiary);">${esc(email)}</div>` : ''}
+                </div>
+            </div>`;
+        } catch (e) { return ''; }
     }).join('');
+    listEl.innerHTML = cards || `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
 }
 
 // Export the currently-open report as a printable, letterheaded PDF
