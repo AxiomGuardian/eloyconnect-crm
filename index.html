@@ -2886,6 +2886,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="nav-item" data-page="directory" onclick="navigateTo('directory')">Business Directory</div>
         <div class="nav-item" data-page="enforcement" onclick="navigateTo('enforcement')">Code Enforcement</div>
         <div class="nav-item" data-page="notifications" onclick="navigateTo('notifications')">Messages</div>
+        <div class="nav-item" data-page="voices" onclick="navigateTo('voices')">Citizens Voices <span class="badge badge-info" id="navVoicesBadge" style="display:none;"></span></div>
         <div class="nav-item" data-page="archive" onclick="navigateTo('archive')">Archive</div>
 
         <div class="nav-group-divider"></div>
@@ -4164,6 +4165,29 @@ input[type="checkbox"].bulk-check:checked::after {
         </div>
 
         <!-- ========== STAFF & SETTINGS ========== -->
+        <!-- ========== CITIZENS VOICES — resident concerns / ideas / questions ========== -->
+        <div class="page" id="page-voices">
+            <div class="glass-card" style="margin-bottom:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <div style="font-size:15px; font-weight:700;">Messages from residents</div>
+                        <div style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">Concerns, ideas, and questions sent through &quot;Speak to the City&quot; in the app</div>
+                    </div>
+                    <div id="voicesStats" style="display:flex; gap:18px;"></div>
+                </div>
+                <div id="voicesFilters" style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+                    <button class="filter-tab active" data-vfilter="all" onclick="setVoicesFilter('all')">All</button>
+                    <button class="filter-tab" data-vfilter="concern" onclick="setVoicesFilter('concern')">Concerns</button>
+                    <button class="filter-tab" data-vfilter="idea" onclick="setVoicesFilter('idea')">Ideas</button>
+                    <button class="filter-tab" data-vfilter="question" onclick="setVoicesFilter('question')">Questions</button>
+                    <button class="filter-tab" data-vfilter="other" onclick="setVoicesFilter('other')">Other</button>
+                </div>
+            </div>
+            <div id="voicesList" style="display:flex; flex-direction:column; gap:12px;">
+                <div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages yet. When residents use &quot;Speak to the City&quot; in the app, their messages appear here.</div>
+            </div>
+        </div>
+
         <div class="page" id="page-staff">
             <div class="section-header">
                 <div>
@@ -4933,6 +4957,7 @@ var pages = {
     directory: { title: 'Business Directory', subtitle: 'Manage local business listings' },
     enforcement: { title: 'Code Enforcement', subtitle: 'Violations & compliance tracking' },
     notifications: { title: 'Messages', subtitle: 'Every push the city sends — on the record' },
+    voices: { title: 'Citizens Voices', subtitle: 'What residents are telling the city — concerns, ideas, and questions' },
     archive: { title: 'Archive', subtitle: 'Closed reports, retired posts, archived messages — nothing is ever lost' },
     council: { title: 'Council Meetings', subtitle: 'Meetings, summaries, and how residents engage with them' },
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
@@ -5754,6 +5779,8 @@ async function fetchAllData() {
         try { updateFeatureAdoption(); } catch(e) { console.warn('feature adoption:', e); }
         try { populateStaffSelects(); } catch(e) { console.warn('staff selects:', e); }
         try { renderResidentVoice(); } catch(e) { console.warn('resident voice:', e); }
+        try { updateVoicesBadge(); } catch(e) { console.warn('voices badge:', e); }
+        try { if (document.getElementById('page-voices')?.classList.contains('active')) renderResidentVoicesPage(); } catch(e) {}
         renderStaffPage();
         console.log('Live data loaded:', Object.entries(liveData).map(([k,v]) => `${k}: ${v?.length || 0}`).join(', '));
     } catch(e) {
@@ -6739,6 +6766,9 @@ function navigateTo(page) {
 
     // Council command center: refresh meetings + engagement.
     if (page === 'council') loadCouncilPage();
+
+    // Citizens Voices: render the resident messages inbox.
+    if (page === 'voices') renderResidentVoicesPage();
 }
 
 // Alias — some buttons use navigateToPage, make sure it works identically
@@ -7242,6 +7272,74 @@ function renderResidentVoice() {
             </div>
             <div style="font-size:13px; color:var(--text-primary); line-height:1.5;">${esc(m.message || '')}</div>
             <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">${esc(name)}</div>
+        </div>`;
+    }).join('');
+}
+
+// ===== CITIZENS VOICES — full-page resident messages inbox =====
+let voicesFilter = 'all';
+
+function setVoicesFilter(f) {
+    voicesFilter = f;
+    document.querySelectorAll('#voicesFilters .filter-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.vfilter === f));
+    renderResidentVoicesPage();
+}
+
+// Update the nav badge with the count of new (unread) resident messages.
+function updateVoicesBadge() {
+    const badge = document.getElementById('navVoicesBadge');
+    if (!badge) return;
+    const newCount = (liveData.civicVoice || []).filter(m => (m.status || 'new') === 'new').length;
+    if (newCount > 0) { badge.textContent = newCount; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+}
+
+function renderResidentVoicesPage() {
+    const listEl = document.getElementById('voicesList');
+    const statsEl = document.getElementById('voicesStats');
+    if (!listEl) return;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const all = liveData.civicVoice || [];
+
+    if (statsEl) {
+        const newCount = all.filter(m => (m.status || 'new') === 'new').length;
+        statsEl.innerHTML =
+            `<div style="text-align:center;"><div style="font-size:20px; font-weight:700;">${all.length}</div><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);">Total</div></div>
+             <div style="text-align:center;"><div style="font-size:20px; font-weight:700; color:var(--accent);">${newCount}</div><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);">New</div></div>`;
+    }
+
+    const catMeta = {
+        concern:  { label: 'Concern',  color: 'var(--warm-accent)' },
+        idea:     { label: 'Idea',     color: 'var(--success)' },
+        question: { label: 'Question', color: 'var(--accent)' },
+        other:    { label: 'Other',    color: 'var(--text-tertiary)' }
+    };
+    const msgs = voicesFilter === 'all' ? all : all.filter(m => (m.category || 'other') === voicesFilter);
+    if (!msgs.length) {
+        listEl.innerHTML = `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
+        return;
+    }
+    listEl.innerHTML = msgs.map(m => {
+        const cat = catMeta[m.category] || catMeta.other;
+        const who = (liveData.profiles || []).find(p => p.id === m.user_id);
+        const name = who ? (who.display_name || 'Resident') : 'Resident';
+        const email = who && who.email ? who.email : '';
+        const when = m.created_at ? getTimeAgo(m.created_at) : '';
+        const isNew = (m.status || 'new') === 'new';
+        const initial = esc((name[0] || 'R').toUpperCase());
+        return `<div class="glass-card" style="padding:16px 18px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
+                ${isNew ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(63,224,232,0.1); padding:3px 8px; border-radius:999px;">NEW</span>' : ''}
+                <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(when)}</span>
+            </div>
+            <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+                <div style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">${initial}</div>
+                <div style="font-size:13px; font-weight:500;">${esc(name)}</div>
+                ${email ? `<div style="font-size:12px; color:var(--text-tertiary);">${esc(email)}</div>` : ''}
+            </div>
         </div>`;
     }).join('');
 }
