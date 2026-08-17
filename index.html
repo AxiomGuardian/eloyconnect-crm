@@ -4201,6 +4201,18 @@ input[type="checkbox"].bulk-check:checked::after {
                     <button class="filter-tab" data-vfilter="other" onclick="setVoicesFilter('other')">Other</button>
                 </div>
             </div>
+            <div class="glass-card" style="margin-bottom:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;" onclick="const b=document.getElementById('voicesReportBody'); const c=document.getElementById('voicesReportChevron'); const open=b.style.display==='none'; b.style.display=open?'block':'none'; c.style.transform=open?'rotate(90deg)':'rotate(0deg)';">
+                    <div>
+                        <div style="font-size:15px; font-weight:700;">Message reports</div>
+                        <div style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">How many voices came in each month, broken down by type</div>
+                    </div>
+                    <span id="voicesReportChevron" style="transition:transform .2s; color:var(--text-tertiary); font-size:18px;">&rsaquo;</span>
+                </div>
+                <div id="voicesReportBody" style="display:none; margin-top:16px;">
+                    <div id="voicesReport" style="display:flex; flex-wrap:wrap; gap:12px;"></div>
+                </div>
+            </div>
             <div id="voicesList" style="display:flex; flex-direction:column; gap:12px;">
                 <div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages yet. When residents use &quot;Speak to the City&quot; in the app, their messages appear here.</div>
             </div>
@@ -4848,9 +4860,12 @@ input[type="checkbox"].bulk-check:checked::after {
             <span id="voiceTime" style="margin-left:auto; font-size:12px; color:var(--text-tertiary);"></span>
         </div>
         <div id="voiceMessage" style="position:relative; font-size:16px; line-height:1.8; color:var(--text-primary); background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 24px; margin-bottom:26px; white-space:pre-wrap; min-height:120px;">—</div>
-        <div style="position:relative; display:flex; gap:10px; justify-content:flex-end;">
-            <button class="btn btn-secondary" onclick="setVoiceStatus('in_review')">Mark under review</button>
-            <button class="btn btn-primary" onclick="setVoiceStatus('acknowledged')">Acknowledge</button>
+        <div style="position:relative; display:flex; gap:10px; justify-content:space-between; align-items:center;">
+            <button class="btn btn-ghost" style="color:#F43F5E;" onclick="deleteVoiceMessage()">Delete</button>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="setVoiceStatus('in_review')">Mark under review</button>
+                <button class="btn btn-primary" onclick="setVoiceStatus('acknowledged')">Acknowledge</button>
+            </div>
         </div>
     </div>
 </div>
@@ -7362,6 +7377,8 @@ function renderResidentVoicesPage() {
         question: { label: 'Question', color: 'var(--accent)' },
         other:    { label: 'Other',    color: 'var(--text-tertiary)' }
     };
+    try { renderVoicesReport(); } catch (e) {}
+
     // Safe relative-time — never let a weird timestamp throw and blank the list.
     const timeAgo = ts => { try { return ts ? getTimeAgo(ts) : ''; } catch (e) { return ''; } };
 
@@ -7388,7 +7405,7 @@ function renderResidentVoicesPage() {
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                     <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
                     <span style="font-size:10px; font-weight:700; color:${sm.color}; background:${sm.bg}; padding:3px 8px; border-radius:999px;">${sm.label}</span>
-                    <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(when)}</span>
+                    <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(formatVoiceDateTime(m.created_at))} &middot; ${esc(when)}</span>
                 </div>
                 <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
                 <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
@@ -7412,6 +7429,66 @@ function voiceStatusMeta(s) {
         case 'archived':     return { label: 'Archived',     color: 'var(--text-tertiary)', bg: 'rgba(255,255,255,0.06)' };
         default:             return { label: 'New',          color: 'var(--accent)',      bg: 'rgba(63,224,232,0.14)' };
     }
+}
+
+// Absolute date + time a message came in, e.g. "Aug 17, 2026, 2:30 PM".
+function formatVoiceDateTime(ts) {
+    try {
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch (e) { return ''; }
+}
+
+// Monthly breakdown of resident messages (for the "Messages by month" report).
+function renderVoicesReport() {
+    const el = document.getElementById('voicesReport');
+    if (!el) return;
+    const all = liveData.civicVoice || [];
+    if (!all.length) {
+        el.innerHTML = '<div style="color:var(--text-tertiary); font-size:13px;">No messages yet — the monthly breakdown will build here as residents write in.</div>';
+        return;
+    }
+    const groups = {};
+    all.forEach(m => {
+        const d = new Date(m.created_at);
+        if (isNaN(d.getTime())) return;
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const label = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        if (!groups[key]) groups[key] = { label, count: 0, concern: 0, idea: 0, question: 0, other: 0 };
+        groups[key].count++;
+        const cat = ['concern', 'idea', 'question'].includes(m.category) ? m.category : 'other';
+        groups[key][cat]++;
+    });
+    const keys = Object.keys(groups).sort().reverse();
+    el.innerHTML = keys.map(k => {
+        const g = groups[k];
+        const parts = [];
+        if (g.concern) parts.push(g.concern + ' concern' + (g.concern > 1 ? 's' : ''));
+        if (g.idea) parts.push(g.idea + ' idea' + (g.idea > 1 ? 's' : ''));
+        if (g.question) parts.push(g.question + ' question' + (g.question > 1 ? 's' : ''));
+        if (g.other) parts.push(g.other + ' other');
+        return `<div style="border:1px solid var(--border); border-radius:12px; padding:14px 18px; min-width:160px; background:var(--surface);">
+            <div style="font-size:24px; font-weight:700;">${g.count}</div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:6px;">${escapeHtml(g.label)}</div>
+            <div style="font-size:11px; color:var(--text-tertiary); line-height:1.5;">${escapeHtml(parts.join(' · '))}</div>
+        </div>`;
+    }).join('');
+}
+
+// Staff delete a resident message (RLS: cv_staff_delete).
+async function deleteVoiceMessage() {
+    if (!currentVoiceId || !sbClient) return;
+    if (!confirm('Delete this message permanently? This cannot be undone.')) return;
+    try {
+        const { error } = await sbClient.from('civic_voice_messages').delete().eq('id', currentVoiceId);
+        if (error) throw error;
+        liveData.civicVoice = (liveData.civicVoice || []).filter(x => String(x.id) !== String(currentVoiceId));
+        closeVoiceDetail();
+        showToast('Message deleted', 'success');
+        renderResidentVoicesPage();
+        updateVoicesBadge();
+    } catch (e) { showToast('Delete failed: ' + (e.message || e), 'error'); }
 }
 
 let currentVoiceId = null;
@@ -7449,7 +7526,9 @@ function openVoiceDetail(id) {
     const cm = catMeta[m.category] || catMeta.other;
     document.getElementById('voiceCat').innerHTML = `<span style="font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:${cm.c};border:1px solid ${cm.c};padding:3px 10px;border-radius:999px;">${cm.l}</span>`;
     renderVoiceStatusBadge(m.status || 'new');
-    document.getElementById('voiceTime').textContent = m.created_at ? getTimeAgo(m.created_at) : '';
+    document.getElementById('voiceTime').textContent = m.created_at
+        ? (formatVoiceDateTime(m.created_at) + ' · ' + getTimeAgo(m.created_at))
+        : '';
     document.getElementById('voiceMessage').textContent = m.message || '';
 
     document.getElementById('voiceDetailModal').classList.add('open');
