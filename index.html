@@ -1271,6 +1271,16 @@ input[type="checkbox"].bulk-check:checked::after {
 .aura-host.aura-green { --aura: 52,211,153; }
 .aura-host.aura-red   { --aura: 244,63,94; }
 .aura-host.aura-gold  { --aura: 246,196,69; }
+/* Civic variant — the app's megaphone teal that bleeds into warm orange */
+.aura-host.aura-civic { --aura: 63,224,232; }
+.aura-host.aura-civic .aura-glow {
+    background: radial-gradient(ellipse at 50% -18%, rgba(63,224,232,0.24), rgba(246,196,69,0.12) 45%, transparent 72%);
+    height: 220px;
+}
+.aura-host.aura-civic .aura-line {
+    background: linear-gradient(90deg, transparent, rgba(63,224,232,0.95), rgba(246,196,69,0.95), transparent);
+    height: 2.5px;
+}
 .aura-host {
     border: 1px solid rgba(var(--aura), 0.28) !important;
     animation: auraBreathe 4.5s ease-in-out infinite;
@@ -4816,6 +4826,35 @@ input[type="checkbox"].bulk-check:checked::after {
 </div>
 
 <!-- CONFIRM DIALOG MODAL -->
+<!-- CITIZENS VOICES — message detail modal -->
+<div class="modal-overlay" id="voiceDetailModal" onclick="if(event.target===this)closeVoiceDetail()">
+    <div class="modal aura-host aura-civic" style="width: min(920px, 94vw); max-height: 92vh; overflow-y:auto; padding: 36px 40px;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+        <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:24px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div id="voiceAvatar"></div>
+                <div>
+                    <div style="font-size:10px; font-weight:700; letter-spacing:1.4px; color:var(--accent); text-transform:uppercase; margin-bottom:2px;">Message from a resident</div>
+                    <div id="voiceName" style="font-size:19px; font-weight:700;">—</div>
+                    <div id="voiceEmail" style="font-size:13px; color:var(--text-tertiary);">—</div>
+                </div>
+            </div>
+            <button class="btn btn-ghost" style="font-size:18px; padding:6px 12px;" onclick="closeVoiceDetail()">✕</button>
+        </div>
+        <div style="position:relative; display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <span id="voiceCat"></span>
+            <span id="voiceStatusBadge"></span>
+            <span id="voiceTime" style="margin-left:auto; font-size:12px; color:var(--text-tertiary);"></span>
+        </div>
+        <div id="voiceMessage" style="position:relative; font-size:16px; line-height:1.8; color:var(--text-primary); background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 24px; margin-bottom:26px; white-space:pre-wrap; min-height:120px;">—</div>
+        <div style="position:relative; display:flex; gap:10px; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="setVoiceStatus('in_review')">Mark under review</button>
+            <button class="btn btn-primary" onclick="setVoiceStatus('acknowledged')">Acknowledge</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="confirmModal">
     <div class="modal" style="width: 440px; max-height: 60vh; padding: 32px;">
         <div id="confirmModalIcon" style="width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; font-size: 24px;"></div>
@@ -7338,25 +7377,101 @@ function renderResidentVoicesPage() {
             const who = (liveData.profiles || []).find(p => p.id === m.user_id);
             const name = who ? (who.display_name || 'Resident') : 'Resident';
             const email = who && who.email ? who.email : '';
+            const avatar = who && who.avatar_url ? who.avatar_url : '';
             const when = timeAgo(m.created_at);
-            const isNew = (m.status || 'new') === 'new';
+            const sm = voiceStatusMeta(m.status || 'new');
             const initial = esc((String(name).charAt(0) || 'R').toUpperCase());
-            return `<div class="glass-card" style="padding:16px 18px;">
+            const avatarHtml = avatar
+                ? `<img src="${esc(avatar)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`
+                : `<div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;">${initial}</div>`;
+            return `<div class="glass-card" onclick="openVoiceDetail('${esc(String(m.id))}')" style="padding:16px 18px; cursor:pointer; transition:border-color .15s, transform .1s;" onmouseover="this.style.borderColor='rgba(63,224,232,0.4)'" onmouseout="this.style.borderColor=''">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                     <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
-                    ${isNew ? '<span style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(63,224,232,0.1); padding:3px 8px; border-radius:999px;">NEW</span>' : ''}
+                    <span style="font-size:10px; font-weight:700; color:${sm.color}; background:${sm.bg}; padding:3px 8px; border-radius:999px;">${sm.label}</span>
                     <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(when)}</span>
                 </div>
                 <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
                 <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div style="width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--primary)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">${initial}</div>
+                    ${avatarHtml}
                     <div style="font-size:13px; font-weight:500;">${esc(name)}</div>
                     ${email ? `<div style="font-size:12px; color:var(--text-tertiary);">${esc(email)}</div>` : ''}
+                    <span style="margin-left:auto; font-size:11px; color:var(--accent); font-weight:600;">Open &rarr;</span>
                 </div>
             </div>`;
         } catch (e) { return ''; }
     }).join('');
     listEl.innerHTML = cards || `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
+}
+
+// Status styling shared by the list + the detail modal.
+function voiceStatusMeta(s) {
+    switch (s) {
+        case 'in_review':    return { label: 'In review',    color: 'var(--warm-accent)', bg: 'rgba(246,196,69,0.14)' };
+        case 'acknowledged': return { label: 'Acknowledged', color: 'var(--success)',     bg: 'rgba(52,211,153,0.14)' };
+        case 'responded':    return { label: 'Responded',    color: 'var(--accent)',      bg: 'rgba(63,224,232,0.14)' };
+        case 'archived':     return { label: 'Archived',     color: 'var(--text-tertiary)', bg: 'rgba(255,255,255,0.06)' };
+        default:             return { label: 'New',          color: 'var(--accent)',      bg: 'rgba(63,224,232,0.14)' };
+    }
+}
+
+let currentVoiceId = null;
+
+// Open the centered detail modal for one resident message.
+function openVoiceDetail(id) {
+    const m = (liveData.civicVoice || []).find(x => String(x.id) === String(id));
+    if (!m) { showToast('Message not found — try refreshing', 'warning'); return; }
+    currentVoiceId = id;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+    const who = (liveData.profiles || []).find(p => p.id === m.user_id);
+    const name = who ? (who.display_name || 'Resident') : 'Resident';
+    const email = who && who.email ? who.email : '';
+    const avatar = who && who.avatar_url ? who.avatar_url : '';
+    const initial = esc((String(name).charAt(0) || 'R').toUpperCase());
+
+    document.getElementById('voiceAvatar').innerHTML = avatar
+        ? `<img src="${esc(avatar)}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;">`
+        : `<div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;color:#fff;">${initial}</div>`;
+    document.getElementById('voiceName').textContent = name;
+    document.getElementById('voiceEmail').textContent = email || 'No email on file';
+
+    const catMeta = { concern:{l:'Concern',c:'var(--warm-accent)'}, idea:{l:'Idea',c:'var(--success)'}, question:{l:'Question',c:'var(--accent)'}, other:{l:'Other',c:'var(--text-tertiary)'} };
+    const cm = catMeta[m.category] || catMeta.other;
+    document.getElementById('voiceCat').innerHTML = `<span style="font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:${cm.c};border:1px solid ${cm.c};padding:3px 10px;border-radius:999px;">${cm.l}</span>`;
+    renderVoiceStatusBadge(m.status || 'new');
+    document.getElementById('voiceTime').textContent = m.created_at ? getTimeAgo(m.created_at) : '';
+    document.getElementById('voiceMessage').textContent = m.message || '';
+
+    document.getElementById('voiceDetailModal').classList.add('open');
+}
+
+function renderVoiceStatusBadge(status) {
+    const sm = voiceStatusMeta(status);
+    const el = document.getElementById('voiceStatusBadge');
+    if (el) el.innerHTML = `<span style="font-size:11px;font-weight:700;color:${sm.color};background:${sm.bg};padding:3px 10px;border-radius:999px;">${sm.label}</span>`;
+}
+
+function closeVoiceDetail() {
+    document.getElementById('voiceDetailModal').classList.remove('open');
+    currentVoiceId = null;
+}
+
+// Staff set a message's status (persists; RLS allows staff update).
+async function setVoiceStatus(status) {
+    if (!currentVoiceId || !sbClient) return;
+    try {
+        const { error } = await sbClient.from('civic_voice_messages')
+            .update({ status, updated_at: new Date().toISOString() })
+            .eq('id', currentVoiceId);
+        if (error) throw error;
+        const m = (liveData.civicVoice || []).find(x => String(x.id) === String(currentVoiceId));
+        if (m) m.status = status;
+        renderVoiceStatusBadge(status);
+        const sm = voiceStatusMeta(status);
+        showToast('Marked ' + sm.label.toLowerCase(), 'success');
+        renderResidentVoicesPage();
+        updateVoicesBadge();
+    } catch (e) { showToast('Update failed: ' + (e.message || e), 'error'); }
 }
 
 // Export the currently-open report as a printable, letterheaded PDF
