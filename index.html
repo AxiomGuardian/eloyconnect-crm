@@ -8031,7 +8031,11 @@ function updateAttentionCards() {
 
 function getTimeAgo(date) {
     const now = new Date();
-    const diffMs = now - date;
+    // Accept a Date OR a date string/number — coercing prevents
+    // "toLocaleDateString is not a function" on raw timestamp strings.
+    const d = (date instanceof Date) ? date : new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const diffMs = now - d;
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 1) return 'just now';
     if (diffMins < 60) return diffMins + 'm ago';
@@ -8039,7 +8043,7 @@ function getTimeAgo(date) {
     if (diffHours < 24) return diffHours + 'h ago';
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 7) return diffDays + 'd ago';
-    return date.toLocaleDateString();
+    return d.toLocaleDateString();
 }
 
 function updateSuggestionCards() {
