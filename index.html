@@ -4216,6 +4216,16 @@ input[type="checkbox"].bulk-check:checked::after {
             <div id="voicesList" style="display:flex; flex-direction:column; gap:12px;">
                 <div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages yet. When residents use &quot;Speak to the City&quot; in the app, their messages appear here.</div>
             </div>
+
+            <div id="voicesArchiveSection" style="display:none; margin-top:26px;">
+                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:12px 4px; border-top:1px solid var(--border);" onclick="const b=document.getElementById('voicesArchiveList'); const c=document.getElementById('voicesArchiveChevron'); const open=b.style.display==='none'; b.style.display=open?'flex':'none'; c.style.transform=open?'rotate(90deg)':'rotate(0deg)';">
+                    <span id="voicesArchiveChevron" style="transition:transform .2s; color:var(--text-tertiary); font-size:18px;">&rsaquo;</span>
+                    <div style="font-size:14px; font-weight:700; color:var(--text-secondary);">Archived</div>
+                    <span id="voicesArchiveCount" style="font-size:12px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.06); padding:2px 9px; border-radius:999px;">0</span>
+                    <span style="font-size:12px; color:var(--text-tertiary);">Kept out of the main list. Open one to restore it.</span>
+                </div>
+                <div id="voicesArchiveList" style="display:none; flex-direction:column; gap:12px; margin-top:10px;"></div>
+            </div>
         </div>
 
         <div class="page" id="page-staff">
@@ -4863,6 +4873,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div style="position:relative; display:flex; gap:10px; justify-content:space-between; align-items:center;">
             <button class="btn btn-ghost" style="color:#F43F5E;" onclick="deleteVoiceMessage()">Delete</button>
             <div style="display:flex; gap:10px;">
+                <button class="btn btn-ghost" id="voiceArchiveBtn" onclick="setVoiceArchived(true)">Archive</button>
                 <button class="btn btn-secondary" onclick="setVoiceStatus('in_review')">Mark under review</button>
                 <button class="btn btn-primary" onclick="setVoiceStatus('acknowledged')">Acknowledge</button>
             </div>
@@ -7352,7 +7363,7 @@ function setVoicesFilter(f) {
 function updateVoicesBadge() {
     const badge = document.getElementById('navVoicesBadge');
     if (!badge) return;
-    const newCount = (liveData.civicVoice || []).filter(m => (m.status || 'new') === 'new').length;
+    const newCount = (liveData.civicVoice || []).filter(m => !m.archived && (m.status || 'new') === 'new').length;
     if (newCount > 0) { badge.textContent = newCount; badge.style.display = ''; }
     else { badge.style.display = 'none'; }
 }
@@ -7365,9 +7376,10 @@ function renderResidentVoicesPage() {
     const all = liveData.civicVoice || [];
 
     if (statsEl) {
-        const newCount = all.filter(m => (m.status || 'new') === 'new').length;
+        const activeCount = all.filter(m => !m.archived).length;
+        const newCount = all.filter(m => !m.archived && (m.status || 'new') === 'new').length;
         statsEl.innerHTML =
-            `<div style="text-align:center;"><div style="font-size:20px; font-weight:700;">${all.length}</div><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);">Total</div></div>
+            `<div style="text-align:center;"><div style="font-size:20px; font-weight:700;">${activeCount}</div><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);">Total</div></div>
              <div style="text-align:center;"><div style="font-size:20px; font-weight:700; color:var(--accent);">${newCount}</div><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-tertiary);">New</div></div>`;
     }
 
@@ -7382,13 +7394,8 @@ function renderResidentVoicesPage() {
     // Safe relative-time — never let a weird timestamp throw and blank the list.
     const timeAgo = ts => { try { return ts ? getTimeAgo(ts) : ''; } catch (e) { return ''; } };
 
-    const msgs = voicesFilter === 'all' ? all : all.filter(m => (m.category || 'other') === voicesFilter);
-    if (!msgs.length) {
-        listEl.innerHTML = `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
-        return;
-    }
-    // Build each card in its own try/catch so one bad row can't blank them all.
-    const cards = msgs.map(m => {
+    // Build one message card. `archived` cards get a dimmed look + "Archived" tag.
+    const buildCard = (m, isArchived) => {
         try {
             const cat = catMeta[m.category] || catMeta.other;
             const who = (liveData.profiles || []).find(p => p.id === m.user_id);
@@ -7401,10 +7408,11 @@ function renderResidentVoicesPage() {
             const avatarHtml = avatar
                 ? `<img src="${esc(avatar)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`
                 : `<div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;">${initial}</div>`;
-            return `<div class="glass-card civic-voice-row" data-voice-id="${esc(String(m.id))}" style="padding:16px 18px; cursor:pointer; transition:border-color .15s, transform .1s;" onmouseover="this.style.borderColor='rgba(63,224,232,0.4)'" onmouseout="this.style.borderColor=''">
+            return `<div class="glass-card civic-voice-row" data-voice-id="${esc(String(m.id))}" style="padding:16px 18px; cursor:pointer; transition:border-color .15s, transform .1s; ${isArchived ? 'opacity:0.62;' : ''}" onmouseover="this.style.borderColor='rgba(63,224,232,0.4)'" onmouseout="this.style.borderColor=''">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                     <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
                     <span style="font-size:10px; font-weight:700; color:${sm.color}; background:${sm.bg}; padding:3px 8px; border-radius:999px;">${sm.label}</span>
+                    ${isArchived ? `<span style="font-size:10px; font-weight:700; color:var(--text-tertiary); background:rgba(255,255,255,0.06); padding:3px 8px; border-radius:999px;">Archived</span>` : ''}
                     <span style="margin-left:auto; font-size:12px; color:var(--text-tertiary);">${esc(formatVoiceDateTime(m.created_at))} &middot; ${esc(when)}</span>
                 </div>
                 <div style="font-size:15px; color:var(--text-primary); line-height:1.6;">${esc(m.message || '')}</div>
@@ -7416,8 +7424,30 @@ function renderResidentVoicesPage() {
                 </div>
             </div>`;
         } catch (e) { return ''; }
-    }).join('');
+    };
+
+    const activeAll = all.filter(m => !m.archived);
+    const archivedAll = all.filter(m => m.archived);
+
+    // Main list: active messages, honoring the category filter.
+    const msgs = voicesFilter === 'all' ? activeAll : activeAll.filter(m => (m.category || 'other') === voicesFilter);
+    const cards = msgs.map(m => buildCard(m, false)).join('');
     listEl.innerHTML = cards || `<div style="text-align:center; padding:48px 0; color:var(--text-tertiary); font-size:14px;">No messages in this view yet.</div>`;
+
+    // Archived section (separate, collapsed, same tab).
+    const archSection = document.getElementById('voicesArchiveSection');
+    const archList = document.getElementById('voicesArchiveList');
+    const archCount = document.getElementById('voicesArchiveCount');
+    if (archSection && archList) {
+        if (archivedAll.length) {
+            archSection.style.display = '';
+            if (archCount) archCount.textContent = archivedAll.length;
+            archList.innerHTML = archivedAll.map(m => buildCard(m, true)).join('');
+        } else {
+            archSection.style.display = 'none';
+            archList.innerHTML = '';
+        }
+    }
 }
 
 // Status styling shared by the list + the detail modal.
@@ -7476,6 +7506,22 @@ function renderVoicesReport() {
     }).join('');
 }
 
+// Archive / unarchive a resident message (CRM-only flag; resident status unchanged).
+async function setVoiceArchived(archived) {
+    if (!currentVoiceId || !sbClient) return;
+    try {
+        const { error } = await sbClient.from('civic_voice_messages')
+            .update({ archived }).eq('id', currentVoiceId);
+        if (error) throw error;
+        const m = (liveData.civicVoice || []).find(x => String(x.id) === String(currentVoiceId));
+        if (m) m.archived = archived;
+        closeVoiceDetail();
+        showToast(archived ? 'Message archived' : 'Message restored', 'success');
+        renderResidentVoicesPage();
+        updateVoicesBadge();
+    } catch (e) { showToast((archived ? 'Archive' : 'Restore') + ' failed: ' + (e.message || e), 'error'); }
+}
+
 // Staff delete a resident message (RLS: cv_staff_delete).
 async function deleteVoiceMessage() {
     if (!currentVoiceId || !sbClient) return;
@@ -7530,6 +7576,13 @@ function openVoiceDetail(id) {
         ? (formatVoiceDateTime(m.created_at) + ' · ' + getTimeAgo(m.created_at))
         : '';
     document.getElementById('voiceMessage').textContent = m.message || '';
+
+    // Archive button reflects current state (Archive vs Restore).
+    const archBtn = document.getElementById('voiceArchiveBtn');
+    if (archBtn) {
+        if (m.archived) { archBtn.textContent = 'Restore'; archBtn.setAttribute('onclick', 'setVoiceArchived(false)'); }
+        else { archBtn.textContent = 'Archive'; archBtn.setAttribute('onclick', 'setVoiceArchived(true)'); }
+    }
 
     document.getElementById('voiceDetailModal').classList.add('open');
 }
