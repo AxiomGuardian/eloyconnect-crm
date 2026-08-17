@@ -3775,6 +3775,14 @@ input[type="checkbox"].bulk-check:checked::after {
                     <div id="mtgTags" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
                 </div>
 
+                <div style="margin-bottom:18px;">
+                    <label class="form-label">Agenda packet / context file <span style="color:var(--text-tertiary); font-weight:400;">(PDF, doc, or short video — optional; feeds Meeting Intelligence)</span></label>
+                    <input type="file" id="mtgFile" accept=".pdf,.doc,.docx,.txt,video/mp4" style="display:none;" onchange="mtgFileChosen()">
+                    <div id="mtgFileDrop" onclick="document.getElementById('mtgFile').click()" style="border:1px dashed var(--border); border-radius:12px; padding:16px; text-align:center; cursor:pointer; transition:border-color .2s;">
+                        <div id="mtgFileLabel" style="font-size:13px; color:var(--text-tertiary);">Click to attach a PDF or file for context</div>
+                    </div>
+                </div>
+
                 <div style="padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; margin-bottom:20px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE — COMING SOON
@@ -9394,9 +9402,19 @@ function openNewMeeting() {
     ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput', 'mtgLink'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
+    const fileEl = document.getElementById('mtgFile'); if (fileEl) fileEl.value = '';
+    const fileLabel = document.getElementById('mtgFileLabel');
+    if (fileLabel) fileLabel.textContent = 'Click to attach a PDF or file for context';
     const d = document.getElementById('mtgDate');
     if (d) d.value = new Date().toISOString().split('T')[0];
     document.getElementById('mtgModal').classList.add('open');
+}
+
+// Show the chosen meeting context file's name.
+function mtgFileChosen() {
+    const f = document.getElementById('mtgFile')?.files?.[0];
+    const label = document.getElementById('mtgFileLabel');
+    if (label) label.textContent = f ? ('Attached: ' + f.name) : 'Click to attach a PDF or file for context';
 }
 
 function closeMtgModal() { document.getElementById('mtgModal').classList.remove('open'); }
@@ -9429,6 +9447,22 @@ async function saveMeeting(publish) {
         // Accept a full pasted Zoom/Meet invitation — extract just the URL.
         const linkRaw = document.getElementById('mtgLink')?.value?.trim() || '';
         const meetingUrl = (linkRaw.match(/https?:\/\/[^\s"'<>]+/) || [null])[0];
+
+        // Upload the agenda packet / context file to storage, if one was chosen.
+        let agendaPacketUrl = null;
+        const file = document.getElementById('mtgFile')?.files?.[0];
+        if (file) {
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `${Date.now()}-${safeName}`;
+            const { error: upErr } = await sbClient.storage.from('meeting-files').upload(path, file, { upsert: false });
+            if (upErr) {
+                showToast('File upload failed: ' + upErr.message, 'error');
+            } else {
+                const { data: pub } = sbClient.storage.from('meeting-files').getPublicUrl(path);
+                agendaPacketUrl = pub?.publicUrl || null;
+            }
+        }
+
         const { data: created, error } = await sbClient.from('meeting_records').insert({
             meeting_type: 'council',
             title,
@@ -9438,6 +9472,7 @@ async function saveMeeting(publish) {
             status: 'scheduled',
             public_summary: body || null,
             topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null,
+            agenda_packet_url: agendaPacketUrl,
             is_public: publish,
             city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
         }).select('id');
@@ -9526,6 +9561,7 @@ async function openCouncilMeeting(id) {
     tryTags(m.topics_discussed, 'TOPICS ON THE TABLE');
     tryTags(m.key_decisions, 'KEY DECISIONS');
     if (m.video_url) parts.push(`<a href="${escapeHtml(m.video_url)}" target="_blank" style="color:var(--accent); font-size:14px;">${svgIco('play', '#3FE0E8')} Watch the meeting video</a>`);
+    if (m.agenda_packet_url) parts.push(`<a href="${escapeHtml(m.agenda_packet_url)}" target="_blank" style="color:var(--accent); font-size:14px; display:inline-block; margin-top:8px;">${svgIco('columns', '#3FE0E8')} Open agenda packet / context file</a>`);
     if (!parts.length) parts.push('<div style="color:var(--text-tertiary); font-size:13px;">No agenda published yet — edit coming with the Meeting Intelligence build.</div>');
     document.getElementById('mdBody').innerHTML = parts.join('');
 
@@ -11794,7 +11830,7 @@ const roleConfig = {
         label: 'Mayor / City Manager',
         // user/initials/title are unused for display — the real signed-in user
         // populates the header via applyHeaderUser(). Kept only for RBAC page list.
-        pages: ['dashboard', 'reports', 'content', 'council', 'residents', 'grok', 'directory', 'enforcement', 'notifications', 'archive', 'leaders', 'staff']
+        pages: ['dashboard', 'reports', 'content', 'council', 'residents', 'grok', 'directory', 'enforcement', 'notifications', 'voices', 'archive', 'leaders', 'staff']
     },
     chambers: {
         label: 'Chambers of Commerce',
@@ -11815,7 +11851,7 @@ const roleConfig = {
         user: 'S. Kim',
         initials: 'SK',
         title: 'Content Editor',
-        pages: ['dashboard', 'reports', 'content', 'council', 'notifications', 'archive']
+        pages: ['dashboard', 'reports', 'content', 'council', 'notifications', 'voices', 'archive']
     }
 };
 
