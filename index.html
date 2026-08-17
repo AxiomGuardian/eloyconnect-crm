@@ -7384,7 +7384,7 @@ function renderResidentVoicesPage() {
             const avatarHtml = avatar
                 ? `<img src="${esc(avatar)}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;">`
                 : `<div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;">${initial}</div>`;
-            return `<div class="glass-card" onclick="openVoiceDetail('${esc(String(m.id))}')" style="padding:16px 18px; cursor:pointer; transition:border-color .15s, transform .1s;" onmouseover="this.style.borderColor='rgba(63,224,232,0.4)'" onmouseout="this.style.borderColor=''">
+            return `<div class="glass-card civic-voice-row" data-voice-id="${esc(String(m.id))}" style="padding:16px 18px; cursor:pointer; transition:border-color .15s, transform .1s;" onmouseover="this.style.borderColor='rgba(63,224,232,0.4)'" onmouseout="this.style.borderColor=''">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                     <span style="font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:${cat.color}; border:1px solid ${cat.color}; padding:3px 10px; border-radius:999px;">${cat.label}</span>
                     <span style="font-size:10px; font-weight:700; color:${sm.color}; background:${sm.bg}; padding:3px 8px; border-radius:999px;">${sm.label}</span>
@@ -7415,6 +7415,16 @@ function voiceStatusMeta(s) {
 }
 
 let currentVoiceId = null;
+
+// Robust click handling — one delegated listener catches taps on any resident
+// message row (survives re-renders; no reliance on inline handlers).
+if (!window.__voiceDelegationBound) {
+    window.__voiceDelegationBound = true;
+    document.addEventListener('click', function (e) {
+        const row = e.target.closest && e.target.closest('.civic-voice-row[data-voice-id]');
+        if (row && row.dataset.voiceId) openVoiceDetail(row.dataset.voiceId);
+    });
+}
 
 // Open the centered detail modal for one resident message.
 function openVoiceDetail(id) {
