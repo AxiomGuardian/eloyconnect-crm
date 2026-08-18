@@ -4707,6 +4707,10 @@ input[type="checkbox"].bulk-check:checked::after {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
                     <span class="composer-label">Polish with AI</span>
                 </button>
+                <button type="button" class="composer-btn" onclick="crmActionSteps('ceDescription', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6l1 1 1.5-2M4.5 12l1 1 1.5-2M4.5 18l1 1 1.5-2"/></svg>
+                    <span class="composer-label">Action Steps</span>
+                </button>
                 <button type="button" class="composer-btn" onclick="crmComposerUndo('ceDescription')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
                     <span class="composer-label">Undo</span>
@@ -5760,6 +5764,41 @@ async function crmComposerPolish(id, btn, mode) {
     } finally {
         if (wrap) wrap.classList.remove('aura-polish');
         if (btn) { _ceBtnLabel(btn, 'Polish with AI'); btn.disabled = false; btn.classList.remove('busy'); }
+    }
+}
+
+// ============================================================
+// ACTION-STEPS ENGINE — turns notes into a resident-facing explanation +
+// clear, reasoned action steps (bullets). Output uses "- " bullets that the
+// app renders as a checklist. Reusable for any channel.
+// ============================================================
+async function crmActionSteps(id, btn) {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    const text = (ta.value || '').trim();
+    if (!text) { showToast('Write or dictate the situation first', 'warning'); return; }
+    _crmSnapshot(id);
+    const wrap = ta.closest('.composer-field') || ta.parentElement;
+    if (wrap) wrap.classList.add('aura-polish');
+    if (btn) { _ceBtnLabel(btn, 'Thinking…'); btn.disabled = true; btn.classList.add('busy'); }
+    try {
+        const prompt = `You are the City of Eloy writing a code enforcement notice a resident reads in their phone app. From the notes below, write:
+1) One or two plain sentences explaining what the city observed and why it matters.
+2) A blank line, then clear ACTION STEPS the resident can take — each on its own line starting with "- ", and each step briefly stating the reason (example: "- Clear the weeds and debris from the front yard — this removes the fire and pest hazard.").
+3) A blank line, then one closing line offering help (how the city can assist or who to contact).
+Respectful, encouraging, plain English. No letterhead, salutation, signature, or invented code numbers. Return ONLY the text.
+
+NOTES:
+${text}`;
+        const out = await crmQuickAI(prompt, 900);
+        const clean = (out || '').trim();
+        if (clean) { ta.value = clean; showToast('Action steps drafted — review and edit', 'success'); }
+        else showToast('AI returned nothing — try again', 'warning');
+    } catch (e) {
+        showToast('AI failed: ' + (e.message || e), 'error');
+    } finally {
+        if (wrap) wrap.classList.remove('aura-polish');
+        if (btn) { _ceBtnLabel(btn, 'Action Steps'); btn.disabled = false; btn.classList.remove('busy'); }
     }
 }
 
