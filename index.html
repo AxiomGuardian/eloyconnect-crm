@@ -5647,10 +5647,14 @@ function ceAddressSuggest(q) {
                 const line2 = [p.city || p.county, p.state, p.postcode].filter(Boolean).join(', ');
                 return [line1, line2].filter(Boolean).join(', ');
             }).filter((v, i, a) => v && a.indexOf(v) === i);
-            if (!rows.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
-            box.innerHTML = rows.map(label =>
+            // Always let staff use exactly what they typed (rural house numbers
+            // often aren't in the map data), then map matches below.
+            const typedLabel = /eloy/i.test(q) ? q : `${q}, Eloy, AZ`;
+            const typedRow = `<div onclick="cePickAddress(this)" data-addr="${escapeHtml(typedLabel)}" style="padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); color:var(--accent); font-weight:600;" onmouseover="this.style.background='rgba(63,224,232,0.10)'" onmouseout="this.style.background=''">Use exactly: ${escapeHtml(typedLabel)}</div>`;
+            const matchRows = rows.map(label =>
                 `<div onclick="cePickAddress(this)" data-addr="${escapeHtml(label)}" style="padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); color:var(--text-secondary);" onmouseover="this.style.background='rgba(63,224,232,0.08)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background=''; this.style.color='var(--text-secondary)'">${escapeHtml(label)}</div>`
             ).join('');
+            box.innerHTML = typedRow + matchRows;
             box.style.display = 'block';
         } catch (e) { box.style.display = 'none'; }
     }, 160);
@@ -5754,10 +5758,34 @@ async function crmDictate(textareaId, btn) {
     };
     rec.onend = () => {
         ta.classList.remove('aura-dictate');
-        if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.classList.remove('recording', 'busy'); }
+        if (btn) { btn.classList.remove('recording'); }
         _crmRecog = null;
+        // Phone-style smart formatting: add punctuation + capitalization.
+        crmPunctuate(textareaId, btn);
     };
     try { rec.start(); } catch (e) { rec.onend(); }
+}
+
+// Restore punctuation + capitalization on a dictated transcript (mirrors the
+// app's Deepgram smart-format). Only fixes formatting — never changes words.
+async function crmPunctuate(id, btn) {
+    const ta = document.getElementById(id);
+    if (!ta) { if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); } return; }
+    const text = (ta.value || '').trim();
+    if (text.length < 2) { if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); } return; }
+    const wrap = ta.closest('.composer-field');
+    if (wrap) wrap.classList.add('aura-polish');
+    if (btn) { _ceBtnLabel(btn, 'Formatting…'); btn.disabled = true; btn.classList.add('busy'); }
+    try {
+        const prompt = `Add correct punctuation and capitalization to this transcribed speech. Do NOT change, add, remove, or reorder any words — only fix capitalization and add commas, periods, and question marks. Return ONLY the corrected text.\n\n${text}`;
+        const out = await callGrokAI(prompt);
+        const clean = (out || '').trim();
+        if (clean) ta.value = clean;
+    } catch (e) { /* keep the raw transcript on failure */ }
+    finally {
+        if (wrap) wrap.classList.remove('aura-polish');
+        if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); }
+    }
 }
 
 // Fallback: record the clip and transcribe on stop (Deepgram).
