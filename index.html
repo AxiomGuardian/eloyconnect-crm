@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* ============================================
    ELOY CONNECT CRM — PREMIUM DESIGN SYSTEM
@@ -1182,6 +1183,50 @@ textarea.form-input {
 #enforcementTableBody tr td, #residentsTableBody tr td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 #enforcementTableBody tr:hover td, #residentsTableBody tr:hover td { background: rgba(63,224,232,0.07); }
 #enforcementTableBody tr:hover td:first-child, #residentsTableBody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* ===== Resident profile modal — premium bits ===== */
+/* Contact rows: icon tile + fluid hover reveal */
+.rp-contact { display:flex; align-items:center; gap:12px; padding:10px 10px; border-radius:12px; transition:background .18s ease, transform .18s ease; }
+.rp-contact:hover { background:rgba(255,255,255,0.045); transform:translateX(2px); }
+.rp-ico { width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; }
+.rp-ico svg { width:18px; height:18px; }
+.rp-ico.ico-mail  { background:linear-gradient(140deg, rgba(63,224,232,0.22), rgba(63,224,232,0.05)); color:#7ff0f5; box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(63,224,232,0.10); }
+.rp-ico.ico-phone { background:linear-gradient(140deg, rgba(129,140,248,0.24), rgba(129,140,248,0.05)); color:#b3bcff; box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(129,140,248,0.10); }
+.rp-ico.ico-pin   { background:linear-gradient(140deg, rgba(244,114,182,0.22), rgba(244,114,182,0.05)); color:#ffa8d6; box-shadow:inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px rgba(244,114,182,0.10); }
+
+/* Activity stat cards: contrast + depth */
+.rp-stat { position:relative; border-radius:14px; padding:14px 8px; text-align:center; background:linear-gradient(165deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)); border:1px solid rgba(255,255,255,0.07); box-shadow:inset 0 1px 0 rgba(255,255,255,0.06); overflow:hidden; transition:transform .18s ease, box-shadow .18s ease; }
+.rp-stat:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.10); }
+.rp-stat .rp-num { font-size:28px; font-weight:800; line-height:1; letter-spacing:-0.5px; background-clip:text; -webkit-background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+.rp-num.num-cyan   { background-image:linear-gradient(180deg,#8bf4fa,#2fd0d8); }
+.rp-num.num-violet { background-image:linear-gradient(180deg,#c3b8ff,#7c6cf5); }
+.rp-num.num-green  { background-image:linear-gradient(180deg,#86efac,#22c55e); }
+.rp-num.num-dim    { background-image:linear-gradient(180deg,#9aa4b2,#6b7280); }
+.rp-stat .rp-lbl { font-size:10.5px; letter-spacing:0.4px; text-transform:uppercase; color:var(--text-tertiary); margin-top:7px; }
+
+/* Notice rows inside profile: real pop on hover */
+.rp-notice { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 12px; margin:0 -4px; border-radius:12px; cursor:pointer; border:1px solid transparent; transition:background .16s ease, transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.rp-notice + .rp-notice { margin-top:4px; }
+.rp-notice:hover { background:rgba(245,148,58,0.09); border-color:rgba(245,148,58,0.28); transform:translateY(-1px); box-shadow:0 8px 20px rgba(245,148,58,0.10); }
+.rp-notice:hover .rp-notice-title { color:#ffce9a; }
+.rp-notice-chev { color:var(--text-tertiary); opacity:0; transform:translateX(-4px); transition:opacity .16s ease, transform .16s ease; }
+.rp-notice:hover .rp-notice-chev { opacity:1; transform:translateX(0); }
+
+/* ===== Evidence photo buttons + thumbnails ===== */
+.ce-photo-btn { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; background:linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.10); box-shadow:inset 0 1px 0 rgba(255,255,255,0.06); transition:transform .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease; }
+.ce-photo-btn svg { width:16px; height:16px; }
+.ce-photo-btn:hover { transform:translateY(-1px); color:var(--text-primary); border-color:rgba(63,224,232,0.4); box-shadow:0 6px 16px rgba(63,224,232,0.12), inset 0 1px 0 rgba(255,255,255,0.08); }
+.ce-photo-btn-qr:hover { border-color:rgba(129,140,248,0.45); box-shadow:0 6px 16px rgba(129,140,248,0.14), inset 0 1px 0 rgba(255,255,255,0.08); }
+.ce-thumb { position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.10); background:rgba(255,255,255,0.03); }
+.ce-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.ce-thumb .ce-thumb-x { position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; border:none; background:rgba(8,12,20,0.78); color:#fff; font-size:13px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.ce-thumb .ce-thumb-x:hover { background:#e5484d; }
+.ce-thumb.ce-thumb-loading::after { content:''; position:absolute; inset:0; background:linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.14) 50%, transparent 80%); background-size:200% 100%; animation:ceShimmer 1.1s linear infinite; }
+@keyframes ceShimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
+.ce-thumb-badge { position:absolute; bottom:3px; left:3px; font-size:9px; font-weight:700; padding:2px 5px; border-radius:5px; background:rgba(129,140,248,0.85); color:#fff; letter-spacing:0.3px; }
+.ce-qr-pulse { width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 rgba(63,224,232,0.6); animation:ceQrPulse 1.6s ease-out infinite; }
+@keyframes ceQrPulse { 0%{ box-shadow:0 0 0 0 rgba(63,224,232,0.5);} 70%{ box-shadow:0 0 0 10px rgba(63,224,232,0);} 100%{ box-shadow:0 0 0 0 rgba(63,224,232,0);} }
+#ceQrCanvas img, #ceQrCanvas canvas { width:100% !important; height:100% !important; border-radius:6px; }
 
 /* Liquid-glass modal (used by the enforcement modal) */
 .modal.modal-glass {
@@ -4733,6 +4778,24 @@ input[type="checkbox"].bulk-check:checked::after {
             </div>
         </div>
 
+        <!-- Evidence Photos -->
+        <div style="margin-bottom: 14px;">
+            <label class="form-label">Evidence Photos <span style="color:var(--text-tertiary); font-weight:400;">(up to 20)</span></label>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                <button type="button" class="ce-photo-btn" onclick="document.getElementById('cePhotoInput').click()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.4-2.2h5.2L16 7"/></svg>
+                    <span>Upload photos</span>
+                </button>
+                <button type="button" class="ce-photo-btn ce-photo-btn-qr" onclick="ceOpenQrUpload()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M20 14v.01M14 20h.01M17 20h.01M20 17v4"/></svg>
+                    <span>Scan QR — upload from phone</span>
+                </button>
+                <input type="file" id="cePhotoInput" accept="image/*" multiple style="display:none" onchange="ceAddIssuePhotos(this.files); this.value='';">
+            </div>
+            <div id="cePhotoGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(78px,1fr)); gap:8px;"></div>
+            <div id="cePhotoHint" style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Snap the violation from your phone or drop files here. Photos attach to the notice and show in the resident's app.</div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div>
                 <label class="form-label">Compliance Deadline</label>
@@ -4750,6 +4813,22 @@ input[type="checkbox"].bulk-check:checked::after {
             <button class="btn btn-secondary" onclick="closeEnforcementModal()">Cancel</button>
             <button class="btn btn-primary" onclick="issueEnforcementNotice()">Issue Notice</button>
         </div>
+    </div>
+</div>
+
+<!-- QR PHONE-UPLOAD MODAL -->
+<div class="modal-overlay" id="ceQrModal" onclick="if(event.target===this)ceStopQrSession()">
+    <div class="modal modal-glass" style="width:min(420px,94vw); text-align:center; padding:26px 24px;">
+        <div style="display:flex; align-items:center; gap:9px; justify-content:center; margin-bottom:6px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);"></span>
+            <div style="font-size:16px; font-weight:700; color:var(--text-primary);">Upload from your phone</div>
+        </div>
+        <div style="font-size:12.5px; color:var(--text-tertiary); line-height:1.5; margin-bottom:18px;">Scan this with any phone camera. Photos you take appear here live.</div>
+        <div id="ceQrCanvas" style="width:212px; height:212px; margin:0 auto; background:#fff; border-radius:16px; padding:12px; box-shadow:0 10px 30px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center;"></div>
+        <div id="ceQrStatus" style="margin-top:16px; font-size:13px; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span class="ce-qr-pulse"></span><span>Waiting for photos…</span>
+        </div>
+        <button class="btn btn-secondary" style="margin-top:18px; width:100%;" onclick="ceStopQrSession()">Done</button>
     </div>
 </div>
 
@@ -12022,6 +12101,7 @@ function closeEnforcementDetail() {
 
 function openEnforcementModal() {
     populateCEResidents();
+    ceResetIssuePhotos();
     document.getElementById('enforcementModal').classList.add('open');
     // Set default deadline to 14 days from today
     const defaultDeadline = new Date();
@@ -12031,6 +12111,148 @@ function openEnforcementModal() {
 
 function closeEnforcementModal() {
     document.getElementById('enforcementModal').classList.remove('open');
+    ceStopQrSession();
+}
+
+// ===== Evidence photos (desktop upload + QR-from-phone) =====
+const CE_PROOF_BUCKET = 'notice-proofs';
+let _ceIssuePhotos = [];     // [{ id, url, source:'local'|'qr', uploading }]
+let _ceSessionToken = null;  // shared folder + QR session id
+
+function _ceUuid() { return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)); }
+function _ceEnsureToken() { if (!_ceSessionToken) _ceSessionToken = _ceUuid(); return _ceSessionToken; }
+
+function ceResetIssuePhotos() {
+    _ceIssuePhotos = [];
+    _ceSessionToken = null;
+    _ceQrKnown = new Set();
+    ceRenderPhotoGrid();
+}
+
+function ceRenderPhotoGrid() {
+    const grid = document.getElementById('cePhotoGrid');
+    if (!grid) return;
+    grid.innerHTML = _ceIssuePhotos.map(p => {
+        if (p.uploading) {
+            return `<div class="ce-thumb ce-thumb-loading" data-id="${p.id}"></div>`;
+        }
+        return `<div class="ce-thumb" data-id="${p.id}">
+            <img src="${escapeHtml(p.url)}" alt="evidence">
+            ${p.source === 'qr' ? '<span class="ce-thumb-badge">PHONE</span>' : ''}
+            <button type="button" class="ce-thumb-x" title="Remove" onclick="ceRemoveIssuePhoto('${p.id}')">&#215;</button>
+        </div>`;
+    }).join('');
+    const hint = document.getElementById('cePhotoHint');
+    if (hint) {
+        const done = _ceIssuePhotos.filter(p => !p.uploading).length;
+        hint.textContent = done ? `${done} of 20 photo${done === 1 ? '' : 's'} attached. They post with the notice and appear in the resident's app.` : 'Snap the violation from your phone or upload files. Photos attach to the notice and show in the resident\'s app.';
+    }
+}
+
+function ceRemoveIssuePhoto(id) {
+    _ceIssuePhotos = _ceIssuePhotos.filter(p => p.id !== id);
+    ceRenderPhotoGrid();
+}
+
+async function ceAddIssuePhotos(fileList) {
+    if (!sbClient) { showToast('Not connected', 'error'); return; }
+    const files = Array.from(fileList || []).filter(f => f.type && f.type.startsWith('image/'));
+    if (!files.length) return;
+    const room = 20 - _ceIssuePhotos.length;
+    if (room <= 0) { showToast('Up to 20 photos', 'warning'); return; }
+    if (files.length > room) showToast(`Only room for ${room} more photo${room === 1 ? '' : 's'}`, 'warning');
+    const take = files.slice(0, room);
+    const token = _ceEnsureToken();
+    for (const file of take) {
+        const id = _ceUuid();
+        _ceIssuePhotos.push({ id, url: null, source: 'local', uploading: true });
+        ceRenderPhotoGrid();
+        try {
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+            const path = `issue/${token}/${id}.${ext}`;
+            const { error } = await sbClient.storage.from(CE_PROOF_BUCKET).upload(path, file, { cacheControl: '3600', upsert: false });
+            if (error) throw error;
+            const url = sbClient.storage.from(CE_PROOF_BUCKET).getPublicUrl(path).data.publicUrl;
+            const rec = _ceIssuePhotos.find(p => p.id === id);
+            if (rec) { rec.url = url; rec.uploading = false; }
+        } catch (e) {
+            _ceIssuePhotos = _ceIssuePhotos.filter(p => p.id !== id);
+            showToast('Photo upload failed: ' + (e.message || e), 'error');
+        }
+        ceRenderPhotoGrid();
+    }
+}
+
+// ----- QR: staff scans, uploads from phone, photos land here live -----
+const CE_UPLOAD_FN = 'https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/notice-upload';
+let _ceQrChannel = null;
+let _ceQrPoll = null;
+let _ceQrKnown = new Set();
+
+async function ceOpenQrUpload() {
+    if (!sbClient) { showToast('Not connected', 'error'); return; }
+    const token = _ceEnsureToken();
+    try { await sbClient.from('notice_upload_sessions').upsert({ token, photos: [] }, { onConflict: 'token' }); } catch (e) { /* row may already exist */ }
+    const url = `${CE_UPLOAD_FN}?s=${encodeURIComponent(token)}`;
+    const canvas = document.getElementById('ceQrCanvas');
+    if (canvas) {
+        canvas.innerHTML = '';
+        if (window.QRCode) {
+            try { new QRCode(canvas, { text: url, width: 188, height: 188, colorDark: '#0b1120', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); }
+            catch (e) { canvas.innerHTML = `<div style="font-size:11px;color:#333;word-break:break-all;padding:6px;">${escapeHtml(url)}</div>`; }
+        } else {
+            canvas.innerHTML = `<div style="font-size:11px;color:#333;word-break:break-all;padding:6px;">${escapeHtml(url)}</div>`;
+        }
+    }
+    const st = document.getElementById('ceQrStatus');
+    if (st) st.innerHTML = '<span class="ce-qr-pulse"></span><span>Waiting for photos…</span>';
+    document.getElementById('ceQrModal').classList.add('open');
+    _ceQrKnown = new Set(_ceIssuePhotos.filter(p => p.url).map(p => p.url));
+    ceSubscribeQr(token);
+}
+
+function _ceQrAbsorb(photos) {
+    if (!Array.isArray(photos)) return;
+    let added = 0;
+    for (const url of photos) {
+        if (!url || _ceQrKnown.has(url)) continue;
+        if (_ceIssuePhotos.length >= 20) break;
+        _ceQrKnown.add(url);
+        _ceIssuePhotos.push({ id: _ceUuid(), url, source: 'qr', uploading: false });
+        added++;
+    }
+    if (added) {
+        ceRenderPhotoGrid();
+        const st = document.getElementById('ceQrStatus');
+        const fromPhone = _ceIssuePhotos.filter(p => p.source === 'qr').length;
+        if (st) st.innerHTML = `<span class="ce-qr-pulse"></span><span>${fromPhone} received from phone</span>`;
+        showToast(added + ' photo' + (added > 1 ? 's' : '') + ' arrived from phone', 'success');
+    }
+}
+
+function ceSubscribeQr(token) {
+    try { if (_ceQrChannel) sbClient.removeChannel(_ceQrChannel); } catch (e) {}
+    _ceQrChannel = sbClient.channel('nus-' + token)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notice_upload_sessions', filter: 'token=eq.' + token }, (payload) => {
+            const row = payload.new || payload.record;
+            if (row && row.photos) _ceQrAbsorb(row.photos);
+        })
+        .subscribe();
+    clearInterval(_ceQrPoll);
+    _ceQrPoll = setInterval(async () => {
+        try {
+            const { data } = await sbClient.from('notice_upload_sessions').select('photos').eq('token', token).single();
+            if (data && data.photos) _ceQrAbsorb(data.photos);
+        } catch (e) {}
+    }, 4000);
+}
+
+function ceStopQrSession() {
+    const m = document.getElementById('ceQrModal');
+    if (m) m.classList.remove('open');
+    try { if (_ceQrChannel) sbClient.removeChannel(_ceQrChannel); } catch (e) {}
+    _ceQrChannel = null;
+    clearInterval(_ceQrPoll); _ceQrPoll = null;
 }
 
 function saveEnforcementDraft() {
@@ -12055,6 +12277,10 @@ async function issueEnforcementNotice() {
     }
     if (!sbClient) { showToast('Not connected', 'error'); return; }
 
+    const stillUploading = _ceIssuePhotos.some(p => p.uploading);
+    if (stillUploading) { showToast('Photos are still uploading — one moment', 'warning'); return; }
+    const proofUrls = _ceIssuePhotos.filter(p => p.url).map(p => p.url);
+
     try {
         const payload = {
             resident_id: residentId,
@@ -12062,6 +12288,7 @@ async function issueEnforcementNotice() {
             severity, status: 'pending', deadline,
             issued_by_name: inspector || 'Code Enforcement'
         };
+        if (proofUrls.length) { payload.proof_photo_urls = proofUrls; payload.proof_photo_url = proofUrls[0]; }
         const { data, error } = await sbClient.from('notices').insert(payload).select().single();
         if (error) throw error;
 
@@ -12078,6 +12305,7 @@ async function issueEnforcementNotice() {
         ['ceAddress', 'ceTitle', 'ceDescription'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('ceType').value = '';
         if (resSel) resSel.selectedIndex = 0;
+        ceResetIssuePhotos();
     } catch (e) {
         showToast('Failed to issue notice: ' + (e.message || e), 'error');
     }
@@ -13120,10 +13348,15 @@ function openResidentDetail(userId) {
             const sm = (typeof voiceStatusMeta === 'function') ? null : null;
             const cs = (typeof CE_STATUS !== 'undefined' && CE_STATUS[eff]) ? CE_STATUS[eff] : { label: eff, css: 'ce-status-pending' };
             const dt = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-            return `<div onclick="closeResidentDetail(); setTimeout(()=>openEnforcementDetailById('${escapeHtml(String(n.id))}'), 60);" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;">
-                <div style="min-width:0;">
-                    <div style="font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(n.title || 'Notice')}</div>
-                    <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">${escapeHtml(n.address || '')} · ${dt}</div>
+            return `<div class="rp-notice" onclick="closeResidentDetail(); setTimeout(()=>openEnforcementDetailById('${escapeHtml(String(n.id))}'), 60);">
+                <div style="min-width:0; display:flex; align-items:center; gap:8px;">
+                    <span class="rp-notice-chev" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </span>
+                    <div style="min-width:0;">
+                        <div class="rp-notice-title" style="font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .16s ease;">${escapeHtml(n.title || 'Notice')}</div>
+                        <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">${escapeHtml(n.address || '')} · ${dt}</div>
+                    </div>
                 </div>
                 <span class="status ${cs.css}" style="font-size:11px; flex-shrink:0;"><span class="status-dot"></span>${cs.label}</span>
             </div>`;
@@ -13148,27 +13381,27 @@ function openResidentDetail(userId) {
         </div>
 
         <!-- Contact Info -->
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Contact Information</div>
-            <div style="display: grid; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(63,224,232,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9993;</div>
-                    <div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Email</div>
-                        <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.email || 'Not provided')}</div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding-left:6px;">Contact Information</div>
+            <div style="display: grid; gap: 2px;">
+                <div class="rp-contact">
+                    <div class="rp-ico ico-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"></rect><path d="M3 6.5l9 6 9-6"></path></svg></div>
+                    <div style="min-width:0;">
+                        <div style="font-size: 10.5px; color: var(--text-tertiary); text-transform:uppercase; letter-spacing:0.3px;">Email</div>
+                        <div style="font-size: 13px; color: var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(resident.email || 'Not provided')}</div>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(63,224,232,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#9742;</div>
-                    <div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Phone</div>
+                <div class="rp-contact">
+                    <div class="rp-ico ico-phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.6a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"></path></svg></div>
+                    <div style="min-width:0;">
+                        <div style="font-size: 10.5px; color: var(--text-tertiary); text-transform:uppercase; letter-spacing:0.3px;">Phone</div>
                         <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.phone || 'Not provided')}</div>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(63,224,232,0.1); display: flex; align-items: center; justify-content: center; font-size: 14px;">&#128205;</div>
-                    <div>
-                        <div style="font-size: 11px; color: var(--text-tertiary);">Address</div>
+                <div class="rp-contact">
+                    <div class="rp-ico ico-pin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"></path><circle cx="12" cy="10" r="2.6"></circle></svg></div>
+                    <div style="min-width:0;">
+                        <div style="font-size: 10.5px; color: var(--text-tertiary); text-transform:uppercase; letter-spacing:0.3px;">Address</div>
                         <div style="font-size: 13px; color: var(--text-primary);">${escapeHtml(resident.address || 'Not provided')}</div>
                     </div>
                 </div>
@@ -13176,79 +13409,34 @@ function openResidentDetail(userId) {
         </div>
 
         <!-- Activity Stats -->
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Activity</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
-                <div>
-                    <div style="font-size: 22px; font-weight: 700; color: var(--accent);">${reportCount}</div>
-                    <div style="font-size: 11px; color: var(--text-tertiary);">Reports</div>
-                </div>
-                <div>
-                    <div style="font-size: 22px; font-weight: 700; color: var(--info);">${langLabel}</div>
-                    <div style="font-size: 11px; color: var(--text-tertiary);">Language</div>
-                </div>
-                <div>
-                    <div style="font-size: 22px; font-weight: 700; color: ${pushStatus === 'Enabled' ? 'var(--success)' : 'var(--text-tertiary)'};">${pushStatus === 'Enabled' ? 'On' : 'Off'}</div>
-                    <div style="font-size: 11px; color: var(--text-tertiary);">Push Alerts</div>
-                </div>
+        <div style="margin-bottom: 14px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-left:2px;">Activity</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div class="rp-stat"><div class="rp-num num-cyan">${reportCount}</div><div class="rp-lbl">Reports</div></div>
+                <div class="rp-stat"><div class="rp-num num-violet" style="font-size:20px; padding-top:4px;">${langLabel}</div><div class="rp-lbl">Language</div></div>
+                <div class="rp-stat"><div class="rp-num ${pushStatus === 'Enabled' ? 'num-green' : 'num-dim'}">${pushStatus === 'Enabled' ? 'On' : 'Off'}</div><div class="rp-lbl">Push Alerts</div></div>
             </div>
         </div>
 
-        <!-- Last Active -->
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 13px; color: var(--text-secondary);">Last Active</div>
-                <div style="font-size: 13px; font-weight: 500; color: var(--text-primary);">${lastActive}</div>
+        <!-- Code Enforcement Notices (primary) -->
+        <div style="background: rgba(245,148,58,0.06); border: 1px solid rgba(245,148,58,0.18); border-radius: 14px; padding: 14px; margin-bottom: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 8px; padding-left:2px;">
+                <span style="width:7px; height:7px; border-radius:50%; background:#F5943A; box-shadow:0 0 8px rgba(245,148,58,0.7);"></span>
+                <div style="font-size: 11px; font-weight: 700; color: #F5943A; text-transform: uppercase; letter-spacing: 0.5px;">Code Enforcement Notices (${userNotices.length})</div>
             </div>
-        </div>
-
-        <!-- Report History -->
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px;">
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Report History</div>
-            ${reportsHtml}
-        </div>
-
-        <!-- Code Enforcement Notices -->
-        <div style="background: rgba(245,148,58,0.05); border: 1px solid rgba(245,148,58,0.15); border-radius: 12px; padding: 16px; margin-top: 14px;">
-            <div style="font-size: 11px; font-weight: 600; color: #F5943A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Code Enforcement Notices (${userNotices.length})</div>
             ${noticesHtml}
         </div>
 
-        <!-- Deletion Request Banner -->
-        ${resident.deletion_requested_at ? `
-        <div style="background: rgba(255,152,0,0.12); border: 1px solid rgba(255,152,0,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,152,0,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px;">&#9888;</div>
-                <div>
-                    <div style="font-size: 13px; font-weight: 600; color: #ff9800;">Account Deletion Requested</div>
-                    <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 2px;">Requested ${new Date(resident.deletion_requested_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>
-                </div>
-            </div>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-primary" style="flex: 1; background: #d32f2f; border-color: #d32f2f; font-size: 12px; padding: 8px 12px;" data-uid="${escapeHtml(userId)}" onclick="processAccountDeletion(this.dataset.uid)">&#128465; Delete Account</button>
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px;" data-uid="${escapeHtml(userId)}" onclick="dismissDeletionRequest(this.dataset.uid)">Dismiss Request</button>
-            </div>
-        </div>` : ''}
+        <!-- Report History -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px; margin-bottom:14px;">
+            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-left:2px;">Report History</div>
+            ${reportsHtml}
+        </div>
 
-        <!-- Actions -->
-        <div style="margin-top: 20px;">
-            <div style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Account Management</div>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <select class="form-input" style="flex: 1; padding: 10px 12px; font-size: 13px;" data-uid="${escapeHtml(userId)}" onchange="updateResidentRole(this.dataset.uid, this.value)">
-                    <option value="resident" ${resident.role === 'resident' ? 'selected' : ''}>Resident</option>
-                    <option value="staff" ${resident.role === 'staff' ? 'selected' : ''}>Staff</option>
-                    <option value="admin" ${resident.role === 'admin' ? 'selected' : ''}>Admin</option>
-                </select>
-            </div>
-            ${resident.deactivated_at ? `
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 10px 12px; background: rgba(255,152,0,0.1); border-radius: 8px; border: 1px solid rgba(255,152,0,0.2);">
-                <span style="font-size: 11px; color: #ff9800; font-weight: 600;">Account deactivated ${new Date(resident.deactivated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-            </div>` : ''}
-            ${!resident.deletion_requested_at ? `
-            <div style="display: flex; gap: 8px;">
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: #d32f2f; border-color: rgba(211,47,47,0.3);" data-uid="${escapeHtml(userId)}" onclick="processAccountDeletion(this.dataset.uid)">&#128465; Delete Account</button>
-                <button class="btn btn-ghost" style="flex: 1; font-size: 12px; padding: 8px 12px; color: ${resident.deactivated_at ? '#4caf50' : '#ff9800'}; border-color: ${resident.deactivated_at ? 'rgba(76,175,80,0.3)' : 'rgba(255,152,0,0.3)'};" data-uid="${escapeHtml(userId)}" onclick="deactivateResident(this.dataset.uid)">${resident.deactivated_at ? 'Reactivate' : 'Deactivate'}</button>
-            </div>` : ''}
+        <!-- Last Active -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+            <div style="font-size: 12px; color: var(--text-tertiary); text-transform:uppercase; letter-spacing:0.4px;">Last Active</div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${lastActive}</div>
         </div>
     `;
 
