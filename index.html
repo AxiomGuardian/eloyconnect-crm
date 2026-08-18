@@ -1116,16 +1116,16 @@ textarea.form-input {
 @property --pa { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 /* Listening waveform — clean, bottom-anchored equalizer (audio-reactive) */
 .dict-wave-overlay {
-    position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex;
-    align-items: flex-end; justify-content: space-between; gap: 12px;
+    position: absolute; left: 12px; right: 12px; bottom: 9px; display: flex;
+    align-items: flex-end; justify-content: space-between; gap: 10px;
     pointer-events: none; z-index: 3; opacity: 0; transition: opacity .28s ease;
 }
 .dict-wave-overlay.active { opacity: 1; }
-.dict-wave-overlay .dwbars { display: flex; align-items: flex-end; gap: 2.5px; height: 26px; }
+.dict-wave-overlay .dwbars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
 .dict-wave-overlay .dwbars span {
-    width: 2.5px; height: 3px; border-radius: 99px;
+    width: 2px; height: 2px; border-radius: 99px;
     background: linear-gradient(180deg, #8BEDF2, #3FE0E8);
-    box-shadow: 0 0 6px rgba(63,224,232,0.45);
+    box-shadow: 0 0 5px rgba(63,224,232,0.4);
     transition: height .06s ease;
 }
 .dict-wave-overlay.pulse .dwbars span { animation: dwPulse 1s ease-in-out infinite; }
@@ -1358,16 +1358,20 @@ input[type="checkbox"].bulk-check:checked::after {
     background: linear-gradient(90deg, transparent, rgba(63,224,232,0.95), rgba(246,196,69,0.95), transparent);
     height: 2.5px;
 }
-/* Enforcement variant — red bleeding into warm orange */
-.aura-host.aura-enforce { --aura: 244,63,94; }
+/* Enforcement variant — premium cyan → violet → magenta (dynamic, liquid-glass) */
+.aura-host.aura-enforce { --aura: 130,110,255; }
 .aura-host.aura-enforce .aura-glow {
-    background: radial-gradient(ellipse at 50% -18%, rgba(244,63,94,0.24), rgba(245,148,58,0.14) 45%, transparent 72%);
-    height: 220px;
+    background: radial-gradient(ellipse at 50% -20%, rgba(63,224,232,0.22), rgba(139,92,246,0.18) 42%, rgba(236,72,153,0.12) 62%, transparent 80%);
+    height: 250px;
 }
 .aura-host.aura-enforce .aura-line {
-    background: linear-gradient(90deg, transparent, rgba(244,63,94,0.95), rgba(245,148,58,0.95), transparent);
-    height: 2.5px;
+    left: 0; width: 100%;
+    background: linear-gradient(90deg, transparent 0%, #3FE0E8 22%, #8B5CF6 50%, #EC4899 78%, transparent 100%);
+    background-size: 220% 100%;
+    height: 2px;
+    animation: auraLineFlow 4.2s linear infinite;
 }
+@keyframes auraLineFlow { 0% { background-position: 0% 0; } 100% { background-position: 220% 0; } }
 .aura-host {
     border: 1px solid rgba(var(--aura), 0.28) !important;
     animation: auraBreathe 4.5s ease-in-out infinite;
@@ -4707,6 +4711,10 @@ input[type="checkbox"].bulk-check:checked::after {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
                     <span class="composer-label">Undo</span>
                 </button>
+                <button type="button" class="composer-btn" onclick="crmComposerRedo('ceDescription')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>
+                    <span class="composer-label">Redo</span>
+                </button>
             </div>
         </div>
 
@@ -5568,16 +5576,28 @@ function _stopDictVisualizer() {
 // reusable on any textarea (code enforcement, council meetings, etc.).
 // ============================================
 const _crmUndo = {};   // textareaId -> [snapshots]
+const _crmRedo = {};   // textareaId -> [snapshots]
 function _crmSnapshot(id) {
     const ta = document.getElementById(id);
     if (!ta) return;
     (_crmUndo[id] = _crmUndo[id] || []).push(ta.value);
+    _crmRedo[id] = [];   // a new edit invalidates the redo stack
 }
 function crmComposerUndo(id) {
     const ta = document.getElementById(id);
     const st = _crmUndo[id];
-    if (ta && st && st.length) { ta.value = st.pop(); }
-    else { showToast('Nothing to undo', 'info'); }
+    if (ta && st && st.length) {
+        (_crmRedo[id] = _crmRedo[id] || []).push(ta.value);
+        ta.value = st.pop();
+    } else { showToast('Nothing to undo', 'info'); }
+}
+function crmComposerRedo(id) {
+    const ta = document.getElementById(id);
+    const st = _crmRedo[id];
+    if (ta && st && st.length) {
+        (_crmUndo[id] = _crmUndo[id] || []).push(ta.value);
+        ta.value = st.pop();
+    } else { showToast('Nothing to redo', 'info'); }
 }
 // Set a composer button's label span (keeps the SVG icon intact).
 function _ceBtnLabel(btn, text) {
@@ -5590,12 +5610,14 @@ function _ceBtnLabel(btn, text) {
 const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>`;
 const SVG_SPARK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>`;
 const SVG_UNDO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>`;
+const SVG_REDO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>`;
 function composerButtonsHTML(inputId, polishMode) {
     const m = polishMode || 'notice';
     return `
         <button type="button" class="composer-btn" onclick="crmDictate('${inputId}', this)">${SVG_MIC}<span class="composer-label">Dictate</span></button>
         <button type="button" class="composer-btn" onclick="crmComposerPolish('${inputId}', this, '${m}')">${SVG_SPARK}<span class="composer-label">Polish with AI</span></button>
-        <button type="button" class="composer-btn" onclick="crmComposerUndo('${inputId}')">${SVG_UNDO}<span class="composer-label">Undo</span></button>`;
+        <button type="button" class="composer-btn" onclick="crmComposerUndo('${inputId}')">${SVG_UNDO}<span class="composer-label">Undo</span></button>
+        <button type="button" class="composer-btn" onclick="crmComposerRedo('${inputId}')">${SVG_REDO}<span class="composer-label">Redo</span></button>`;
 }
 
 // ---- Notice conversation thread (city <-> resident) ----
@@ -5728,7 +5750,7 @@ async function crmComposerPolish(id, btn, mode) {
     try {
         const prompt = (mode === 'message')
             ? `Rewrite the following into a clear, warm, professional message from the City of Eloy to a resident about their code enforcement notice. Keep it brief and genuinely helpful, plain English, first-person from the city ("The City of Eloy..."). No letterhead, salutation, or signature. Keep every fact and offer. Return ONLY the rewritten message.\n\nTEXT:\n${text}`
-            : `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
+            : `Rewrite the following into a clear code enforcement notice written by the City of Eloy directly TO the resident, in plain, respectful, human language. Structure it as: (1) one sentence stating what the city observed; (2) one or two sentences on exactly what the resident needs to do to bring it into compliance; (3) a brief closing that offers help. Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
         const out = await crmQuickAI(prompt, 700);
         const clean = (out || '').trim();
         if (clean) { ta.value = clean; showToast('Polished — review and edit as needed', 'success'); }
@@ -5886,7 +5908,7 @@ function _crmStartWave(wrap, stream) {
         wrap.appendChild(ov);
     }
     const barsEl = ov.querySelector('.dwbars');
-    const BARS = 24;
+    const BARS = 14;
     barsEl.innerHTML = '';
     _dg.bars = [];
     for (let i = 0; i < BARS; i++) { const s = document.createElement('span'); barsEl.appendChild(s); _dg.bars.push(s); }
@@ -5906,7 +5928,7 @@ function _crmStartWave(wrap, stream) {
             for (let i = 0; i < _dg.bars.length; i++) {
                 let sum = 0; for (let j = 0; j < step; j++) sum += data[i * step + j] || 0;
                 const amp = sum / step / 255;
-                _dg.bars[i].style.height = (3 + Math.min(1, amp * 1.4) * 22).toFixed(1) + 'px';
+                _dg.bars[i].style.height = (2 + Math.min(1, amp * 1.4) * 13).toFixed(1) + 'px';
             }
         };
         draw();
