@@ -1417,13 +1417,15 @@ input[type="checkbox"].bulk-check:checked::after {
     right: -480px;
     width: 480px;
     height: 100vh;
-    background: #0E1729;
-    border-left: 1px solid rgba(255,255,255,0.06);
+    background: linear-gradient(180deg, rgba(20,30,50,0.92), rgba(11,17,30,0.96));
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border-left: 1px solid rgba(255,255,255,0.10);
     z-index: 200;
     transition: right 0.35s var(--ease);
     display: flex;
     flex-direction: column;
-    box-shadow: -24px 0 80px rgba(0,0,0,0.5);
+    box-shadow: -24px 0 80px rgba(0,0,0,0.55), inset 1px 0 0 rgba(255,255,255,0.06);
 }
 
 .detail-panel::before {
@@ -1453,6 +1455,7 @@ input[type="checkbox"].bulk-check:checked::after {
     flex: 1;
     overflow-y: auto;
     padding: 24px;
+    padding-bottom: 56px;
 }
 
 .detail-body::-webkit-scrollbar { width: 4px; }
@@ -4627,9 +4630,10 @@ input[type="checkbox"].bulk-check:checked::after {
                     <option value="">-- Select resident --</option>
                 </select>
             </div>
-            <div>
+            <div style="position:relative;">
                 <label class="form-label">Property Address</label>
-                <input class="form-input" id="ceAddress" placeholder="123 N. Main St, Eloy, AZ">
+                <input class="form-input" id="ceAddress" placeholder="Start typing an address…" autocomplete="off" oninput="ceAddressSuggest(this.value)" onblur="setTimeout(()=>{const b=document.getElementById('ceAddressSuggest'); if(b){b.style.display='none';}}, 200)">
+                <div id="ceAddressSuggest" style="display:none; position:absolute; z-index:60; left:0; right:0; top:100%; margin-top:4px; background:#0E1729; border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.55);"></div>
             </div>
         </div>
 
@@ -5557,7 +5561,124 @@ function _ceBtnLabel(btn, text) {
     const l = btn.querySelector('.composer-label');
     if (l) l.textContent = text; else btn.textContent = text;
 }
-async function crmComposerPolish(id, btn) {
+
+// Shared composer icons + a row builder so any textarea gets the app model.
+const SVG_MIC = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>`;
+const SVG_SPARK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>`;
+const SVG_UNDO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>`;
+function composerButtonsHTML(inputId, polishMode) {
+    const m = polishMode || 'notice';
+    return `
+        <button type="button" class="composer-btn" onclick="crmDictate('${inputId}', this)">${SVG_MIC}<span class="composer-label">Dictate</span></button>
+        <button type="button" class="composer-btn" onclick="crmComposerPolish('${inputId}', this, '${m}')">${SVG_SPARK}<span class="composer-label">Polish with AI</span></button>
+        <button type="button" class="composer-btn" onclick="crmComposerUndo('${inputId}')">${SVG_UNDO}<span class="composer-label">Undo</span></button>`;
+}
+
+// ---- Notice conversation thread (city <-> resident) ----
+async function loadNoticeThread(noticeId) {
+    const el = document.getElementById('ceThread');
+    if (!el || !sbClient) return;
+    el.innerHTML = `<div style="font-size:12px; color:var(--text-tertiary); padding:6px;">Loading…</div>`;
+    try {
+        const { data, error } = await sbClient.from('notice_messages')
+            .select('*').eq('notice_id', noticeId).order('created_at', { ascending: true });
+        if (error) throw error;
+        renderNoticeThread(data || []);
+    } catch (e) {
+        el.innerHTML = `<div style="font-size:12px; color:var(--text-tertiary); padding:6px;">Couldn't load the conversation.</div>`;
+    }
+}
+function renderNoticeThread(msgs) {
+    const el = document.getElementById('ceThread');
+    if (!el) return;
+    if (!msgs.length) {
+        el.innerHTML = `<div style="font-size:12px; color:var(--text-tertiary); padding:6px;">No messages yet — send the resident a note or an offer to help.</div>`;
+        return;
+    }
+    el.innerHTML = msgs.map(m => {
+        const city = m.sender_role === 'city';
+        const when = formatVoiceDateTime(m.created_at);
+        return `<div style="display:flex; ${city ? 'justify-content:flex-end;' : ''}">
+            <div style="max-width:82%; padding:9px 12px; border-radius:12px; font-size:13px; line-height:1.5; ${city ? 'background:rgba(63,224,232,0.12); border:1px solid rgba(63,224,232,0.25);' : 'background:var(--surface); border:1px solid var(--border);'}">
+                <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:${city ? 'var(--accent)' : 'var(--text-tertiary)'}; margin-bottom:3px;">${city ? 'City of Eloy' : 'Resident'} &middot; ${escapeHtml(when)}</div>
+                <div style="color:var(--text-primary); white-space:pre-wrap;">${escapeHtml(m.body)}</div>
+            </div>
+        </div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+}
+async function sendNoticeThreadMessage(noticeId) {
+    const ta = document.getElementById('ceThreadInput');
+    if (!ta || !sbClient) return;
+    const body = (ta.value || '').trim();
+    if (!body) { showToast('Write a message first', 'warning'); return; }
+    try {
+        const { error } = await sbClient.from('notice_messages').insert({ notice_id: noticeId, sender_role: 'city', body });
+        if (error) throw error;
+        ta.value = '';
+        await loadNoticeThread(noticeId);
+        showToast('Message sent to the resident', 'success');
+        const row = (liveData.notices || []).find(x => String(x.id) === String(noticeId));
+        if (row) ceNotifyResident(row, 'Message from the City', body.length > 90 ? body.slice(0, 90) + '…' : body);
+    } catch (e) { showToast('Send failed: ' + (e.message || e), 'error'); }
+}
+
+// Address autocomplete (free OpenStreetMap geocoder, biased to Eloy, AZ).
+let _ceAddrTimer = null;
+function ceAddressSuggest(q) {
+    clearTimeout(_ceAddrTimer);
+    const box = document.getElementById('ceAddressSuggest');
+    if (!box) return;
+    q = (q || '').trim();
+    if (q.length < 3) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    _ceAddrTimer = setTimeout(async () => {
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=us&q=${encodeURIComponent(q + ', Eloy, Arizona')}`;
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            const data = await res.json();
+            if (!Array.isArray(data) || !data.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.innerHTML = data.map(d => {
+                const label = String(d.display_name || '').replace(/, United States$/, '');
+                return `<div onclick="cePickAddress(this)" data-addr="${escapeHtml(label)}" style="padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); color:var(--text-secondary);" onmouseover="this.style.background='rgba(63,224,232,0.08)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background=''; this.style.color='var(--text-secondary)'">${escapeHtml(label)}</div>`;
+            }).join('');
+            box.style.display = 'block';
+        } catch (e) { box.style.display = 'none'; }
+    }, 450);
+}
+function cePickAddress(el) {
+    const addr = el.getAttribute('data-addr') || '';
+    const inp = document.getElementById('ceAddress');
+    if (inp) inp.value = addr;
+    const box = document.getElementById('ceAddressSuggest');
+    if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+}
+
+// Business referral — pull a local company from the Business Directory into the message.
+function populateBizReferral() {
+    const sel = document.getElementById('ceBizReferral');
+    if (!sel) return;
+    const biz = (liveData.businesses || []).filter(b => b && (b.status ? b.status === 'approved' : true) && b.name);
+    sel._biz = biz;
+    sel.innerHTML = '<option value="">+ Suggest a local business…</option>' +
+        biz.map((b, i) => `<option value="${i}">${escapeHtml(b.name)}</option>`).join('');
+}
+function insertBusinessReferral() {
+    const sel = document.getElementById('ceBizReferral');
+    const ta = document.getElementById('ceThreadInput');
+    if (!sel || !ta || sel.value === '') return;
+    const b = (sel._biz || [])[Number(sel.value)];
+    if (!b) return;
+    const parts = [];
+    if (b.phone) parts.push(b.phone);
+    if (b.email) parts.push(b.email);
+    if (b.website) parts.push(b.website);
+    const contact = parts.length ? ' (' + parts.join(' · ') + ')' : '';
+    const line = `${b.name} is one of our local Eloy businesses that can help with this${contact}. Reply here if you'd like us to connect you.`;
+    ta.value = ta.value ? (ta.value.trim() + '\n' + line) : line;
+    sel.value = '';
+    showToast('Referral added — edit or send', 'info');
+}
+async function crmComposerPolish(id, btn, mode) {
     const ta = document.getElementById(id);
     if (!ta) return;
     const text = (ta.value || '').trim();
@@ -5567,7 +5688,9 @@ async function crmComposerPolish(id, btn) {
     if (wrap) wrap.classList.add('aura-polish');
     if (btn) { _ceBtnLabel(btn, 'Polishing…'); btn.disabled = true; btn.classList.add('busy'); }
     try {
-        const prompt = `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
+        const prompt = (mode === 'message')
+            ? `Rewrite the following into a clear, warm, professional message from the City of Eloy to a resident about their code enforcement notice. Keep it brief and genuinely helpful, plain English, first-person from the city ("The City of Eloy..."). No letterhead, salutation, or signature. Keep every fact and offer. Return ONLY the rewritten message.\n\nTEXT:\n${text}`
+            : `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
         const out = await callGrokAI(prompt);
         const clean = (out || '').trim();
         if (clean) { ta.value = clean; showToast('Polished — review and edit as needed', 'success'); }
@@ -11473,6 +11596,23 @@ function openEnforcementDetail(notice) {
             </a>
         </div>` : ''}
 
+        <div style="margin-bottom: 22px;">
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 8px;">Conversation with resident</div>
+            <div id="ceThread" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding:6px 2px; margin-bottom:10px;"></div>
+            <div class="composer-field">
+                <textarea class="form-input" id="ceThreadInput" rows="2" placeholder="Message the resident — offer help, request an update, or clarify."></textarea>
+            </div>
+            <div style="margin-top:8px;">
+                <select class="form-input" id="ceBizReferral" onchange="insertBusinessReferral()" style="font-size:12px; padding:7px 10px;">
+                    <option value="">+ Suggest a local business…</option>
+                </select>
+            </div>
+            <div class="composer-row">
+                ${composerButtonsHTML('ceThreadInput', 'message')}
+                <button type="button" class="btn btn-primary" style="margin-left:auto;" onclick="sendNoticeThreadMessage('${notice._dbId}')">Send</button>
+            </div>
+        </div>
+
         <div style="margin-bottom: 20px;">
             <label class="form-label">Update Status</label>
             <select class="form-input" onchange="updateNoticeStatus('${notice._dbId}', this.value)">
@@ -11500,6 +11640,8 @@ function openEnforcementDetail(notice) {
     `;
 
     panel.classList.add('open');
+    try { loadNoticeThread(notice._dbId); } catch (e) {}
+    try { populateBizReferral(); } catch (e) {}
 }
 
 function closeEnforcementDetail() {
