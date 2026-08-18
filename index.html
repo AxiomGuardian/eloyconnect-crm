@@ -1281,6 +1281,16 @@ input[type="checkbox"].bulk-check:checked::after {
     background: linear-gradient(90deg, transparent, rgba(63,224,232,0.95), rgba(246,196,69,0.95), transparent);
     height: 2.5px;
 }
+/* Enforcement variant — red bleeding into warm orange */
+.aura-host.aura-enforce { --aura: 244,63,94; }
+.aura-host.aura-enforce .aura-glow {
+    background: radial-gradient(ellipse at 50% -18%, rgba(244,63,94,0.24), rgba(245,148,58,0.14) 45%, transparent 72%);
+    height: 220px;
+}
+.aura-host.aura-enforce .aura-line {
+    background: linear-gradient(90deg, transparent, rgba(244,63,94,0.95), rgba(245,148,58,0.95), transparent);
+    height: 2.5px;
+}
 .aura-host {
     border: 1px solid rgba(var(--aura), 0.28) !important;
     animation: auraBreathe 4.5s ease-in-out infinite;
@@ -4552,8 +4562,10 @@ input[type="checkbox"].bulk-check:checked::after {
 
 <!-- CODE ENFORCEMENT — NEW NOTICE MODAL -->
 <div class="modal-overlay" id="enforcementModal">
-    <div class="modal" style="width: 640px;">
-        <div class="modal-title">Issue New Code Enforcement Notice</div>
+    <div class="modal aura-host aura-enforce" style="width: 640px; position:relative;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+        <div class="modal-title" style="position:relative;">Issue New Code Enforcement Notice</div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div>
@@ -4596,9 +4608,14 @@ input[type="checkbox"].bulk-check:checked::after {
             </div>
         </div>
 
-        <div style="margin-bottom: 14px;">
+        <div style="margin-bottom: 14px; position:relative;">
             <label class="form-label">Description</label>
-            <textarea class="form-input" id="ceDescription" rows="4" placeholder="Describe the violation in detail..."></textarea>
+            <textarea class="form-input" id="ceDescription" rows="4" placeholder="Describe the violation — type it, or tap Dictate to speak it."></textarea>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmDictate('ceDescription', this)">🎙️ Dictate</button>
+                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmComposerPolish('ceDescription', this)">✨ Polish with AI</button>
+                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmComposerUndo('ceDescription')">↩ Undo</button>
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
@@ -4614,15 +4631,8 @@ input[type="checkbox"].bulk-check:checked::after {
             </div>
         </div>
 
-        <div style="padding: 12px; background: rgba(63, 224, 232, 0.06); border: 1px solid rgba(63, 224, 232, 0.15); border-radius: var(--radius-sm); margin-bottom: 14px;">
-            <div style="font-size: 13px; color: var(--accent); font-weight: 500; margin-bottom: 4px;">AI Assist</div>
-            <div style="font-size: 12px; color: var(--text-secondary);">AI can generate a formal notice letter from your description, including applicable municipal code references.</div>
-            <button class="btn btn-secondary" style="margin-top: 8px; font-size: 12px;" onclick="showToast('AI notice letter generated with Eloy Municipal Code 15-204 reference', 'success')">Generate Notice Letter</button>
-        </div>
-
-        <div class="modal-actions">
+        <div class="modal-actions" style="position:relative;">
             <button class="btn btn-secondary" onclick="closeEnforcementModal()">Cancel</button>
-            <button class="btn btn-secondary" onclick="saveEnforcementDraft()">Save as Draft</button>
             <button class="btn btn-primary" onclick="issueEnforcementNotice()">Issue Notice</button>
         </div>
     </div>
@@ -5461,6 +5471,43 @@ function _stopDictVisualizer() {
     }
     _dictWaveEl = null; _dictBars = [];
 }
+// ============================================
+// CRM COMPOSER — the app's Dictate · Polish with AI · Undo model,
+// reusable on any textarea (code enforcement, council meetings, etc.).
+// ============================================
+const _crmUndo = {};   // textareaId -> [snapshots]
+function _crmSnapshot(id) {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    (_crmUndo[id] = _crmUndo[id] || []).push(ta.value);
+}
+function crmComposerUndo(id) {
+    const ta = document.getElementById(id);
+    const st = _crmUndo[id];
+    if (ta && st && st.length) { ta.value = st.pop(); }
+    else { showToast('Nothing to undo', 'info'); }
+}
+async function crmComposerPolish(id, btn) {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    const text = (ta.value || '').trim();
+    if (!text) { showToast('Write or dictate something first', 'warning'); return; }
+    _crmSnapshot(id);
+    const orig = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = '✨ Polishing…'; btn.disabled = true; }
+    try {
+        const prompt = `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
+        const out = await callGrokAI(prompt);
+        const clean = (out || '').trim();
+        if (clean) { ta.value = clean; showToast('Polished — review and edit as needed', 'success'); }
+        else showToast('AI returned nothing — try again', 'warning');
+    } catch (e) {
+        showToast('AI failed: ' + (e.message || e), 'error');
+    } finally {
+        if (btn) { btn.textContent = orig || '✨ Polish with AI'; btn.disabled = false; }
+    }
+}
+
 async function crmDictate(textareaId, btn) {
     // If already recording, stop and transcribe.
     if (_dictRecorder && _dictRecorder.state === 'recording') {
@@ -5469,6 +5516,7 @@ async function crmDictate(textareaId, btn) {
     }
     const ta = document.getElementById(textareaId);
     if (!ta) return;
+    _crmSnapshot(textareaId);   // so Undo reverts a dictation
     _dictTarget = ta; _dictBtn = btn;
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -11446,6 +11494,38 @@ async function issueEnforcementNotice() {
         if (resSel) resSel.selectedIndex = 0;
     } catch (e) {
         showToast('Failed to issue notice: ' + (e.message || e), 'error');
+    }
+}
+
+// AI Assist: draft a clean violation description from the officer's notes.
+async function generateNoticeLetter(btn) {
+    const title = (document.getElementById('ceTitle').value || '').trim();
+    const typeCode = document.getElementById('ceType').value;
+    const severity = document.getElementById('ceSeverity').value;
+    const address = (document.getElementById('ceAddress').value || '').trim();
+    const notes = (document.getElementById('ceDescription').value || '').trim();
+    if (!title && !typeCode && !notes) { showToast('Add a title or a few notes first', 'warning'); return; }
+    const orig = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Writing…'; btn.disabled = true; }
+    try {
+        const prompt = `Write a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful. Write in the city's voice ("The City of Eloy has observed..."). No letterhead, no salutation, no signature. Do NOT invent specific municipal code section numbers.
+Title: ${title || '(none)'}
+Violation type: ${ceTypeLabel(typeCode) || '(unspecified)'}
+Severity: ${severity}
+Address: ${address || '(unspecified)'}
+Officer notes: ${notes || '(none)'}`;
+        const out = await callGrokAI(prompt);
+        const clean = (out || '').trim();
+        if (clean) {
+            document.getElementById('ceDescription').value = clean;
+            showToast('Description written — review and edit as needed', 'success');
+        } else {
+            showToast('AI returned nothing — try again', 'warning');
+        }
+    } catch (e) {
+        showToast('AI failed: ' + (e.message || e), 'error');
+    } finally {
+        if (btn) { btn.textContent = orig || 'Write description with AI'; btn.disabled = false; }
     }
 }
 
