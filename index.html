@@ -1115,20 +1115,21 @@ textarea.form-input {
 .composer-field { position: relative; border-radius: 12px; }
 /* Listening waveform overlay (shown while dictating instead of live text) */
 .dict-wave-overlay {
-    position: absolute; inset: 0; display: none; flex-direction: column;
-    align-items: center; justify-content: center; gap: 9px; pointer-events: none;
-    border-radius: inherit; z-index: 3;
-    background: rgba(10,16,28,0.66); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    position: absolute; left: 12px; right: 12px; bottom: 10px; display: none;
+    align-items: center; justify-content: space-between; gap: 10px; pointer-events: none; z-index: 3;
 }
 .dict-wave-overlay.active { display: flex; }
-.dict-wave-overlay .dwbars { display: flex; align-items: center; gap: 4px; height: 36px; }
+.dict-wave-overlay .dwbars { display: flex; align-items: center; gap: 3px; height: 24px; }
 .dict-wave-overlay .dwbars span {
-    width: 4px; height: 10px; border-radius: 3px;
+    width: 3px; height: 18px; border-radius: 2px; transform: scaleY(0.16); transform-origin: center;
     background: linear-gradient(180deg, #3FE0E8, #F5943A);
-    animation: dwPulse 0.9s ease-in-out infinite;
+    transition: transform 0.05s linear;
 }
-@keyframes dwPulse { 0%,100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.8); } }
-.dict-wave-overlay .dwlabel { font-size: 12px; font-weight: 600; color: #3FE0E8; letter-spacing: .3px; }
+.dict-wave-overlay.pulse .dwbars span { animation: dwPulse 0.9s ease-in-out infinite; transition: none; }
+.dict-wave-overlay.pulse .dwbars span:nth-child(2n) { animation-delay: .15s; }
+.dict-wave-overlay.pulse .dwbars span:nth-child(3n) { animation-delay: .3s; }
+@keyframes dwPulse { 0%,100% { transform: scaleY(0.3); } 50% { transform: scaleY(1.6); } }
+.dict-wave-overlay .dwlabel { font-size: 12px; font-weight: 700; color: #3FE0E8; letter-spacing: .3px; }
 .composer-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .composer-btn {
     display: inline-flex; align-items: center; gap: 7px;
@@ -5756,63 +5757,188 @@ async function crmQuickAI(userMessage, maxTokens) {
     return '';
 }
 
-// Show/hide the "listening" waveform overlay inside a composer field.
-function _crmShowWave(wrap, show) {
-    if (!wrap) return;
-    let ov = wrap.querySelector('.dict-wave-overlay');
-    if (show) {
-        if (!ov) {
-            ov = document.createElement('div');
-            ov.className = 'dict-wave-overlay';
-            ov.innerHTML = '<div class="dwbars">' +
-                Array.from({ length: 9 }).map((_, i) => `<span style="animation-delay:${(i * 0.09).toFixed(2)}s"></span>`).join('') +
-                '</div><div class="dwlabel">Listening…</div>';
-            wrap.appendChild(ov);
-        }
-        ov.classList.add('active');
-    } else if (ov) {
-        ov.classList.remove('active');
-    }
-}
+// ============================================================
+// LIVE DICTATION — streams the mic straight to Deepgram (same engine as the
+// phone). Punctuation arrives as you speak; a real audio-reactive waveform
+// shows the mic level; the finished text drops in the instant you stop.
+// ============================================================
+const _dg = { ws: null, rec: null, stream: null, ctx: null, analyser: null, raf: null, bars: [], ta: null, wrap: null, btn: null, base: '', final: '' };
 
-// Phone-style dictation: show a waveform WHILE speaking (no live word-by-word
-// text), then on stop punctuate the transcript and pop the finished text in.
-let _crmRecog = null;
 async function crmDictate(textareaId, btn) {
     const ta = document.getElementById(textareaId);
     if (!ta) return;
-    if (_crmRecog) { try { _crmRecog.stop(); } catch (e) {} return; }
+    if (_dg.ws || _dg.rec) { _crmStopDictation(); return; }   // toggle off
 
+    _crmSnapshot(textareaId);
+    _dg.ta = ta;
+    _dg.wrap = ta.closest('.composer-field');
+    _dg.btn = btn;
+    _dg.base = ta.value ? ta.value.trim() : '';
+    _dg.final = '';
+
+    // 1) Mic
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (e) { showToast('Allow the microphone to dictate', 'warning'); return; }
+    _dg.stream = stream;
+
+    // 2) Short-lived Deepgram token (server-side, key never exposed)
+    let token;
+    try {
+        const r = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/deepgram-token', {
+            method: 'POST', headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+        });
+        const d = await r.json();
+        token = d.access_token;
+        if (!token) throw new Error('no token');
+    } catch (e) {
+        stream.getTracks().forEach(t => t.stop()); _dg.stream = null;
+        return crmDictateWebSpeech(textareaId, btn);   // graceful fallback
+    }
+
+    // 3) Audio-reactive waveform + listening state
+    _crmStartWave(_dg.wrap, stream);
+    ta.classList.add('aura-dictate');
+    if (btn) { _ceBtnLabel(btn, 'Listening…'); btn.classList.add('recording'); }
+
+    // 4) Deepgram live socket — nova-2, smart-format punctuation
+    const url = 'wss://api.deepgram.com/v1/listen?model=nova-2&smart_format=true&punctuate=true&interim_results=true&endpointing=300';
+    let ws;
+    try { ws = new WebSocket(url, ['bearer', token]); }
+    catch (e) { _crmCleanupDictation(); return crmDictateWebSpeech(textareaId, btn); }
+    _dg.ws = ws;
+
+    ws.onopen = () => {
+        try {
+            _dg.rec = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            _dg.rec.ondataavailable = e => { if (e.data.size && ws.readyState === 1) ws.send(e.data); };
+            _dg.rec.start(250);
+        } catch (e) { _crmStopDictation(); }
+    };
+    ws.onmessage = (msg) => {
+        try {
+            const d = JSON.parse(msg.data);
+            const txt = d?.channel?.alternatives?.[0]?.transcript || '';
+            // Accumulate FINALS only; interim not shown (waveform stands in).
+            if (txt && d.is_final) _dg.final += (_dg.final ? ' ' : '') + txt;
+        } catch (e) {}
+    };
+    ws.onerror = () => {};
+    ws.onclose = () => {
+        // If the socket never opened a recorder and captured nothing, the token
+        // or connection failed — fall back to the browser recognizer.
+        if (!_dg.rec && !_dg.final) {
+            _crmStopWave(_dg.wrap);
+            if (_dg.ta) _dg.ta.classList.remove('aura-dictate');
+            if (_dg.btn) { _ceBtnLabel(_dg.btn, 'Dictate'); _dg.btn.classList.remove('recording', 'busy'); }
+            _crmCleanupDictation();
+            return crmDictateWebSpeech(textareaId, btn);
+        }
+        _crmFinishDictation();
+    };
+}
+
+function _crmStopDictation() {
+    try { if (_dg.rec && _dg.rec.state !== 'inactive') _dg.rec.stop(); } catch (e) {}
+    try { if (_dg.ws && _dg.ws.readyState === 1) _dg.ws.send(JSON.stringify({ type: 'CloseStream' })); } catch (e) {}
+    if (_dg.btn) _ceBtnLabel(_dg.btn, 'Finishing…');
+    setTimeout(() => { try { _dg.ws && _dg.ws.close(); } catch (e) {} if (_dg.ws) _crmFinishDictation(); }, 450);
+}
+
+function _crmFinishDictation() {
+    if (!_dg.stream && !_dg.ta) return;   // already finished
+    const ta = _dg.ta, wrap = _dg.wrap, btn = _dg.btn;
+    if (ta) {
+        const combined = [_dg.base, _dg.final].filter(Boolean).join(' ').trim();
+        if (combined) ta.value = combined;
+        ta.classList.remove('aura-dictate');
+    }
+    _crmStopWave(wrap);
+    if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('recording', 'busy'); }
+    _crmCleanupDictation();
+}
+
+function _crmCleanupDictation() {
+    try { if (_dg.rec && _dg.rec.state !== 'inactive') _dg.rec.stop(); } catch (e) {}
+    try { if (_dg.stream) _dg.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+    if (_dg.raf) { cancelAnimationFrame(_dg.raf); _dg.raf = null; }
+    try { if (_dg.ctx) _dg.ctx.close(); } catch (e) {}
+    _dg.ws = null; _dg.rec = null; _dg.stream = null; _dg.ctx = null; _dg.analyser = null; _dg.bars = []; _dg.ta = null;
+}
+
+// Audio-reactive waveform strip at the bottom of the field (like the phone).
+function _crmStartWave(wrap, stream) {
+    if (!wrap) return;
+    let ov = wrap.querySelector('.dict-wave-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.className = 'dict-wave-overlay';
+        ov.innerHTML = '<div class="dwbars"></div><div class="dwlabel">Listening…</div>';
+        wrap.appendChild(ov);
+    }
+    const barsEl = ov.querySelector('.dwbars');
+    const BARS = 24;
+    barsEl.innerHTML = '';
+    _dg.bars = [];
+    for (let i = 0; i < BARS; i++) { const s = document.createElement('span'); barsEl.appendChild(s); _dg.bars.push(s); }
+    ov.classList.add('active');
+    try {
+        _dg.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = _dg.ctx.createMediaStreamSource(stream);
+        _dg.analyser = _dg.ctx.createAnalyser();
+        _dg.analyser.fftSize = 128;
+        src.connect(_dg.analyser);
+        const bins = _dg.analyser.frequencyBinCount;
+        const data = new Uint8Array(bins);
+        const step = Math.max(1, Math.floor(bins / BARS));
+        const draw = () => {
+            _dg.raf = requestAnimationFrame(draw);
+            _dg.analyser.getByteFrequencyData(data);
+            for (let i = 0; i < _dg.bars.length; i++) {
+                let sum = 0; for (let j = 0; j < step; j++) sum += data[i * step + j] || 0;
+                const amp = sum / step / 255;
+                _dg.bars[i].style.transform = 'scaleY(' + (0.14 + amp * 2.6).toFixed(2) + ')';
+            }
+        };
+        draw();
+    } catch (e) { /* static bars if the analyser is unavailable */ }
+}
+function _crmStopWave(wrap) {
+    if (_dg.raf) { cancelAnimationFrame(_dg.raf); _dg.raf = null; }
+    if (!wrap) return;
+    const ov = wrap.querySelector('.dict-wave-overlay');
+    if (ov) ov.classList.remove('active');
+}
+
+// Fallback for browsers without Deepgram streaming — browser recognizer, then
+// punctuate on stop. Rarely used (Chrome supports the streaming path).
+let _crmRecog = null;
+async function crmDictateWebSpeech(textareaId, btn) {
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    if (_crmRecog) { try { _crmRecog.stop(); } catch (e) {} return; }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { return crmDictateFallback(textareaId, btn); }
-
     _crmSnapshot(textareaId);
     const baseText = ta.value ? ta.value.trim() : '';
     let finalText = '';
     const wrap = ta.closest('.composer-field');
     const rec = new SR();
     _crmRecog = rec;
-    rec.lang = 'en-US';
-    rec.continuous = true;
-    rec.interimResults = true;   // captured internally, never shown live
+    rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true;
     ta.classList.add('aura-dictate');
-    _crmShowWave(wrap, true);
+    let ov = wrap ? wrap.querySelector('.dict-wave-overlay') : null;
+    if (wrap && !ov) { ov = document.createElement('div'); ov.className = 'dict-wave-overlay'; ov.innerHTML = '<div class="dwbars">' + Array.from({length:24}).map(()=>'<span></span>').join('') + '</div><div class="dwlabel">Listening…</div>'; wrap.appendChild(ov); }
+    if (ov) { ov.classList.add('active', 'pulse'); }
     if (btn) { _ceBtnLabel(btn, 'Listening…'); btn.classList.add('recording'); }
-
     rec.onresult = (e) => {
-        // Accumulate FINAL segments only. Do NOT write to the textarea while
-        // speaking — the waveform stands in for it (like the phone).
         for (let i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) finalText += (finalText ? ' ' : '') + e.results[i][0].transcript.trim();
         }
     };
-    rec.onerror = (e) => {
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-            showToast('Allow the microphone in your browser to dictate', 'warning');
-        }
-    };
+    rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') showToast('Allow the microphone to dictate', 'warning'); };
     rec.onend = async () => {
-        _crmShowWave(wrap, false);
+        if (ov) ov.classList.remove('active', 'pulse');
         ta.classList.remove('aura-dictate');
         if (btn) btn.classList.remove('recording');
         _crmRecog = null;
