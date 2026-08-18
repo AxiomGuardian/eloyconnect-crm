@@ -1177,6 +1177,12 @@ textarea.form-input {
 }
 @keyframes paSpin { to { --pa: 360deg; } }
 
+/* Clickable table rows — clear hover emphasis */
+#enforcementTableBody tr, #residentsTableBody tr { transition: background .15s ease; }
+#enforcementTableBody tr td, #residentsTableBody tr td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#enforcementTableBody tr:hover td, #residentsTableBody tr:hover td { background: rgba(63,224,232,0.07); }
+#enforcementTableBody tr:hover td:first-child, #residentsTableBody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
 /* Liquid-glass modal (used by the enforcement modal) */
 .modal.modal-glass {
     background: linear-gradient(160deg, rgba(22,32,52,0.86), rgba(12,18,32,0.92));
@@ -4444,12 +4450,12 @@ input[type="checkbox"].bulk-check:checked::after {
                     <thead>
                         <tr style="text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-tertiary);">
                             <th style="padding:12px 16px;">Resident</th>
-                            <th style="padding:12px 16px;">Address</th>
-                            <th style="padding:12px 16px;">Type</th>
-                            <th style="padding:12px 16px;">Severity</th>
+                            <th style="padding:12px 16px;">Latest Address</th>
+                            <th style="padding:12px 16px;">Notices</th>
+                            <th style="padding:12px 16px;">Top Severity</th>
                             <th style="padding:12px 16px;">Status</th>
-                            <th style="padding:12px 16px;">Deadline</th>
-                            <th style="padding:12px 16px;">Issued</th>
+                            <th style="padding:12px 16px;">Next Deadline</th>
+                            <th style="padding:12px 16px;">Latest</th>
                         </tr>
                     </thead>
                     <tbody id="enforcementTableBody"></tbody>
@@ -4875,17 +4881,21 @@ input[type="checkbox"].bulk-check:checked::after {
     </div>
 </div>
 
-<!-- RESIDENT DETAIL PANEL -->
-<div class="detail-panel" id="residentDetail">
-    <div class="detail-header">
-        <div>
-            <div style="font-size: 16px; font-weight: 600;" id="residentDetailName">Resident</div>
-            <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;" id="residentDetailRole">resident</div>
+<!-- RESIDENT PROFILE (centered glass modal) -->
+<div class="modal-overlay" id="residentDetail" onclick="if(event.target===this)closeResidentDetail()">
+    <div class="modal modal-glass aura-host aura-civic" style="width:min(760px,94vw); max-height:90vh; overflow-y:auto; position:relative; padding:30px 34px;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+        <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px;">
+            <div>
+                <div style="font-size: 18px; font-weight: 700;" id="residentDetailName">Resident</div>
+                <div style="font-size: 12px; color: var(--text-tertiary); margin-top: 2px;" id="residentDetailRole">resident</div>
+            </div>
+            <button class="btn btn-ghost" onclick="closeResidentDetail()" style="font-size: 20px;" title="Close (Esc)">&#10005;</button>
         </div>
-        <button class="btn btn-ghost" onclick="closeResidentDetail()" style="font-size: 20px;" title="Close (Esc)">&#10005;</button>
-    </div>
-    <div class="detail-body" id="residentDetailBody">
-        <!-- Populated by JS -->
+        <div id="residentDetailBody" style="position:relative;">
+            <!-- Populated by JS -->
+        </div>
     </div>
 </div>
 
@@ -11816,37 +11826,45 @@ function renderEnforcementTable(filter) {
         return;
     }
 
-    tbody.innerHTML = filtered.map(n => {
-        const sc = CE_STATUS[n.status] || CE_STATUS.pending;
-        const sevColor = ceSeverityColor(n.severityRaw);
-        const deadlineDate = new Date(n.deadline);
-        const issuedDate = new Date(n.issued);
-        const deadlineStr = isNaN(deadlineDate) ? '—' : deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const issuedStr = isNaN(issuedDate) ? '—' : issuedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-        const daysRemaining = Math.ceil((deadlineDate - new Date()) / (1000 * 60 * 60 * 24));
-        const daysText = daysRemaining > 0 ? daysRemaining + ' days remaining' : Math.abs(daysRemaining) + ' days overdue';
-        const daysColor = daysRemaining > 7 ? 'var(--success)' : daysRemaining > 0 ? 'var(--warm-accent)' : 'var(--warning)';
-        const responseStatus = n.response ? 'Responded' : 'No response yet';
-        const responseColor = n.response ? 'var(--success)' : 'var(--text-tertiary)';
-
-        return `<tr onclick="openEnforcementDetailById('${n._dbId}')" style="cursor: pointer; position: relative;">
-            <td style="font-weight: 500;">${escapeHtml(n.resident)}</td>
-            <td style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(n.address)}</td>
-            <td><span class="tag" style="background: rgba(142,168,190,0.12); color: var(--text-secondary);">${escapeHtml(n.type)}</span></td>
-            <td><span style="font-size: 12px; font-weight: 600; color: ${sevColor};">${escapeHtml(n.severity)}</span></td>
-            <td><span class="status ${sc.css}"><span class="status-dot"></span>${sc.label}</span></td>
-            <td style="color: ${n.status === 'overdue' ? 'var(--warning)' : 'var(--text-tertiary)'}; font-size: 12px; font-weight: ${n.status === 'overdue' ? '600' : '400'};">${deadlineStr}</td>
-            <td style="color: var(--text-tertiary); font-size: 12px;">${issuedStr}</td>
-            <div class="hover-popup" style="left:80px; min-width:300px;">
-                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px;">${escapeHtml(n.id)} - ${escapeHtml(n.type)}</div>
-                <div style="font-size:12px; line-height:1.5; margin-bottom:8px;">${escapeHtml(n.description.substring(0, 120))}${n.description.length > 120 ? '...' : ''}</div>
-                <div class="popup-line"><span>Deadline</span><span class="popup-val" style="color:${daysColor};">${daysText}</span></div>
-                <div class="popup-line"><span>Resident Response</span><span class="popup-val" style="color:${responseColor};">${responseStatus}</span></div>
-                <div class="popup-line"><span>Inspector</span><span class="popup-val">${escapeHtml(n.inspector)}</span></div>
-            </div>
+    // Group notices by resident — one row per person (click opens their profile).
+    const groups = {};
+    filtered.forEach(n => {
+        const key = n.resident_id || n.resident || 'unknown';
+        if (!groups[key]) groups[key] = { resident: n.resident, resident_id: n.resident_id, notices: [] };
+        groups[key].notices.push(n);
+    });
+    const sevRank = { high: 3, medium: 2, low: 1 };
+    const rows = Object.values(groups)
+        .sort((a, b) => b.notices.length - a.notices.length)
+        .map(g => {
+            const ns = g.notices.slice().sort((a, b) => new Date(b.issued || 0) - new Date(a.issued || 0));
+            const latest = ns[0];
+            const count = ns.length;
+            const topSev = ns.reduce((m, x) => (sevRank[x.severityRaw] || 0) > (sevRank[m] || 0) ? x.severityRaw : m, 'low');
+            const sevColor = ceSeverityColor(topSev);
+            const openCount = ns.filter(x => x.status !== 'resolved').length;
+            const overdueCount = ns.filter(x => x.status === 'overdue').length;
+            let statusHtml;
+            if (overdueCount) statusHtml = `<span class="status ce-status-overdue"><span class="status-dot"></span>${overdueCount} overdue</span>`;
+            else if (openCount) statusHtml = `<span class="status ce-status-pending"><span class="status-dot"></span>${openCount} open</span>`;
+            else statusHtml = `<span class="status ce-status-resolved"><span class="status-dot"></span>All resolved</span>`;
+            const upcoming = ns.map(x => x.deadline).filter(Boolean).map(d => new Date(d)).filter(d => !isNaN(d)).sort((a, b) => a - b)[0];
+            const deadlineStr = upcoming ? upcoming.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            const issuedStr = latest.issued ? new Date(latest.issued).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+            const click = g.resident_id
+                ? `openResidentDetail('${escapeHtml(String(g.resident_id))}')`
+                : `openEnforcementDetailById('${latest._dbId}')`;
+            return `<tr onclick="${click}" class="ce-resident-row" style="cursor:pointer;">
+            <td style="font-weight:600;">${escapeHtml(g.resident)}</td>
+            <td style="color:var(--text-secondary); font-size:12px;">${escapeHtml(latest.address || '')}</td>
+            <td><span style="font-weight:700; color:#F5943A; background:rgba(245,148,58,0.12); padding:2px 10px; border-radius:999px; font-size:12px;">${count} notice${count > 1 ? 's' : ''}</span></td>
+            <td><span style="font-size:12px; font-weight:600; color:${sevColor};">${escapeHtml(ceSeverityLabel(topSev))}</span></td>
+            <td>${statusHtml}</td>
+            <td style="color:var(--text-tertiary); font-size:12px;">${deadlineStr}</td>
+            <td style="color:var(--text-tertiary); font-size:12px;">${issuedStr}</td>
         </tr>`;
-    }).join('');
+        });
+    tbody.innerHTML = rows.join('');
 }
 
 let currentCEFilter = 'all';
@@ -11897,7 +11915,7 @@ function openEnforcementDetail(notice) {
         <div style="margin-bottom: 20px;">
             <span class="status ${sc.css}" style="margin-bottom: 12px; display: inline-flex;"><span class="status-dot"></span>${sc.label}</span>
             <h3 style="font-size: 18px; font-weight: 600; margin: 8px 0;">${escapeHtml(notice.type)}</h3>
-            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">${escapeHtml(notice.description)}</p>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap;">${escapeHtml(deDash(notice.description))}</p>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
