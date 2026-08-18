@@ -1113,23 +1113,26 @@ textarea.form-input {
    (matches the Eloy Connect app's aura model)
    ============================================ */
 .composer-field { position: relative; border-radius: 12px; }
-/* Listening waveform overlay (shown while dictating instead of live text) */
+@property --pa { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+/* Listening waveform — clean, bottom-anchored equalizer (audio-reactive) */
 .dict-wave-overlay {
-    position: absolute; left: 12px; right: 12px; bottom: 10px; display: none;
-    align-items: center; justify-content: space-between; gap: 10px; pointer-events: none; z-index: 3;
+    position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex;
+    align-items: flex-end; justify-content: space-between; gap: 12px;
+    pointer-events: none; z-index: 3; opacity: 0; transition: opacity .28s ease;
 }
-.dict-wave-overlay.active { display: flex; }
-.dict-wave-overlay .dwbars { display: flex; align-items: center; gap: 3px; height: 24px; }
+.dict-wave-overlay.active { opacity: 1; }
+.dict-wave-overlay .dwbars { display: flex; align-items: flex-end; gap: 2.5px; height: 26px; }
 .dict-wave-overlay .dwbars span {
-    width: 3px; height: 18px; border-radius: 2px; transform: scaleY(0.16); transform-origin: center;
-    background: linear-gradient(180deg, #3FE0E8, #F5943A);
-    transition: transform 0.05s linear;
+    width: 2.5px; height: 3px; border-radius: 99px;
+    background: linear-gradient(180deg, #8BEDF2, #3FE0E8);
+    box-shadow: 0 0 6px rgba(63,224,232,0.45);
+    transition: height .06s ease;
 }
-.dict-wave-overlay.pulse .dwbars span { animation: dwPulse 0.9s ease-in-out infinite; transition: none; }
-.dict-wave-overlay.pulse .dwbars span:nth-child(2n) { animation-delay: .15s; }
-.dict-wave-overlay.pulse .dwbars span:nth-child(3n) { animation-delay: .3s; }
-@keyframes dwPulse { 0%,100% { transform: scaleY(0.3); } 50% { transform: scaleY(1.6); } }
-.dict-wave-overlay .dwlabel { font-size: 12px; font-weight: 700; color: #3FE0E8; letter-spacing: .3px; }
+.dict-wave-overlay.pulse .dwbars span { animation: dwPulse 1s ease-in-out infinite; }
+.dict-wave-overlay.pulse .dwbars span:nth-child(2n) { animation-delay: .12s; }
+.dict-wave-overlay.pulse .dwbars span:nth-child(3n) { animation-delay: .24s; }
+@keyframes dwPulse { 0%,100% { height: 4px; } 50% { height: 20px; } }
+.dict-wave-overlay .dwlabel { font-size: 11.5px; font-weight: 600; color: #3FE0E8; letter-spacing: .4px; opacity: .9; }
 .composer-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .composer-btn {
     display: inline-flex; align-items: center; gap: 7px;
@@ -1152,23 +1155,27 @@ textarea.form-input {
 @keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.35); } 50% { box-shadow: 0 0 22px 3px rgba(244,63,94,0.48); } }
 .composer-btn.busy { color: #C4B5FD; border-color: rgba(139,92,246,0.55); background: rgba(139,92,246,0.14); }
 
-/* Dictation aura — the app's teal bleeding into warm orange */
+/* Dictation aura — clean cyan breathing glow (modern, no plastic gradient) */
 @keyframes auraDictateBreathe {
-    0%,100% { box-shadow: 0 0 0 1px rgba(63,224,232,0.40), 0 0 16px 2px rgba(63,224,232,0.18), 0 0 30px 7px rgba(245,148,58,0.10); border-color: rgba(63,224,232,0.55); }
-    50%     { box-shadow: 0 0 0 1px rgba(63,224,232,0.78), 0 0 26px 5px rgba(63,224,232,0.38), 0 0 44px 12px rgba(245,148,58,0.22); border-color: rgba(245,148,58,0.78); }
+    0%,100% { box-shadow: 0 0 0 1px rgba(63,224,232,0.35), 0 0 18px 2px rgba(63,224,232,0.16); border-color: rgba(63,224,232,0.50); }
+    50%     { box-shadow: 0 0 0 1px rgba(63,224,232,0.62), 0 0 30px 5px rgba(63,224,232,0.30); border-color: rgba(63,224,232,0.74); }
 }
-.aura-dictate { animation: auraDictateBreathe 2.2s ease-in-out infinite; border-color: rgba(63,224,232,0.6) !important; transition: box-shadow .4s ease, border-color .4s ease; }
+.aura-dictate { animation: auraDictateBreathe 2s ease-in-out infinite; border-color: rgba(63,224,232,0.55) !important; transition: box-shadow .4s ease, border-color .4s ease; }
 
-/* Polish shimmer — animated light sweep across the field while AI works */
-.composer-field.aura-polish { box-shadow: 0 0 0 1px rgba(139,92,246,0.5), 0 0 28px 4px rgba(139,92,246,0.26); }
-.composer-field.aura-polish::after {
-    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; overflow: hidden;
-    background: linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.16) 48%, rgba(63,224,232,0.28) 52%, transparent 68%);
-    background-size: 220% 100%;
-    animation: polishSweep 1.15s linear infinite;
-    mix-blend-mode: screen;
+/* Polish — smooth breathing glow + a slow rotating gradient ring (premium AI feel) */
+.composer-field.aura-polish { animation: polishGlow 1.8s ease-in-out infinite; }
+@keyframes polishGlow {
+    0%,100% { box-shadow: 0 0 0 1px rgba(63,224,232,0.42), 0 0 22px 2px rgba(63,224,232,0.16); }
+    50%     { box-shadow: 0 0 0 1px rgba(139,92,246,0.52), 0 0 30px 4px rgba(139,92,246,0.24); }
 }
-@keyframes polishSweep { 0% { background-position: 135% 0; } 100% { background-position: -135% 0; } }
+.composer-field.aura-polish::after {
+    content: ''; position: absolute; inset: -1.5px; border-radius: inherit; padding: 1.5px; pointer-events: none;
+    background: conic-gradient(from var(--pa), transparent 0deg, rgba(63,224,232,0.85) 70deg, rgba(139,92,246,0.9) 150deg, transparent 250deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: paSpin 1.5s linear infinite;
+}
+@keyframes paSpin { to { --pa: 360deg; } }
 
 /* Liquid-glass modal (used by the enforcement modal) */
 .modal.modal-glass {
@@ -5899,7 +5906,7 @@ function _crmStartWave(wrap, stream) {
             for (let i = 0; i < _dg.bars.length; i++) {
                 let sum = 0; for (let j = 0; j < step; j++) sum += data[i * step + j] || 0;
                 const amp = sum / step / 255;
-                _dg.bars[i].style.transform = 'scaleY(' + (0.14 + amp * 2.6).toFixed(2) + ')';
+                _dg.bars[i].style.height = (3 + Math.min(1, amp * 1.4) * 22).toFixed(1) + 'px';
             }
         };
         draw();
