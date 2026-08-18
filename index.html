@@ -1113,6 +1113,22 @@ textarea.form-input {
    (matches the Eloy Connect app's aura model)
    ============================================ */
 .composer-field { position: relative; border-radius: 12px; }
+/* Listening waveform overlay (shown while dictating instead of live text) */
+.dict-wave-overlay {
+    position: absolute; inset: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 9px; pointer-events: none;
+    border-radius: inherit; z-index: 3;
+    background: rgba(10,16,28,0.66); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.dict-wave-overlay.active { display: flex; }
+.dict-wave-overlay .dwbars { display: flex; align-items: center; gap: 4px; height: 36px; }
+.dict-wave-overlay .dwbars span {
+    width: 4px; height: 10px; border-radius: 3px;
+    background: linear-gradient(180deg, #3FE0E8, #F5943A);
+    animation: dwPulse 0.9s ease-in-out infinite;
+}
+@keyframes dwPulse { 0%,100% { transform: scaleY(0.4); } 50% { transform: scaleY(1.8); } }
+.dict-wave-overlay .dwlabel { font-size: 12px; font-weight: 600; color: #3FE0E8; letter-spacing: .3px; }
 .composer-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .composer-btn {
     display: inline-flex; align-items: center; gap: 7px;
@@ -5705,7 +5721,7 @@ async function crmComposerPolish(id, btn, mode) {
         const prompt = (mode === 'message')
             ? `Rewrite the following into a clear, warm, professional message from the City of Eloy to a resident about their code enforcement notice. Keep it brief and genuinely helpful, plain English, first-person from the city ("The City of Eloy..."). No letterhead, salutation, or signature. Keep every fact and offer. Return ONLY the rewritten message.\n\nTEXT:\n${text}`
             : `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
-        const out = await callGrokAI(prompt);
+        const out = await crmQuickAI(prompt, 700);
         const clean = (out || '').trim();
         if (clean) { ta.value = clean; showToast('Polished — review and edit as needed', 'success'); }
         else showToast('AI returned nothing — try again', 'warning');
@@ -5717,15 +5733,54 @@ async function crmComposerPolish(id, btn, mode) {
     }
 }
 
-// Live streaming dictation — starts listening the instant you click and
-// transcribes in real time (no mic-open lag, no cut-off tail). Uses the
-// browser's SpeechRecognition; falls back to record→Deepgram if unavailable.
+// Lightweight AI call for formatting tasks — hits grok-chat directly with a
+// tiny system prompt (NO CRM data snapshot), so it returns in ~1s.
+async function crmQuickAI(userMessage, maxTokens) {
+    const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/grok-chat', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: 'grok-3-mini',
+            messages: [
+                { role: 'system', content: 'You are a precise text editor. Follow the instruction exactly and return ONLY the resulting text — no preamble.' },
+                { role: 'user', content: userMessage }
+            ],
+            max_tokens: maxTokens || 500,
+            temperature: 0.2
+        })
+    });
+    const data = await resp.json();
+    if (data.choices && data.choices[0]?.message?.content) return data.choices[0].message.content;
+    if (data.content) return data.content;
+    if (data.response) return data.response;
+    return '';
+}
+
+// Show/hide the "listening" waveform overlay inside a composer field.
+function _crmShowWave(wrap, show) {
+    if (!wrap) return;
+    let ov = wrap.querySelector('.dict-wave-overlay');
+    if (show) {
+        if (!ov) {
+            ov = document.createElement('div');
+            ov.className = 'dict-wave-overlay';
+            ov.innerHTML = '<div class="dwbars">' +
+                Array.from({ length: 9 }).map((_, i) => `<span style="animation-delay:${(i * 0.09).toFixed(2)}s"></span>`).join('') +
+                '</div><div class="dwlabel">Listening…</div>';
+            wrap.appendChild(ov);
+        }
+        ov.classList.add('active');
+    } else if (ov) {
+        ov.classList.remove('active');
+    }
+}
+
+// Phone-style dictation: show a waveform WHILE speaking (no live word-by-word
+// text), then on stop punctuate the transcript and pop the finished text in.
 let _crmRecog = null;
 async function crmDictate(textareaId, btn) {
     const ta = document.getElementById(textareaId);
     if (!ta) return;
-
-    // Toggle off if already listening.
     if (_crmRecog) { try { _crmRecog.stop(); } catch (e) {} return; }
 
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -5734,58 +5789,56 @@ async function crmDictate(textareaId, btn) {
     _crmSnapshot(textareaId);
     const baseText = ta.value ? ta.value.trim() : '';
     let finalText = '';
+    const wrap = ta.closest('.composer-field');
     const rec = new SR();
     _crmRecog = rec;
     rec.lang = 'en-US';
     rec.continuous = true;
-    rec.interimResults = true;
+    rec.interimResults = true;   // captured internally, never shown live
     ta.classList.add('aura-dictate');
+    _crmShowWave(wrap, true);
     if (btn) { _ceBtnLabel(btn, 'Listening…'); btn.classList.add('recording'); }
 
     rec.onresult = (e) => {
-        let interim = '';
+        // Accumulate FINAL segments only. Do NOT write to the textarea while
+        // speaking — the waveform stands in for it (like the phone).
         for (let i = e.resultIndex; i < e.results.length; i++) {
-            const seg = e.results[i][0].transcript;
-            if (e.results[i].isFinal) finalText += (finalText ? ' ' : '') + seg.trim();
-            else interim += seg;
+            if (e.results[i].isFinal) finalText += (finalText ? ' ' : '') + e.results[i][0].transcript.trim();
         }
-        ta.value = [baseText, finalText, interim].filter(Boolean).join(' ');
     };
     rec.onerror = (e) => {
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
             showToast('Allow the microphone in your browser to dictate', 'warning');
         }
     };
-    rec.onend = () => {
+    rec.onend = async () => {
+        _crmShowWave(wrap, false);
         ta.classList.remove('aura-dictate');
-        if (btn) { btn.classList.remove('recording'); }
+        if (btn) btn.classList.remove('recording');
         _crmRecog = null;
-        // Phone-style smart formatting: add punctuation + capitalization.
-        crmPunctuate(textareaId, btn);
+        const raw = [baseText, finalText].filter(Boolean).join(' ').trim();
+        if (!raw) { if (btn) _ceBtnLabel(btn, 'Dictate'); return; }
+        await crmPunctuateSet(textareaId, raw, btn);
     };
     try { rec.start(); } catch (e) { rec.onend(); }
 }
 
-// Restore punctuation + capitalization on a dictated transcript (mirrors the
-// app's Deepgram smart-format). Only fixes formatting — never changes words.
-async function crmPunctuate(id, btn) {
+// Punctuate a raw transcript, then set the finished text into the field at once.
+async function crmPunctuateSet(id, rawText, btn) {
     const ta = document.getElementById(id);
-    if (!ta) { if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); } return; }
-    const text = (ta.value || '').trim();
-    if (text.length < 2) { if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); } return; }
+    if (!ta) return;
     const wrap = ta.closest('.composer-field');
     if (wrap) wrap.classList.add('aura-polish');
     if (btn) { _ceBtnLabel(btn, 'Formatting…'); btn.disabled = true; btn.classList.add('busy'); }
+    let result = rawText;
     try {
-        const prompt = `Add correct punctuation and capitalization to this transcribed speech. Do NOT change, add, remove, or reorder any words — only fix capitalization and add commas, periods, and question marks. Return ONLY the corrected text.\n\n${text}`;
-        const out = await callGrokAI(prompt);
+        const out = await crmQuickAI(`Add correct punctuation and capitalization to this transcribed speech. Do NOT change, add, remove, or reorder any words — only fix capitalization and add commas, periods, and question marks. Return ONLY the corrected text.\n\n${rawText}`, 600);
         const clean = (out || '').trim();
-        if (clean) ta.value = clean;
+        if (clean) result = clean;
     } catch (e) { /* keep the raw transcript on failure */ }
-    finally {
-        if (wrap) wrap.classList.remove('aura-polish');
-        if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); }
-    }
+    ta.value = result;
+    if (wrap) wrap.classList.remove('aura-polish');
+    if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.disabled = false; btn.classList.remove('busy'); }
 }
 
 // Fallback: record the clip and transcribe on stop (Deepgram).
