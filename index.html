@@ -5623,27 +5623,37 @@ async function sendNoticeThreadMessage(noticeId) {
     } catch (e) { showToast('Send failed: ' + (e.message || e), 'error'); }
 }
 
-// Address autocomplete (free OpenStreetMap geocoder, biased to Eloy, AZ).
+// Address autocomplete — Photon (fast, autocomplete-optimized), biased to Eloy.
 let _ceAddrTimer = null;
+let _ceAddrSeq = 0;
 function ceAddressSuggest(q) {
     clearTimeout(_ceAddrTimer);
     const box = document.getElementById('ceAddressSuggest');
     if (!box) return;
     q = (q || '').trim();
     if (q.length < 3) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const seq = ++_ceAddrSeq;
     _ceAddrTimer = setTimeout(async () => {
         try {
-            const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=us&q=${encodeURIComponent(q + ', Eloy, Arizona')}`;
-            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            // lat/lon bias = Eloy, AZ so nearby streets rank first.
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=en&lat=32.7559&lon=-111.5548`;
+            const res = await fetch(url);
             const data = await res.json();
-            if (!Array.isArray(data) || !data.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
-            box.innerHTML = data.map(d => {
-                const label = String(d.display_name || '').replace(/, United States$/, '');
-                return `<div onclick="cePickAddress(this)" data-addr="${escapeHtml(label)}" style="padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); color:var(--text-secondary);" onmouseover="this.style.background='rgba(63,224,232,0.08)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background=''; this.style.color='var(--text-secondary)'">${escapeHtml(label)}</div>`;
-            }).join('');
+            if (seq !== _ceAddrSeq) return; // a newer keystroke already fired
+            const feats = (data && data.features) ? data.features : [];
+            const rows = feats.map(f => {
+                const p = f.properties || {};
+                const line1 = [p.housenumber, p.street || p.name].filter(Boolean).join(' ');
+                const line2 = [p.city || p.county, p.state, p.postcode].filter(Boolean).join(', ');
+                return [line1, line2].filter(Boolean).join(', ');
+            }).filter((v, i, a) => v && a.indexOf(v) === i);
+            if (!rows.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+            box.innerHTML = rows.map(label =>
+                `<div onclick="cePickAddress(this)" data-addr="${escapeHtml(label)}" style="padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border); color:var(--text-secondary);" onmouseover="this.style.background='rgba(63,224,232,0.08)'; this.style.color='var(--text-primary)'" onmouseout="this.style.background=''; this.style.color='var(--text-secondary)'">${escapeHtml(label)}</div>`
+            ).join('');
             box.style.display = 'block';
         } catch (e) { box.style.display = 'none'; }
-    }, 450);
+    }, 160);
 }
 function cePickAddress(el) {
     const addr = el.getAttribute('data-addr') || '';
@@ -5703,15 +5713,59 @@ async function crmComposerPolish(id, btn, mode) {
     }
 }
 
+// Live streaming dictation — starts listening the instant you click and
+// transcribes in real time (no mic-open lag, no cut-off tail). Uses the
+// browser's SpeechRecognition; falls back to record→Deepgram if unavailable.
+let _crmRecog = null;
 async function crmDictate(textareaId, btn) {
-    // If already recording, stop and transcribe.
-    if (_dictRecorder && _dictRecorder.state === 'recording') {
-        _dictRecorder.stop();
-        return;
-    }
     const ta = document.getElementById(textareaId);
     if (!ta) return;
-    _crmSnapshot(textareaId);   // so Undo reverts a dictation
+
+    // Toggle off if already listening.
+    if (_crmRecog) { try { _crmRecog.stop(); } catch (e) {} return; }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { return crmDictateFallback(textareaId, btn); }
+
+    _crmSnapshot(textareaId);
+    const baseText = ta.value ? ta.value.trim() : '';
+    let finalText = '';
+    const rec = new SR();
+    _crmRecog = rec;
+    rec.lang = 'en-US';
+    rec.continuous = true;
+    rec.interimResults = true;
+    ta.classList.add('aura-dictate');
+    if (btn) { _ceBtnLabel(btn, 'Listening…'); btn.classList.add('recording'); }
+
+    rec.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+            const seg = e.results[i][0].transcript;
+            if (e.results[i].isFinal) finalText += (finalText ? ' ' : '') + seg.trim();
+            else interim += seg;
+        }
+        ta.value = [baseText, finalText, interim].filter(Boolean).join(' ');
+    };
+    rec.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+            showToast('Allow the microphone in your browser to dictate', 'warning');
+        }
+    };
+    rec.onend = () => {
+        ta.classList.remove('aura-dictate');
+        if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.classList.remove('recording', 'busy'); }
+        _crmRecog = null;
+    };
+    try { rec.start(); } catch (e) { rec.onend(); }
+}
+
+// Fallback: record the clip and transcribe on stop (Deepgram).
+async function crmDictateFallback(textareaId, btn) {
+    if (_dictRecorder && _dictRecorder.state === 'recording') { _dictRecorder.stop(); return; }
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    _crmSnapshot(textareaId);
     _dictTarget = ta; _dictBtn = btn;
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -5736,7 +5790,6 @@ async function crmDictate(textareaId, btn) {
             if (_dictBtn) { _ceBtnLabel(_dictBtn, 'Dictate'); _dictBtn.disabled = false; _dictBtn.classList.remove('busy', 'recording'); }
         };
         _dictRecorder.start();
-        // Reuse the SAME mic stream for the live waveform + emerald glow.
         _startDictVisualizer(stream, textareaId);
         if (btn) { _ceBtnLabel(btn, 'Stop'); btn.classList.add('recording'); }
     } catch (err) {
