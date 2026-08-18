@@ -5802,6 +5802,16 @@ ${text}`;
     }
 }
 
+// Strip em/en dashes (the "AI dashes") that Isaac dislikes — swap to commas.
+// Leaves "- " bullet markers at line starts alone.
+function deDash(t) {
+    if (!t) return t;
+    return String(t)
+        .replace(/\s*[—–]\s*/g, ', ')   // " — " / "–" inside prose -> ", "
+        .replace(/,\s*,/g, ',')          // collapse any doubled commas
+        .replace(/,\s*\./g, '.');        // ", ." -> "."
+}
+
 // Lightweight AI call for formatting tasks — hits grok-chat directly with a
 // tiny system prompt (NO CRM data snapshot), so it returns in ~1s.
 async function crmQuickAI(userMessage, maxTokens) {
@@ -5811,7 +5821,7 @@ async function crmQuickAI(userMessage, maxTokens) {
         body: JSON.stringify({
             model: 'grok-4-fast-non-reasoning',
             messages: [
-                { role: 'system', content: 'You are a precise text editor. Follow the instruction exactly and return ONLY the resulting text — no preamble.' },
+                { role: 'system', content: 'You are a precise text editor. Follow the instruction exactly and return ONLY the resulting text, no preamble. Never use em dashes or en dashes; use commas or periods instead.' },
                 { role: 'user', content: userMessage }
             ],
             max_tokens: maxTokens || 500,
@@ -5819,10 +5829,11 @@ async function crmQuickAI(userMessage, maxTokens) {
         })
     });
     const data = await resp.json();
-    if (data.choices && data.choices[0]?.message?.content) return data.choices[0].message.content;
-    if (data.content) return data.content;
-    if (data.response) return data.response;
-    return '';
+    let out = '';
+    if (data.choices && data.choices[0]?.message?.content) out = data.choices[0].message.content;
+    else if (data.content) out = data.content;
+    else if (data.response) out = data.response;
+    return deDash(out);
 }
 
 // ============================================================
@@ -11921,9 +11932,10 @@ function openEnforcementDetail(notice) {
         ${notice.proofPhotoUrl ? `
         <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 8px;">Proof of Compliance</div>
-            <a href="${escapeHtml(notice.proofPhotoUrl)}" target="_blank" rel="noopener" style="display:block;">
-                <img src="${escapeHtml(notice.proofPhotoUrl)}" style="width:100%; max-height:260px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--border);">
-            </a>
+            <div style="position:relative; cursor:zoom-in;" onclick="openPhotoLightbox(['${notice.proofPhotoUrl.replace(/'/g, "\\'")}'], 0)">
+                <img src="${escapeHtml(notice.proofPhotoUrl)}" style="width:100%; max-height:260px; object-fit:cover; border-radius:var(--radius-md); border:1px solid var(--border); display:block;">
+                <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.55); color:#fff; font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; backdrop-filter:blur(4px);">Click to enlarge</div>
+            </div>
         </div>` : ''}
 
         <div style="margin-bottom: 22px;">
