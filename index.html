@@ -1108,6 +1108,59 @@ textarea.form-input {
     transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
+/* ============================================
+   APP-STYLE COMPOSER — Dictate · Polish with AI · Undo
+   (matches the Eloy Connect app's aura model)
+   ============================================ */
+.composer-field { position: relative; border-radius: 12px; }
+.composer-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.composer-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 600; letter-spacing: .2px;
+    color: var(--text-secondary);
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    transition: color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease, background .18s ease;
+}
+.composer-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.composer-btn:hover { color: var(--text-primary); border-color: rgba(63,224,232,0.5); box-shadow: 0 0 18px rgba(63,224,232,0.18); transform: translateY(-1px); }
+.composer-btn:active { transform: translateY(0); }
+.composer-btn:disabled { opacity: .6; cursor: default; transform: none; box-shadow: none; }
+.composer-btn.recording {
+    color: #fff; border-color: rgba(244,63,94,0.65); background: rgba(244,63,94,0.16);
+    animation: recPulse 1.4s ease-in-out infinite;
+}
+@keyframes recPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.35); } 50% { box-shadow: 0 0 22px 3px rgba(244,63,94,0.48); } }
+.composer-btn.busy { color: #C4B5FD; border-color: rgba(139,92,246,0.55); background: rgba(139,92,246,0.14); }
+
+/* Dictation aura — the app's teal bleeding into warm orange */
+@keyframes auraDictateBreathe {
+    0%,100% { box-shadow: 0 0 0 1px rgba(63,224,232,0.40), 0 0 16px 2px rgba(63,224,232,0.18), 0 0 30px 7px rgba(245,148,58,0.10); border-color: rgba(63,224,232,0.55); }
+    50%     { box-shadow: 0 0 0 1px rgba(63,224,232,0.78), 0 0 26px 5px rgba(63,224,232,0.38), 0 0 44px 12px rgba(245,148,58,0.22); border-color: rgba(245,148,58,0.78); }
+}
+.aura-dictate { animation: auraDictateBreathe 2.2s ease-in-out infinite; border-color: rgba(63,224,232,0.6) !important; transition: box-shadow .4s ease, border-color .4s ease; }
+
+/* Polish shimmer — animated light sweep across the field while AI works */
+.composer-field.aura-polish { box-shadow: 0 0 0 1px rgba(139,92,246,0.5), 0 0 28px 4px rgba(139,92,246,0.26); }
+.composer-field.aura-polish::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; overflow: hidden;
+    background: linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.16) 48%, rgba(63,224,232,0.28) 52%, transparent 68%);
+    background-size: 220% 100%;
+    animation: polishSweep 1.15s linear infinite;
+    mix-blend-mode: screen;
+}
+@keyframes polishSweep { 0% { background-position: 135% 0; } 100% { background-position: -135% 0; } }
+
+/* Liquid-glass modal (used by the enforcement modal) */
+.modal.modal-glass {
+    background: linear-gradient(160deg, rgba(22,32,52,0.86), rgba(12,18,32,0.92));
+    backdrop-filter: blur(26px) saturate(140%); -webkit-backdrop-filter: blur(26px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 24px 90px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
 .form-label {
     font-size: 12px;
     font-weight: 500;
@@ -4562,7 +4615,7 @@ input[type="checkbox"].bulk-check:checked::after {
 
 <!-- CODE ENFORCEMENT — NEW NOTICE MODAL -->
 <div class="modal-overlay" id="enforcementModal">
-    <div class="modal aura-host aura-enforce" style="width: 640px; position:relative;">
+    <div class="modal modal-glass aura-host aura-enforce" style="width: 640px; position:relative;">
         <div class="aura-glow"></div>
         <div class="aura-line"></div>
         <div class="modal-title" style="position:relative;">Issue New Code Enforcement Notice</div>
@@ -4610,11 +4663,22 @@ input[type="checkbox"].bulk-check:checked::after {
 
         <div style="margin-bottom: 14px; position:relative;">
             <label class="form-label">Description</label>
-            <textarea class="form-input" id="ceDescription" rows="4" placeholder="Describe the violation — type it, or tap Dictate to speak it."></textarea>
-            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmDictate('ceDescription', this)">🎙️ Dictate</button>
-                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmComposerPolish('ceDescription', this)">✨ Polish with AI</button>
-                <button type="button" class="btn btn-secondary" style="font-size:12px; padding:6px 12px;" onclick="crmComposerUndo('ceDescription')">↩ Undo</button>
+            <div class="composer-field">
+                <textarea class="form-input" id="ceDescription" rows="4" placeholder="Describe the violation — type it, or tap Dictate to speak it."></textarea>
+            </div>
+            <div class="composer-row">
+                <button type="button" class="composer-btn" onclick="crmDictate('ceDescription', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    <span class="composer-label">Dictate</span>
+                </button>
+                <button type="button" class="composer-btn" onclick="crmComposerPolish('ceDescription', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
+                    <span class="composer-label">Polish with AI</span>
+                </button>
+                <button type="button" class="composer-btn" onclick="crmComposerUndo('ceDescription')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
+                    <span class="composer-label">Undo</span>
+                </button>
             </div>
         </div>
 
@@ -5426,7 +5490,7 @@ function _startDictVisualizer(stream, textareaId) {
         }
         _dictWaveEl.classList.add('active');
     }
-    if (_dictTarget) _dictTarget.classList.add('dictating-glow');
+    if (_dictTarget) _dictTarget.classList.add('aura-dictate');
 
     try {
         _dictAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -5462,7 +5526,7 @@ function _stopDictVisualizer() {
     if (_dictSource) { try { _dictSource.disconnect(); } catch (e) {} _dictSource = null; }
     if (_dictAnalyser) { try { _dictAnalyser.disconnect(); } catch (e) {} _dictAnalyser = null; }
     if (_dictAudioCtx) { try { _dictAudioCtx.close(); } catch (e) {} _dictAudioCtx = null; }
-    if (_dictTarget) _dictTarget.classList.remove('dictating-glow');
+    if (_dictTarget) _dictTarget.classList.remove('aura-dictate');
     if (_dictWaveEl) {
         _dictWaveEl.classList.remove('active');
         const el = _dictWaveEl;
@@ -5487,14 +5551,21 @@ function crmComposerUndo(id) {
     if (ta && st && st.length) { ta.value = st.pop(); }
     else { showToast('Nothing to undo', 'info'); }
 }
+// Set a composer button's label span (keeps the SVG icon intact).
+function _ceBtnLabel(btn, text) {
+    if (!btn) return;
+    const l = btn.querySelector('.composer-label');
+    if (l) l.textContent = text; else btn.textContent = text;
+}
 async function crmComposerPolish(id, btn) {
     const ta = document.getElementById(id);
     if (!ta) return;
     const text = (ta.value || '').trim();
     if (!text) { showToast('Write or dictate something first', 'warning'); return; }
     _crmSnapshot(id);
-    const orig = btn ? btn.textContent : '';
-    if (btn) { btn.textContent = '✨ Polishing…'; btn.disabled = true; }
+    const wrap = ta.closest('.composer-field') || ta.parentElement;
+    if (wrap) wrap.classList.add('aura-polish');
+    if (btn) { _ceBtnLabel(btn, 'Polishing…'); btn.disabled = true; btn.classList.add('busy'); }
     try {
         const prompt = `Rewrite the following into a clear, professional code enforcement violation description that a resident will read inside a civic app. 2 to 4 sentences, plain English, firm but respectful, written in the city's voice ("The City of Eloy has observed..."). Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
         const out = await callGrokAI(prompt);
@@ -5504,7 +5575,8 @@ async function crmComposerPolish(id, btn) {
     } catch (e) {
         showToast('AI failed: ' + (e.message || e), 'error');
     } finally {
-        if (btn) { btn.textContent = orig || '✨ Polish with AI'; btn.disabled = false; }
+        if (wrap) wrap.classList.remove('aura-polish');
+        if (btn) { _ceBtnLabel(btn, 'Polish with AI'); btn.disabled = false; btn.classList.remove('busy'); }
     }
 }
 
@@ -5526,7 +5598,7 @@ async function crmDictate(textareaId, btn) {
         _dictRecorder.onstop = async () => {
             _stopDictVisualizer();
             stream.getTracks().forEach(t => t.stop());
-            if (_dictBtn) { _dictBtn.textContent = '… transcribing'; _dictBtn.disabled = true; }
+            if (_dictBtn) { _ceBtnLabel(_dictBtn, 'Transcribing…'); _dictBtn.disabled = true; _dictBtn.classList.remove('recording'); _dictBtn.classList.add('busy'); }
             try {
                 const blob = new Blob(_dictChunks, { type: 'audio/webm' });
                 const resp = await fetch(`${SUPABASE_URL}/functions/v1/deepgram-transcribe`, {
@@ -5538,16 +5610,16 @@ async function crmDictate(textareaId, btn) {
                 const text = (data && data.transcript) ? data.transcript : '';
                 if (text) _dictTarget.value = _dictTarget.value ? (_dictTarget.value.trim() + ' ' + text) : text;
             } catch (err) { console.warn('dictation failed', err); }
-            if (_dictBtn) { _dictBtn.textContent = '🎙️ Dictate'; _dictBtn.disabled = false; }
+            if (_dictBtn) { _ceBtnLabel(_dictBtn, 'Dictate'); _dictBtn.disabled = false; _dictBtn.classList.remove('busy', 'recording'); }
         };
         _dictRecorder.start();
         // Reuse the SAME mic stream for the live waveform + emerald glow.
         _startDictVisualizer(stream, textareaId);
-        if (btn) btn.textContent = '⏹ Stop';
+        if (btn) { _ceBtnLabel(btn, 'Stop'); btn.classList.add('recording'); }
     } catch (err) {
         console.warn('mic permission denied', err);
         _stopDictVisualizer();
-        if (btn) btn.textContent = '🎙️ Dictate';
+        if (btn) { _ceBtnLabel(btn, 'Dictate'); btn.classList.remove('recording', 'busy'); }
     }
 }
 
