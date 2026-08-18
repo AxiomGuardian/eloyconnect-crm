@@ -1137,16 +1137,18 @@ textarea.form-input {
 .composer-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .composer-btn {
     display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12.5px; font-weight: 600; letter-spacing: .2px;
-    color: var(--text-secondary);
-    padding: 8px 14px; border-radius: 999px; cursor: pointer;
-    background: rgba(255,255,255,0.045);
-    border: 1px solid rgba(255,255,255,0.10);
+    font-family: inherit; font-size: 12.5px; font-weight: 600; letter-spacing: .1px;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+    color: var(--text-primary);
+    padding: 8px 15px; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(165deg, rgba(255,255,255,0.075), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.18);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     transition: color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease, background .18s ease;
 }
 .composer-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.composer-btn:hover { color: var(--text-primary); border-color: rgba(63,224,232,0.5); box-shadow: 0 0 18px rgba(63,224,232,0.18); transform: translateY(-1px); }
+.composer-btn:hover { color: #fff; border-color: rgba(63,224,232,0.5); background: linear-gradient(165deg, rgba(63,224,232,0.14), rgba(63,224,232,0.03)); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 20px rgba(63,224,232,0.16); transform: translateY(-1px); }
 .composer-btn:active { transform: translateY(0); }
 .composer-btn:disabled { opacity: .6; cursor: default; transform: none; box-shadow: none; }
 .composer-btn.recording {
@@ -4706,9 +4708,14 @@ input[type="checkbox"].bulk-check:checked::after {
         <div class="aura-glow"></div>
         <div class="aura-line"></div>
         <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px;">
-            <div>
-                <div style="font-size:18px; font-weight:700;" id="ceDetailTitle">Notice Details</div>
-                <div style="font-size:12px; color:var(--text-tertiary); margin-top:3px;" id="ceDetailSub"></div>
+            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                <button id="ceDetailBack" onclick="ceDetailGoBack()" title="Back to resident profile" style="display:none; align-items:center; justify-content:center; width:34px; height:34px; border-radius:10px; flex-shrink:0; background:linear-gradient(165deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.12); box-shadow:inset 0 1px 0 rgba(255,255,255,0.08); color:var(--text-primary); cursor:pointer; transition:transform .15s ease, border-color .15s ease;" onmouseover="this.style.transform='translateX(-2px)';this.style.borderColor='rgba(63,224,232,0.5)';" onmouseout="this.style.transform='translateX(0)';this.style.borderColor='rgba(255,255,255,0.12)';">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div style="min-width:0;">
+                    <div style="font-size:18px; font-weight:700;" id="ceDetailTitle">Notice Details</div>
+                    <div style="font-size:12px; color:var(--text-tertiary); margin-top:3px;" id="ceDetailSub"></div>
+                </div>
             </div>
             <button class="btn btn-ghost" onclick="closeEnforcementDetail()" style="font-size:20px;" title="Close (Esc)">✕</button>
         </div>
@@ -11948,7 +11955,7 @@ function renderEnforcementTable(filter) {
             const issuedStr = latest.issued ? new Date(latest.issued).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
             const click = g.resident_id
                 ? `openResidentDetail('${escapeHtml(String(g.resident_id))}')`
-                : `openEnforcementDetailById('${latest._dbId}')`;
+                : `window._ceBackToUser=null; openEnforcementDetailById('${latest._dbId}')`;
             return `<tr onclick="${click}" class="ce-resident-row" style="cursor:pointer;">
             <td style="font-weight:600;">${escapeHtml(g.resident)}</td>
             <td style="color:var(--text-secondary); font-size:12px;">${escapeHtml(latest.address || '')}</td>
@@ -12106,13 +12113,23 @@ function openEnforcementDetail(notice) {
     `;
 
     window._ceProofUrls = notice.proofPhotoUrls || [];
+    const backBtn = document.getElementById('ceDetailBack');
+    if (backBtn) backBtn.style.display = window._ceBackToUser ? 'flex' : 'none';
     panel.classList.add('open');
     try { loadNoticeThread(notice._dbId); } catch (e) {}
     try { populateBizReferral(); } catch (e) {}
 }
 
+function ceDetailGoBack() {
+    const u = window._ceBackToUser;
+    window._ceBackToUser = null;
+    document.getElementById('enforcementDetail').classList.remove('open');
+    if (u) setTimeout(() => { try { openResidentDetail(u); } catch (e) {} }, 60);
+}
+
 function closeEnforcementDetail() {
     document.getElementById('enforcementDetail').classList.remove('open');
+    window._ceBackToUser = null;
 }
 
 function openEnforcementModal() {
@@ -12209,13 +12226,8 @@ async function ceOpenQrUpload() {
     if (!sbClient) { showToast('Not connected', 'error'); return; }
     const token = _ceEnsureToken();
     try { await sbClient.from('notice_upload_sessions').upsert({ token, photos: [] }, { onConflict: 'token' }); } catch (e) { /* row may already exist */ }
-    // Serve the mobile page from our own site (renders as a real page); fall back to the function if not on http.
-    let url;
-    try {
-        url = (location.origin && location.origin.indexOf('http') === 0)
-            ? new URL('upload.html', location.href).href + '?s=' + encodeURIComponent(token)
-            : `${CE_UPLOAD_FN}?s=${encodeURIComponent(token)}`;
-    } catch (e) { url = `${CE_UPLOAD_FN}?s=${encodeURIComponent(token)}`; }
+    // Public Supabase function host (no login wall). Hosting is being finalized.
+    const url = `${CE_UPLOAD_FN}?s=${encodeURIComponent(token)}`;
     const canvas = document.getElementById('ceQrCanvas');
     if (canvas) {
         canvas.innerHTML = '';
@@ -13370,7 +13382,7 @@ function openResidentDetail(userId) {
             const sm = (typeof voiceStatusMeta === 'function') ? null : null;
             const cs = (typeof CE_STATUS !== 'undefined' && CE_STATUS[eff]) ? CE_STATUS[eff] : { label: eff, css: 'ce-status-pending' };
             const dt = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-            return `<div class="rp-notice" onclick="closeResidentDetail(); setTimeout(()=>openEnforcementDetailById('${escapeHtml(String(n.id))}'), 60);">
+            return `<div class="rp-notice" onclick="window._ceBackToUser='${escapeHtml(String(userId))}'; closeResidentDetail(); setTimeout(()=>openEnforcementDetailById('${escapeHtml(String(n.id))}'), 60);">
                 <div style="min-width:0; display:flex; align-items:center; gap:8px;">
                     <span class="rp-notice-chev" aria-hidden="true">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
