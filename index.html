@@ -1248,34 +1248,79 @@ textarea.form-input {
 /* ===== Reports detail: side panel → centered ORANGE glass modal ===== */
 #reportDetail.detail-panel {
     position: fixed; top: 50%; left: 50%; right: auto; bottom: auto;
-    transform: translate(-50%, -48%) scale(0.98);
-    width: min(940px, 94vw); max-width: 94vw; height: auto; max-height: 90vh; overflow-y: auto;
-    border-radius: 22px; padding: 26px 30px;
-    background: linear-gradient(162deg, rgba(34,24,14,0.92), rgba(16,12,9,0.95));
+    transform: translate(-50%, -50%) scale(0.98);
+    width: min(940px, 94vw); max-width: 94vw; height: auto; max-height: 88vh; overflow: hidden;
+    padding: 0; border-radius: 20px;
+    display: flex; flex-direction: column;
+    background: linear-gradient(162deg, rgba(34,24,14,0.94), rgba(15,11,8,0.97));
     backdrop-filter: blur(26px) saturate(140%); -webkit-backdrop-filter: blur(26px) saturate(140%);
-    border: 1px solid rgba(245,148,58,0.30);
-    box-shadow: 0 30px 90px rgba(0,0,0,0.62), 0 0 0 1px rgba(245,148,58,0.10), 0 0 46px rgba(245,148,58,0.14), inset 0 1px 0 rgba(255,255,255,0.06);
+    border: 1px solid rgba(245,148,58,0.30); border-top: 3px solid #F5943A;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.64), 0 0 46px rgba(245,148,58,0.16), inset 0 1px 0 rgba(255,255,255,0.05);
     opacity: 0; visibility: hidden; pointer-events: none;
     z-index: 3000; transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
 }
 #reportDetail.detail-panel::before {
     content: ''; position: fixed; inset: 0; z-index: -1;
-    background: rgba(2,6,14,0.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+    background: rgba(2,6,14,0.64); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
 }
 #reportDetail.detail-panel.open {
     opacity: 1; visibility: visible; pointer-events: auto;
     transform: translate(-50%, -50%) scale(1);
 }
-/* neon-orange top accent bar */
-#reportDetail.detail-panel::after {
-    content: ''; position: sticky; top: -26px; display: block; height: 3px; margin: -26px -30px 18px;
-    border-radius: 22px 22px 0 0;
-    background: linear-gradient(90deg, #F5943A, #FF7A18, #FFB765, #F5943A);
-    box-shadow: 0 0 18px rgba(245,148,58,0.6);
-    z-index: 2;
+#reportDetail.detail-panel .detail-header {
+    flex-shrink: 0; position: relative; z-index: 2;
+    background: rgba(26,18,11,0.92); border-bottom: 1px solid rgba(245,148,58,0.20);
+    padding: 18px 26px;
 }
-#reportDetail.detail-panel .detail-header { border-bottom-color: rgba(245,148,58,0.18); }
-#reportDetail.detail-panel .status-dot { }
+#reportDetail.detail-panel .detail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 26px 30px; }
+
+/* ===== AI Report Triage — dynamic, 3D premium card ===== */
+@property --ai-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+#reportsAITriagePanel {
+    position: relative; padding: 0; overflow: hidden; border-radius: 18px; border: none;
+    background: linear-gradient(165deg, rgba(22,28,52,0.92), rgba(12,15,28,0.96));
+    box-shadow: 0 20px 55px rgba(0,0,0,0.5), 0 0 44px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+#reportsAITriagePanel::before {
+    content: ''; position: absolute; inset: 0; border-radius: 18px; padding: 1px; pointer-events: none; opacity: .75;
+    background: conic-gradient(from var(--ai-a), rgba(63,224,232,0), rgba(99,102,241,0.7), rgba(63,224,232,0.7), rgba(139,92,246,0.55), rgba(63,224,232,0));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: aiBorderSpin 7s linear infinite;
+}
+@keyframes aiBorderSpin { to { --ai-a: 360deg; } }
+#reportsAITriagePanel .ai-assist-toggle {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 15px 18px; background: transparent; border: none; cursor: pointer; position: relative; z-index: 1;
+}
+#reportsAITriagePanel .ai-assist-icon {
+    width: 38px; height: 38px; border-radius: 12px; font-size: 12px; font-weight: 800; letter-spacing: .5px;
+    display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
+    background: radial-gradient(circle at 32% 26%, #a5adff, #4f46e5 58%, #3327a0);
+    box-shadow: 0 8px 20px rgba(79,70,229,0.55), inset 0 1.5px 2px rgba(255,255,255,0.55), inset 0 -4px 7px rgba(0,0,0,0.35);
+    animation: aiOrbFloat 3.4s ease-in-out infinite;
+}
+@keyframes aiOrbFloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
+#reportsAITriagePanel .ai-assist-toggle > span:first-of-type { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+#reportsAITriagePanel .ai-assist-chevron { margin-left: auto; color: var(--text-tertiary); transition: transform .25s ease; }
+#reportsAITriagePanel.collapsed .ai-assist-chevron { transform: rotate(-180deg); }
+#reportsAITriagePanel .ai-assist-body {
+    padding: 2px 20px 20px; position: relative; z-index: 1;
+    font-size: 13.5px; line-height: 1.72; color: var(--text-secondary);
+}
+#reportsAITriagePanel .ai-assist-body strong { color: var(--text-primary); }
+#reportsAITriagePanel .ai-assist-body ul { list-style: none; padding: 0; margin: 8px 0; }
+#reportsAITriagePanel .ai-assist-body li {
+    position: relative; padding: 9px 12px 9px 30px; margin-bottom: 7px; border-radius: 10px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+    border: 1px solid rgba(255,255,255,0.06); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: transform .16s ease, border-color .16s ease;
+}
+#reportsAITriagePanel .ai-assist-body li:hover { transform: translateX(2px); border-color: rgba(99,102,241,0.35); }
+#reportsAITriagePanel .ai-assist-body li::before {
+    content: ''; position: absolute; left: 12px; top: 15px; width: 7px; height: 7px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #a5adff, #4f46e5); box-shadow: 0 0 8px rgba(99,102,241,0.7);
+}
 .ce-qr-pulse { width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 rgba(63,224,232,0.6); animation:ceQrPulse 1.6s ease-out infinite; }
 @keyframes ceQrPulse { 0%{ box-shadow:0 0 0 0 rgba(63,224,232,0.5);} 70%{ box-shadow:0 0 0 10px rgba(63,224,232,0);} 100%{ box-shadow:0 0 0 0 rgba(63,224,232,0);} }
 #ceQrCanvas img, #ceQrCanvas canvas { width:100% !important; height:100% !important; border-radius:6px; }
