@@ -4858,6 +4858,21 @@ input[type="checkbox"].bulk-check:checked::after {
     </div>
 </div>
 
+<!-- DELETE NOTICE — IN-APP CONFIRM MODAL -->
+<div class="modal-overlay" id="ceDeleteConfirm" style="z-index:4000;" onclick="if(event.target===this)ceCancelDelete()">
+    <div class="modal modal-glass" style="width:min(420px,92vw); padding:26px 24px; text-align:center;">
+        <div style="width:52px; height:52px; border-radius:14px; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; background:linear-gradient(150deg, rgba(239,68,68,0.22), rgba(239,68,68,0.05)); color:#ef4444;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+        </div>
+        <div style="font-size:17px; font-weight:700; color:var(--text-primary); margin-bottom:8px;">Delete this notice?</div>
+        <div style="font-size:13px; color:var(--text-tertiary); line-height:1.55; margin-bottom:22px;">This permanently removes the notice, its photos, and the conversation, for the city and the resident's app. This can't be undone.</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" style="flex:1;" onclick="ceCancelDelete()">Cancel</button>
+            <button id="ceDeleteConfirmBtn" class="btn btn-primary" style="flex:1; background:#ef4444; border-color:#ef4444;" onclick="ceConfirmDelete()">Delete notice</button>
+        </div>
+    </div>
+</div>
+
 <!-- BUSINESS DIRECTORY DETAIL PANEL -->
 <div class="detail-panel" id="bizDetail" style="width: 520px; right: -520px;">
     <div class="detail-header">
@@ -12395,11 +12410,27 @@ Officer notes: ${notes || '(none)'}`;
     }
 }
 
+// Open the in-app delete confirmation modal (no ugly browser confirm()).
+function deleteNotice(dbId, reopenUserId) {
+    window._cePendingDelete = { dbId: String(dbId), reopenUserId: reopenUserId || null };
+    const m = document.getElementById('ceDeleteConfirm');
+    if (m) m.classList.add('open');
+}
+
+function ceCancelDelete() {
+    const m = document.getElementById('ceDeleteConfirm');
+    if (m) m.classList.remove('open');
+    window._cePendingDelete = null;
+}
+
 // Permanently delete a notice and ALL its data: storage photos, the message thread,
 // and the row itself. Cascades to the resident's app on their next refresh.
-async function deleteNotice(dbId, reopenUserId) {
-    if (!sbClient) return;
-    if (!confirm('Delete this code enforcement notice and everything in it (photos and messages)? This cannot be undone and removes it from the resident\'s app too.')) return;
+async function ceConfirmDelete() {
+    const pend = window._cePendingDelete;
+    if (!pend || !sbClient) { ceCancelDelete(); return; }
+    const dbId = pend.dbId, reopenUserId = pend.reopenUserId;
+    const btn = document.getElementById('ceDeleteConfirmBtn');
+    if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Deleting…'; }
     try {
         const row = (liveData.notices || []).find(n => String(n.id) === String(dbId));
         // 1) Remove every photo attached to this notice from storage.
@@ -12423,6 +12454,9 @@ async function deleteNotice(dbId, reopenUserId) {
         if (reopenUserId) setTimeout(() => { try { openResidentDetail(reopenUserId); } catch (e) {} }, 80);
     } catch (e) {
         showToast('Delete failed: ' + (e.message || e), 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Delete notice'; }
+        ceCancelDelete();
     }
 }
 
