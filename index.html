@@ -1463,12 +1463,13 @@ input[type="checkbox"].bulk-check:checked {
 input[type="checkbox"].bulk-check::after {
     content: '';
     position: absolute;
-    left: 5.5px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
+    left: 6.5px;
+    top: 3px;
+    width: 4.5px;
+    height: 8.5px;
     border: solid #06121a;
-    border-width: 0 2.5px 2.5px 0;
+    border-width: 0 2px 2px 0;
+    transform-origin: center;
     transform: rotate(45deg) scale(0);
     opacity: 0;
     transition: none;
@@ -8691,52 +8692,85 @@ function exportReportPDF() {
     const created = report.created_at
         ? new Date(report.created_at).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })
         : '—';
-    const statusLabel = (report.status || 'submitted').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const statusRaw = (report.status || 'submitted');
+    const statusLabel = statusRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const statusColors = { resolved:['#065f46','#d1fae5'], closed:['#374151','#e5e7eb'], in_progress:['#1e40af','#dbeafe'], assigned:['#6d28d9','#ede9fe'], under_review:['#92400e','#fef3c7'], submitted:['#9a3412','#ffedd5'] };
+    const stc = statusColors[statusRaw] || ['#0E3E9E','#EAF1FF'];
     const lat = report.latitude ? Number(report.latitude) : null;
     const lng = report.longitude ? Number(report.longitude) : null;
     const gps = (lat && lng) ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : '—';
     const photos = report.photos || [];
+    const rptRef = 'RPT-' + String(report.id || '').substring(0, 4).toUpperCase();
+    const priorityVal = report.priority ? String(report.priority) : '—';
+    const assignedProfile = (liveData.profiles || []).find(p => p.id === report.assigned_to);
+    const assignedName = assignedProfile ? (assignedProfile.display_name || 'Assigned') : (report.assigned_to ? 'Assigned' : 'Unassigned');
+    const genDate = new Date().toLocaleDateString('en-US', { dateStyle: 'long' });
 
     const content = `
       <style>
-        #reportPdfPaper{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;}
-        #reportPdfPaper .band{background:#0B1220;color:#fff;border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
-        #reportPdfPaper .band h1{margin:0;font-size:18px;letter-spacing:0.4px;}
-        #reportPdfPaper .band .sub{color:#9aa4b2;font-size:12px;margin-top:2px;}
-        #reportPdfPaper .band .right{text-align:right;color:#cbd5e1;font-size:11px;line-height:1.5;}
-        #reportPdfPaper h2{font-size:22px;margin:26px 0 6px;}
-        #reportPdfPaper .meta{color:#6b7280;font-size:13px;margin-bottom:18px;}
-        #reportPdfPaper .status-pill{display:inline-block;padding:4px 12px;border-radius:999px;background:#EAF1FF;color:#0E3E9E;font-weight:600;font-size:12px;}
-        #reportPdfPaper .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;}
-        #reportPdfPaper .cell{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;}
-        #reportPdfPaper .label{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
-        #reportPdfPaper .val{font-size:14px;}
-        #reportPdfPaper .desc{border:1px solid #e5e7eb;border-radius:8px;padding:14px;font-size:14px;line-height:1.6;}
-        #reportPdfPaper .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
-        #reportPdfPaper .photos img{width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;}
-        #reportPdfPaper .foot{margin-top:30px;border-top:1px solid #e5e7eb;padding-top:12px;color:#9ca3af;font-size:11px;text-align:center;}
+        #reportPdfPaper{font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;line-height:1.5;}
+        #reportPdfPaper *{box-sizing:border-box;}
+        #reportPdfPaper .hero{background:linear-gradient(120deg,#0b1220,#14233c);color:#fff;border-radius:16px;padding:26px 28px;position:relative;overflow:hidden;}
+        #reportPdfPaper .hero::after{content:'';position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(63,224,232,0.22),transparent 70%);}
+        #reportPdfPaper .hrow{display:flex;justify-content:space-between;align-items:flex-start;position:relative;}
+        #reportPdfPaper .brand{font-size:21px;font-weight:800;letter-spacing:0.5px;}
+        #reportPdfPaper .brand span{color:#3fe0e8;}
+        #reportPdfPaper .bsub{color:#93a3b8;font-size:12px;margin-top:3px;}
+        #reportPdfPaper .ref{text-align:right;font-size:11px;color:#cbd5e1;line-height:1.6;}
+        #reportPdfPaper .ref b{color:#fff;font-size:15px;letter-spacing:0.6px;display:block;}
+        #reportPdfPaper h1{font-size:27px;font-weight:800;margin:22px 0 0;letter-spacing:-0.5px;position:relative;}
+        #reportPdfPaper .chips{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;position:relative;}
+        #reportPdfPaper .badge{display:inline-block;padding:5px 13px;border-radius:999px;font-weight:700;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;}
+        #reportPdfPaper .subline{color:#9fb0c6;font-size:12.5px;}
+        #reportPdfPaper .sec-label{font-size:11px;font-weight:700;letter-spacing:0.9px;text-transform:uppercase;color:#94a3b8;margin:24px 0 11px;}
+        #reportPdfPaper .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        #reportPdfPaper .cell{background:#f8fafc;border:1px solid #eef2f7;border-radius:12px;padding:13px 16px;}
+        #reportPdfPaper .cell .k{font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#94a3b8;margin-bottom:5px;}
+        #reportPdfPaper .cell .v{font-size:14px;font-weight:600;color:#0f172a;}
+        #reportPdfPaper .desc{background:#fff;border:1px solid #eef2f7;border-left:4px solid #3fe0e8;border-radius:10px;padding:16px 18px;font-size:14px;color:#1e293b;}
+        #reportPdfPaper .ai{background:linear-gradient(160deg,#f5f3ff,#faf5ff);border:1px solid #ede9fe;border-radius:12px;padding:16px 18px;}
+        #reportPdfPaper .ai .k{color:#7c3aed;font-weight:800;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:6px;}
+        #reportPdfPaper .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+        #reportPdfPaper .photos img{width:100%;height:150px;object-fit:cover;border-radius:10px;border:1px solid #eef2f7;}
+        #reportPdfPaper .foot{margin-top:30px;border-top:1px solid #eef2f7;padding-top:14px;display:flex;justify-content:space-between;color:#94a3b8;font-size:11px;}
       </style>
-      <div class="band">
-        <div><h1>CITY OF ELOY</h1><div class="sub">Eloy Connect &middot; Resident Report</div></div>
-        <div class="right">Generated ${esc(new Date().toLocaleDateString('en-US',{dateStyle:'long'}))}<br>For internal city use</div>
+      <div class="hero">
+        <div class="hrow">
+          <div><div class="brand">CITY OF <span>ELOY</span></div><div class="bsub">Eloy Connect &middot; Civic Report</div></div>
+          <div class="ref"><b>${rptRef}</b>Generated ${esc(genDate)}<br>For internal city use</div>
+        </div>
+        <h1>${esc(report.title || 'Report')}</h1>
+        <div class="chips">
+          <span class="badge" style="background:${stc[1]};color:${stc[0]};">${esc(statusLabel)}</span>
+          <span class="subline">${esc(report.category || 'General')} &middot; Submitted ${esc(created)}</span>
+        </div>
       </div>
-      <h2>${esc(report.title || 'Report')}</h2>
-      <div class="meta"><span class="status-pill">${esc(statusLabel)}</span> &nbsp; ${esc(report.category || 'General')} &nbsp;&middot;&nbsp; Submitted ${esc(created)}</div>
+
+      <div class="sec-label">Report Details</div>
       <div class="grid">
-        <div class="cell"><div class="label">Submitted by</div><div class="val">${esc(submitterName)}${submitterEmail ? ' &middot; ' + esc(submitterEmail) : ''}</div></div>
-        <div class="cell"><div class="label">Category</div><div class="val">${esc(report.category || 'General')}</div></div>
-        <div class="cell"><div class="label">Address</div><div class="val">${esc(report.address || '—')}</div></div>
-        <div class="cell"><div class="label">GPS</div><div class="val">${esc(gps)}</div></div>
+        <div class="cell"><div class="k">Category</div><div class="v">${esc(report.category || 'General')}</div></div>
+        <div class="cell"><div class="k">Priority</div><div class="v">${esc(priorityVal)}</div></div>
+        <div class="cell"><div class="k">Submitted by</div><div class="v">${esc(submitterName)}${submitterEmail ? '<div style="font-weight:500;color:#64748b;font-size:12px;margin-top:2px;">' + esc(submitterEmail) + '</div>' : ''}</div></div>
+        <div class="cell"><div class="k">Assigned to</div><div class="v">${esc(assignedName)}</div></div>
+        <div class="cell"><div class="k">Address</div><div class="v">${esc(report.address || '—')}</div></div>
+        <div class="cell"><div class="k">GPS Coordinates</div><div class="v">${esc(gps)}</div></div>
       </div>
-      <div class="label">Description</div>
+
+      <div class="sec-label">Description</div>
       <div class="desc">${esc(report.description || 'No description provided.')}</div>
-      ${(report.ai_category || report.ai_summary) ? `<div class="label" style="margin-top:18px;">AI Insights</div><div class="desc">${report.ai_category ? '<strong>'+esc(report.ai_category)+'</strong><br>' : ''}${esc(report.ai_summary || '')}</div>` : ''}
-      ${photos.length ? `<div class="label" style="margin-top:18px;">Photos (${photos.length})</div><div class="photos">${photos.map(u => `<img src="${esc(u)}" crossorigin="anonymous">`).join('')}</div>` : ''}
-      <div class="foot">Eloy Connect &middot; Omnis Technologies LLC &middot; Generated from the city dashboard</div>`;
+
+      ${(report.ai_category || report.ai_summary) ? `<div class="sec-label">AI Insights</div><div class="ai"><div class="k">${esc(report.ai_category || 'Analysis')}</div><div style="font-size:13.5px;color:#3730a3;">${esc(report.ai_summary || '')}</div></div>` : ''}
+
+      ${photos.length ? `<div class="sec-label">Photos (${photos.length})</div><div class="photos">${photos.map(u => `<img src="${esc(u)}" crossorigin="anonymous">`).join('')}</div>` : ''}
+
+      <div class="foot"><span>Eloy Connect &middot; Omnis Technologies LLC</span><span>${rptRef} &middot; ${esc(report.category || 'General')}</span></div>`;
 
     const paper = document.getElementById('reportPdfPaper');
     if (paper) paper.innerHTML = content;
-    window.__reportPdfName = 'Eloy-Report-' + String(report.title || 'report').replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
+    // Smart filename: Eloy_RPT-XXXX_Title-Slug_YYYY-MM-DD
+    const dstamp = new Date().toISOString().slice(0, 10);
+    const titleSlug = String(report.title || 'Report').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'Report';
+    window.__reportPdfName = `Eloy_${rptRef}_${titleSlug}_${dstamp}`;
     document.getElementById('reportPdfModal').classList.add('open');
 }
 
