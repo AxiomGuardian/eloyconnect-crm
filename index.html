@@ -11907,6 +11907,7 @@ function renderEnforcementPage() {
             response: n.response || null,
             proofPhotoUrl: n.proof_photo_url || '',
             proofPhotoUrls: (Array.isArray(n.proof_photo_urls) && n.proof_photo_urls.length) ? n.proof_photo_urls : (n.proof_photo_url ? [n.proof_photo_url] : []),
+            evidencePhotoUrls: Array.isArray(n.evidence_photo_urls) ? n.evidence_photo_urls : [],
             proofPhoto: !!n.proof_photo_url,
             inspector: n.issued_by_name || 'Code Enforcement'
         };
@@ -12043,7 +12044,7 @@ function openEnforcementDetail(notice) {
             </div>
             <div class="ce-info">
                 <div class="ce-i-ico ce-i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.3"/><path d="M8 7l1.4-2.2h5.2L16 7"/></svg></div>
-                <div style="min-width:0;"><div class="ce-i-lbl">Evidence Photos</div><div class="ce-i-val">${(notice.proofPhotoUrls && notice.proofPhotoUrls.length) ? notice.proofPhotoUrls.length + ' attached' : (notice.proofPhoto ? '1 attached' : 'None')}</div></div>
+                <div style="min-width:0;"><div class="ce-i-lbl">Evidence Photos</div><div class="ce-i-val">${(notice.evidencePhotoUrls && notice.evidencePhotoUrls.length) ? notice.evidencePhotoUrls.length + ' attached' : 'None'}</div></div>
             </div>
         </div>
 
@@ -12061,9 +12062,17 @@ function openEnforcementDetail(notice) {
             </div>
         </div>`}
 
+        ${(notice.evidencePhotoUrls && notice.evidencePhotoUrls.length) ? `
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #F5943A; margin-bottom: 8px;">Evidence — What the City Documented (${notice.evidencePhotoUrls.length})</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px;">
+                ${notice.evidencePhotoUrls.map((u, i) => `<div class="ce-proof-thumb" onclick="openPhotoLightbox(window._ceEvidenceUrls, ${i})"><img src="${escapeHtml(u)}"></div>`).join('')}
+            </div>
+        </div>` : ''}
+
         ${(notice.proofPhotoUrls && notice.proofPhotoUrls.length) ? `
         <div style="margin-bottom: 20px;">
-            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-tertiary); margin-bottom: 8px;">Proof of Compliance (${notice.proofPhotoUrls.length})</div>
+            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #34D399; margin-bottom: 8px;">Proof of Compliance — From Resident (${notice.proofPhotoUrls.length})</div>
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px;">
                 ${notice.proofPhotoUrls.map((u, i) => `<div class="ce-proof-thumb" onclick="openPhotoLightbox(window._ceProofUrls, ${i})"><img src="${escapeHtml(u)}"></div>`).join('')}
             </div>
@@ -12113,6 +12122,7 @@ function openEnforcementDetail(notice) {
     `;
 
     window._ceProofUrls = notice.proofPhotoUrls || [];
+    window._ceEvidenceUrls = notice.evidencePhotoUrls || [];
     const backBtn = document.getElementById('ceDetailBack');
     if (backBtn) backBtn.style.display = window._ceBackToUser ? 'flex' : 'none';
     panel.classList.add('open');
@@ -12322,7 +12332,7 @@ async function issueEnforcementNotice() {
             severity, status: 'pending', deadline,
             issued_by_name: inspector || 'Code Enforcement'
         };
-        if (proofUrls.length) { payload.proof_photo_urls = proofUrls; payload.proof_photo_url = proofUrls[0]; }
+        if (proofUrls.length) { payload.evidence_photo_urls = proofUrls; }
         const { data, error } = await sbClient.from('notices').insert(payload).select().single();
         if (error) throw error;
 
