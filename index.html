@@ -4736,7 +4736,7 @@ input[type="checkbox"].bulk-check:checked::after {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
             <div>
                 <label class="form-label">Resident</label>
-                <select class="form-input" id="ceResidentSelect">
+                <select class="form-input" id="ceResidentSelect" onchange="ceResidentPicked(this.value)">
                     <option value="">-- Select resident --</option>
                 </select>
             </div>
@@ -4744,6 +4744,10 @@ input[type="checkbox"].bulk-check:checked::after {
                 <label class="form-label">Property Address</label>
                 <input class="form-input" id="ceAddress" placeholder="Start typing an address…" autocomplete="off" oninput="ceAddressSuggest(this.value)" onblur="setTimeout(()=>{const b=document.getElementById('ceAddressSuggest'); if(b){b.style.display='none';}}, 200)">
                 <div id="ceAddressSuggest" style="display:none; position:absolute; z-index:60; left:0; right:0; top:100%; margin-top:4px; background:#0E1729; border:1px solid var(--border); border-radius:10px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.55);"></div>
+                <button type="button" id="ceAddressFromAccount" onclick="ceUseAccountAddress()" style="display:none; align-items:center; gap:7px; margin-top:7px; padding:7px 11px; border-radius:9px; font-size:12px; cursor:pointer; width:100%; text-align:left; color:var(--text-secondary); background:linear-gradient(140deg, rgba(63,224,232,0.12), rgba(63,224,232,0.03)); border:1px solid rgba(63,224,232,0.28); transition:border-color .15s ease, color .15s ease;" onmouseover="this.style.borderColor='rgba(63,224,232,0.6)';this.style.color='var(--text-primary)';" onmouseout="this.style.borderColor='rgba(63,224,232,0.28)';this.style.color='var(--text-secondary)';">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fe0e8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+                    <span style="min-width:0;"><span style="color:var(--accent); font-weight:600;">Use account address:</span> <span id="ceAddressFromAccountText"></span></span>
+                </button>
             </div>
         </div>
 
@@ -12168,6 +12172,9 @@ function closeEnforcementDetail() {
 function openEnforcementModal() {
     populateCEResidents();
     ceResetIssuePhotos();
+    _ceSuggestedAddress = '';
+    const _chip = document.getElementById('ceAddressFromAccount');
+    if (_chip) _chip.style.display = 'none';
     document.getElementById('enforcementModal').classList.add('open');
     // Set default deadline to 14 days from today
     const defaultDeadline = new Date();
@@ -12521,6 +12528,34 @@ function populateCEResidents() {
     sel.innerHTML = '<option value="">-- Select resident --</option>' +
         residents.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.display_name || p.email || 'Resident')}${p.email ? ' — ' + escapeHtml(p.email) : ''}</option>`).join('');
     if (keep) sel.value = keep;
+}
+
+// When a resident is picked, offer their account address for the notice.
+let _ceSuggestedAddress = '';
+function ceResidentPicked(userId) {
+    const chip = document.getElementById('ceAddressFromAccount');
+    const txt = document.getElementById('ceAddressFromAccountText');
+    const addrInput = document.getElementById('ceAddress');
+    _ceSuggestedAddress = '';
+    if (chip) chip.style.display = 'none';
+    if (!userId) return;
+    const prof = (liveData.profiles || []).find(p => String(p.id) === String(userId));
+    const addr = prof && prof.address ? String(prof.address).trim() : '';
+    if (!addr) return;
+    _ceSuggestedAddress = addr;
+    // If the address box is empty, prefill it automatically; always show the chip so
+    // staff can click to use it (or just type their own).
+    if (addrInput && !addrInput.value.trim()) addrInput.value = addr;
+    if (txt) txt.textContent = addr;
+    if (chip) chip.style.display = 'flex';
+}
+
+function ceUseAccountAddress() {
+    const addrInput = document.getElementById('ceAddress');
+    if (addrInput && _ceSuggestedAddress) {
+        addrInput.value = _ceSuggestedAddress;
+        addrInput.focus();
+    }
 }
 
 function updateEnforcementCounts() {
