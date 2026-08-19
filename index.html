@@ -1316,6 +1316,24 @@ textarea.form-input {
 #reportDetail .detail-body .rpt-mini-btn svg { width: 14px; height: 14px; }
 /* resident profile opened from the report modal must sit above it */
 #residentDetail.modal-overlay { z-index: 3600; }
+/* Report location action buttons — translucent premium (orange), like the composer buttons */
+.rpt-loc-btn {
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:11px;
+    font-size:12.5px; font-weight:600; letter-spacing:.1px; text-decoration:none; cursor:pointer; color:var(--text-secondary);
+    background:linear-gradient(165deg, rgba(255,255,255,0.075), rgba(255,255,255,0.02));
+    border:1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.18);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    transition: color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease, background .18s ease;
+}
+.rpt-loc-btn:hover {
+    color:#fff; border-color:rgba(245,148,58,0.55);
+    background:linear-gradient(165deg, rgba(245,148,58,0.18), rgba(245,148,58,0.04));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 20px rgba(245,148,58,0.18);
+    transform: translateY(-1px);
+}
+.rpt-loc-btn:active { transform: translateY(0); }
 
 /* ===== AI Report Triage — dynamic, 3D premium card ===== */
 @property --ai-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -10300,17 +10318,17 @@ async function openReportDetail(idOrUuid) {
             if (lat && lng) {
                 const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
                 const amapsUrl = `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(addr || 'Report Location')}`;
-                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Google Maps</a>`;
-                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Apple Maps</a>`;
+                buttons += `<a href="${gmapsUrl}" target="_blank" class="rpt-loc-btn">Google Maps</a>`;
+                buttons += `<a href="${amapsUrl}" target="_blank" class="rpt-loc-btn">Apple Maps</a>`;
             }
 
             if (addr) {
-                buttons += `<button data-copy="${escapeHtml(addr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
+                buttons += `<button data-copy="${escapeHtml(addr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" class="rpt-loc-btn">Copy Address</button>`;
             }
 
             if (lat && lng) {
                 const coordStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                buttons += `<button data-copy="${escapeHtml(coordStr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
+                buttons += `<button data-copy="${escapeHtml(coordStr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" class="rpt-loc-btn">Copy GPS</button>`;
             }
 
             actionsEl.innerHTML = buttons || '<span style="font-size:12px; color:var(--text-tertiary);">No location data available</span>';
