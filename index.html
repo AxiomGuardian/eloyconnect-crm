@@ -1213,6 +1213,9 @@ textarea.form-input {
 .rp-notice:hover .rp-notice-title { color:#ffce9a; }
 .rp-notice-chev { color:var(--text-tertiary); opacity:0; transform:translateX(-4px); transition:opacity .16s ease, transform .16s ease; }
 .rp-notice:hover .rp-notice-chev { opacity:1; transform:translateX(0); }
+.rp-del { width:28px; height:28px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:1px solid transparent; color:var(--text-tertiary); cursor:pointer; opacity:0; transition:opacity .16s ease, background .16s ease, color .16s ease, border-color .16s ease; }
+.rp-notice:hover .rp-del { opacity:1; }
+.rp-del:hover { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#ef4444; }
 
 /* ===== Evidence photo buttons + thumbnails ===== */
 .ce-photo-btn { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--text-secondary); cursor:pointer; background:linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.10); box-shadow:inset 0 1px 0 rgba(255,255,255,0.06); transition:transform .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease; }
@@ -12115,8 +12118,13 @@ function openEnforcementDetail(notice) {
             </div>
         </div>` : ''}
 
-        <div class="flex gap-8">
-            <button class="btn btn-primary" style="flex: 1;" onclick="updateNoticeStatus('${notice._dbId}','resolved')">Mark Resolved</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-ghost" style="color:#ef4444; border-color:rgba(239,68,68,0.35); display:inline-flex; align-items:center; gap:6px;" data-id="${notice._dbId}" onclick="deleteNotice(this.dataset.id, window._ceBackToUser)" title="Permanently delete this notice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+                Delete
+            </button>
+            <div style="flex:1;"></div>
+            <button class="btn btn-primary" onclick="updateNoticeStatus('${notice._dbId}','resolved')">Mark Resolved</button>
             <button class="btn btn-secondary" onclick="closeEnforcementDetail()">Close</button>
         </div>
     `;
@@ -12384,6 +12392,37 @@ Officer notes: ${notes || '(none)'}`;
         showToast('AI failed: ' + (e.message || e), 'error');
     } finally {
         if (btn) { btn.textContent = orig || 'Write description with AI'; btn.disabled = false; }
+    }
+}
+
+// Permanently delete a notice and ALL its data: storage photos, the message thread,
+// and the row itself. Cascades to the resident's app on their next refresh.
+async function deleteNotice(dbId, reopenUserId) {
+    if (!sbClient) return;
+    if (!confirm('Delete this code enforcement notice and everything in it (photos and messages)? This cannot be undone and removes it from the resident\'s app too.')) return;
+    try {
+        const row = (liveData.notices || []).find(n => String(n.id) === String(dbId));
+        // 1) Remove every photo attached to this notice from storage.
+        if (row) {
+            const urls = []
+                .concat(Array.isArray(row.evidence_photo_urls) ? row.evidence_photo_urls : [])
+                .concat(Array.isArray(row.proof_photo_urls) ? row.proof_photo_urls : [])
+                .concat(row.proof_photo_url ? [row.proof_photo_url] : []);
+            const marker = '/notice-proofs/';
+            const paths = urls.map(u => { const i = String(u).indexOf(marker); return i >= 0 ? decodeURIComponent(String(u).slice(i + marker.length)) : null; }).filter(Boolean);
+            if (paths.length) { try { await sbClient.storage.from('notice-proofs').remove(paths); } catch (e) { /* non-fatal */ } }
+        }
+        // 2) Remove the conversation thread (FK) then the notice.
+        try { await sbClient.from('notice_messages').delete().eq('notice_id', dbId); } catch (e) { /* non-fatal */ }
+        const { error } = await sbClient.from('notices').delete().eq('id', dbId);
+        if (error) throw error;
+        liveData.notices = (liveData.notices || []).filter(n => String(n.id) !== String(dbId));
+        renderEnforcementPage();
+        closeEnforcementDetail();
+        showToast('Notice and all its data deleted', 'success');
+        if (reopenUserId) setTimeout(() => { try { openResidentDetail(reopenUserId); } catch (e) {} }, 80);
+    } catch (e) {
+        showToast('Delete failed: ' + (e.message || e), 'error');
     }
 }
 
@@ -13402,7 +13441,12 @@ function openResidentDetail(userId) {
                         <div style="font-size:11px; color:var(--text-tertiary); margin-top:2px;">${escapeHtml(n.address || '')} · ${dt}</div>
                     </div>
                 </div>
-                <span class="status ${cs.css}" style="font-size:11px; flex-shrink:0;"><span class="status-dot"></span>${cs.label}</span>
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <span class="status ${cs.css}" style="font-size:11px;"><span class="status-dot"></span>${cs.label}</span>
+                    <button class="rp-del" title="Delete notice + all its data" data-id="${escapeHtml(String(n.id))}" data-uid="${escapeHtml(String(userId))}" onclick="event.stopPropagation(); deleteNotice(this.dataset.id, this.dataset.uid);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>
+                    </button>
+                </div>
             </div>`;
         }).join('');
     } else {
