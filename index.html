@@ -5046,7 +5046,27 @@ input[type="checkbox"].bulk-check:checked::after {
 
         <div style="margin-bottom: 14px;">
             <label class="form-label">Body</label>
-            <textarea class="form-input" id="contentBody" rows="4" placeholder="Write the content body..."></textarea>
+            <div class="composer-field">
+                <textarea class="form-input" id="contentBody" rows="4" placeholder="Write the content body — type it, or tap Dictate to speak it."></textarea>
+            </div>
+            <div class="composer-row">
+                <button type="button" class="composer-btn" onclick="crmDictate('contentBody', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                    <span class="composer-label">Dictate</span>
+                </button>
+                <button type="button" class="composer-btn" onclick="crmComposerPolish('contentBody', this, 'content')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
+                    <span class="composer-label">Polish with AI</span>
+                </button>
+                <button type="button" class="composer-btn" onclick="crmComposerUndo('contentBody')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
+                    <span class="composer-label">Undo</span>
+                </button>
+                <button type="button" class="composer-btn" onclick="crmComposerRedo('contentBody')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>
+                    <span class="composer-label">Redo</span>
+                </button>
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
@@ -5893,6 +5913,8 @@ async function crmComposerPolish(id, btn, mode) {
     try {
         const prompt = (mode === 'message')
             ? `Rewrite the following into a clear, warm, professional message from the City of Eloy to a resident about their code enforcement notice. Keep it brief and genuinely helpful, plain English, first-person from the city ("The City of Eloy..."). No letterhead, salutation, or signature. Keep every fact and offer. Return ONLY the rewritten message.\n\nTEXT:\n${text}`
+            : (mode === 'content')
+            ? `Rewrite the following into a clear, engaging city news or announcement post that residents read in the Eloy Connect app. Warm, professional, plain English. Lead with the most important information. Preserve every fact exactly (dates, times, places, names, numbers). No letterhead, salutation, or signature. Return ONLY the rewritten text.\n\nTEXT:\n${text}`
             : `Rewrite the following into a clear code enforcement notice written by the City of Eloy directly TO the resident, in plain, respectful, human language. Structure it as: (1) one sentence stating what the city observed; (2) one or two sentences on exactly what the resident needs to do to bring it into compliance; (3) a brief closing that offers help. Keep every fact. No letterhead, salutation, signature, or invented municipal code numbers. Return ONLY the rewritten text.\n\nTEXT:\n${text}`;
         const out = await crmQuickAI(prompt, 700);
         const clean = (out || '').trim();
