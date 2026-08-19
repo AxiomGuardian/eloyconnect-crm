@@ -14,6 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 /* ============================================
    ELOY CONNECT CRM — PREMIUM DESIGN SYSTEM
@@ -1313,6 +1314,8 @@ textarea.form-input {
 }
 #reportDetail .detail-body .rpt-mini-btn:hover { transform: translateY(-1px); color: var(--text-primary); border-color: rgba(245,148,58,0.4); }
 #reportDetail .detail-body .rpt-mini-btn svg { width: 14px; height: 14px; }
+/* resident profile opened from the report modal must sit above it */
+#residentDetail.modal-overlay { z-index: 3600; }
 
 /* ===== AI Report Triage — dynamic, 3D premium card ===== */
 @property --ai-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -5011,6 +5014,25 @@ input[type="checkbox"].bulk-check:checked::after {
     </div>
 </div>
 
+<!-- REPORT PDF PREVIEW (in-page, downloadable) -->
+<div class="modal-overlay" id="reportPdfModal" style="z-index:4100;" onclick="if(event.target===this)closeReportPdf()">
+    <div class="modal modal-glass" style="width:min(860px,95vw); max-height:92vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+            <div style="font-size:15px; font-weight:700; color:var(--text-primary);">Report PDF</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button class="btn btn-primary" id="reportPdfDownloadBtn" onclick="downloadReportPdf()" style="display:inline-flex; align-items:center; gap:7px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                    Download PDF
+                </button>
+                <button class="btn btn-ghost" onclick="closeReportPdf()" style="font-size:20px;" title="Close">&#10005;</button>
+            </div>
+        </div>
+        <div style="overflow-y:auto; padding:22px; background:rgba(0,0,0,0.25);">
+            <div id="reportPdfPaper" style="background:#ffffff; color:#111827; border-radius:8px; max-width:760px; margin:0 auto; padding:40px; box-shadow:0 20px 60px rgba(0,0,0,0.5);"></div>
+        </div>
+    </div>
+</div>
+
 <!-- GENERIC IN-APP CONFIRM MODAL (reusable, matches notice-delete style) -->
 <div class="modal-overlay" id="crmConfirmModal" style="z-index:4200;" onclick="if(event.target===this)crmConfirmCancel()">
     <div class="modal modal-glass" style="width:min(420px,92vw); padding:26px 24px; text-align:center;">
@@ -8675,27 +8697,25 @@ function exportReportPDF() {
     const gps = (lat && lng) ? `${lat.toFixed(6)}, ${lng.toFixed(6)}` : '—';
     const photos = report.photos || [];
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Eloy Report — ${esc(report.title || 'Report')}</title>
-    <style>
-      *{box-sizing:border-box;}
-      body{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;margin:0;padding:40px;}
-      .band{background:#0B1220;color:#fff;border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
-      .band h1{margin:0;font-size:18px;letter-spacing:0.4px;}
-      .band .sub{color:#9aa4b2;font-size:12px;margin-top:2px;}
-      .band .right{text-align:right;color:#cbd5e1;font-size:11px;line-height:1.5;}
-      h2{font-size:22px;margin:26px 0 6px;}
-      .meta{color:#6b7280;font-size:13px;margin-bottom:18px;}
-      .status-pill{display:inline-block;padding:4px 12px;border-radius:999px;background:#EAF1FF;color:#0E3E9E;font-weight:600;font-size:12px;}
-      .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;}
-      .cell{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;}
-      .label{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
-      .val{font-size:14px;}
-      .desc{border:1px solid #e5e7eb;border-radius:8px;padding:14px;font-size:14px;line-height:1.6;}
-      .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
-      .photos img{width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;}
-      .foot{margin-top:30px;border-top:1px solid #e5e7eb;padding-top:12px;color:#9ca3af;font-size:11px;text-align:center;}
-      @media print{body{padding:24px;} .band{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
-    </style></head><body>
+    const content = `
+      <style>
+        #reportPdfPaper{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;}
+        #reportPdfPaper .band{background:#0B1220;color:#fff;border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
+        #reportPdfPaper .band h1{margin:0;font-size:18px;letter-spacing:0.4px;}
+        #reportPdfPaper .band .sub{color:#9aa4b2;font-size:12px;margin-top:2px;}
+        #reportPdfPaper .band .right{text-align:right;color:#cbd5e1;font-size:11px;line-height:1.5;}
+        #reportPdfPaper h2{font-size:22px;margin:26px 0 6px;}
+        #reportPdfPaper .meta{color:#6b7280;font-size:13px;margin-bottom:18px;}
+        #reportPdfPaper .status-pill{display:inline-block;padding:4px 12px;border-radius:999px;background:#EAF1FF;color:#0E3E9E;font-weight:600;font-size:12px;}
+        #reportPdfPaper .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;}
+        #reportPdfPaper .cell{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;}
+        #reportPdfPaper .label{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;color:#9ca3af;margin-bottom:4px;}
+        #reportPdfPaper .val{font-size:14px;}
+        #reportPdfPaper .desc{border:1px solid #e5e7eb;border-radius:8px;padding:14px;font-size:14px;line-height:1.6;}
+        #reportPdfPaper .photos{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+        #reportPdfPaper .photos img{width:150px;height:150px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;}
+        #reportPdfPaper .foot{margin-top:30px;border-top:1px solid #e5e7eb;padding-top:12px;color:#9ca3af;font-size:11px;text-align:center;}
+      </style>
       <div class="band">
         <div><h1>CITY OF ELOY</h1><div class="sub">Eloy Connect &middot; Resident Report</div></div>
         <div class="right">Generated ${esc(new Date().toLocaleDateString('en-US',{dateStyle:'long'}))}<br>For internal city use</div>
@@ -8711,17 +8731,37 @@ function exportReportPDF() {
       <div class="label">Description</div>
       <div class="desc">${esc(report.description || 'No description provided.')}</div>
       ${(report.ai_category || report.ai_summary) ? `<div class="label" style="margin-top:18px;">AI Insights</div><div class="desc">${report.ai_category ? '<strong>'+esc(report.ai_category)+'</strong><br>' : ''}${esc(report.ai_summary || '')}</div>` : ''}
-      ${photos.length ? `<div class="label" style="margin-top:18px;">Photos (${photos.length})</div><div class="photos">${photos.map(u => `<img src="${esc(u)}">`).join('')}</div>` : ''}
-      <div class="foot">Eloy Connect &middot; Omnis Technologies LLC &middot; Generated from the city dashboard</div>
-    </body></html>`;
+      ${photos.length ? `<div class="label" style="margin-top:18px;">Photos (${photos.length})</div><div class="photos">${photos.map(u => `<img src="${esc(u)}" crossorigin="anonymous">`).join('')}</div>` : ''}
+      <div class="foot">Eloy Connect &middot; Omnis Technologies LLC &middot; Generated from the city dashboard</div>`;
 
-    const w = window.open('', '_blank');
-    if (!w) { showToast('Allow pop-ups to export the PDF', 'error'); return; }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.onload = () => { setTimeout(() => { try { w.print(); } catch (e) {} }, 400); };
-    showToast('Opening print view — choose "Save as PDF"', 'success');
+    const paper = document.getElementById('reportPdfPaper');
+    if (paper) paper.innerHTML = content;
+    window.__reportPdfName = 'Eloy-Report-' + String(report.title || 'report').replace(/[^a-z0-9]+/gi, '-').slice(0, 40);
+    document.getElementById('reportPdfModal').classList.add('open');
+}
+
+function closeReportPdf() {
+    const m = document.getElementById('reportPdfModal');
+    if (m) m.classList.remove('open');
+}
+
+function downloadReportPdf() {
+    const paper = document.getElementById('reportPdfPaper');
+    const btn = document.getElementById('reportPdfDownloadBtn');
+    if (!paper) return;
+    if (!window.html2pdf) { showToast('PDF engine still loading — try again in a moment', 'warning'); return; }
+    const orig = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
+    const filename = (window.__reportPdfName || 'Eloy-Report') + '.pdf';
+    window.html2pdf().set({
+        margin: 8,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(paper).save()
+      .then(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } showToast('PDF downloaded', 'success'); })
+      .catch((e) => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } showToast('PDF failed: ' + (e.message || e), 'error'); });
 }
 
 function exportReportsCSV() {
@@ -10153,7 +10193,7 @@ async function openReportDetail(idOrUuid) {
             const submitterAvatarSrc = submitterAvatar ? (submitterAvatar.split('?')[0] + '?t=' + Date.now()) : null;
             const initials = submitterName !== '—' ? submitterName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) : '?';
             submittedByEl.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:4px; border-radius:8px; transition:background 0.15s;" onclick="showSubmitterPopup('${escapeHtml(report.user_id)}')" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
+                <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:4px; border-radius:8px; transition:background 0.15s;" onclick="openResidentDetail('${escapeHtml(report.user_id)}')" onmouseover="this.style.background='var(--surface-hover)'" onmouseout="this.style.background='transparent'">
                     ${submitterAvatarSrc
                         ? `<img src="${escapeHtml(submitterAvatarSrc)}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">`
                         : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff;">${escapeHtml(initials)}</div>`
