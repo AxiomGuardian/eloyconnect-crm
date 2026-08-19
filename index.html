@@ -3454,23 +3454,6 @@ input[type="checkbox"].bulk-check:checked::after {
                 </div>
                 <div class="flex gap-8">
                     <button class="btn btn-secondary" onclick="exportReportsCSV()">Export CSV</button>
-                    <button class="ai-assist-btn" onclick="toggleReportsAITriage()">AI Triage</button>
-                </div>
-            </div>
-
-            <!-- AI Triage Panel -->
-            <div id="reportsAITriagePanel" class="ai-assist-panel" style="display:none; margin-bottom:16px;">
-                <button class="ai-assist-toggle" onclick="toggleReportsAITriage()">
-                    <div class="ai-assist-icon">AI</div>
-                    <span>AI Report Triage</span>
-                    <span style="font-size:11px; color:var(--text-tertiary); font-weight:400;">Analyze open reports and suggest priority/assignment</span>
-                    <span class="ai-assist-chevron">&#9660;</span>
-                </button>
-                <div class="ai-assist-body" id="reportsAITriageContent">
-                    <div style="display:flex;align-items:center;gap:8px;color:var(--text-tertiary);">
-                        <span class="ai-typing-dots"><span></span><span></span><span></span></span>
-                        Analyzing reports...
-                    </div>
                 </div>
             </div>
 
@@ -8787,13 +8770,31 @@ function downloadReportPdf() {
     const orig = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
     const filename = (window.__reportPdfName || 'Eloy-Report') + '.pdf';
+
+    // Size the page to the content: short reports = ONE tight page (no empty tail),
+    // long reports (big description / many photos) = A4 that flows onto extra pages.
+    const marginMm = 8;
+    const pageWmm = 210;                         // A4 width
+    const a4Hmm = 297;                           // A4 height
+    const usableWmm = pageWmm - marginMm * 2;
+    const contentWpx = paper.scrollWidth || paper.offsetWidth || 760;
+    const contentHpx = paper.scrollHeight || paper.offsetHeight || 0;
+    const contentHmm = contentHpx * (usableWmm / contentWpx);
+    const fitsOnePage = (contentHmm + marginMm * 2) <= a4Hmm;
+
     window.html2pdf().set({
-        margin: [6, 8, 6, 8],
+        margin: marginMm,
         filename: filename,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        jsPDF: {
+            unit: 'mm', orientation: 'portrait', compress: true,
+            // custom short page sized to content, else standard multi-page A4
+            format: fitsOnePage ? [pageWmm, Math.ceil(contentHmm + marginMm * 2)] : 'a4'
+        },
+        pagebreak: fitsOnePage
+            ? { mode: ['avoid-all'] }
+            : { mode: ['css', 'legacy'], avoid: ['.cell', '.desc', '.ai', '.photos img', '.foot'] }
     }).from(paper).save()
       .then(() => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } showToast('PDF downloaded', 'success'); })
       .catch((e) => { if (btn) { btn.disabled = false; btn.innerHTML = orig; } showToast('PDF failed: ' + (e.message || e), 'error'); });
