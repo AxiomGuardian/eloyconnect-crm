@@ -8805,7 +8805,7 @@ async function downloadReportPdf() {
             image: { type: 'jpeg', quality: 0.95 },
             html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-            pagebreak: { mode: ['css', 'legacy'], avoid: ['.cell', '.desc', '.ai', '.photos img', '.foot'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['.hero', '.cell', '.desc', '.ai', '.photos', '.sec-label', '.foot'] }
         }).from(paper).save();
         showToast('PDF downloaded', 'success');
     } catch (e) {
@@ -10164,31 +10164,54 @@ async function openReportDetail(idOrUuid) {
             try {
                 const { data: task, error } = await sbClient.rpc('pilot_report_task', { p_report_id: report.id });
                 if (error || !task) return;
-                const statusLabels = { pending: 'Dispatched — awaiting crew', in_progress: 'Crew on it', completed: 'Completed by crew', cancelled: 'Cancelled' };
-                let html = `<div style="font-weight:600; color:var(--text-primary);">${escapeHtml(statusLabels[task.status] || task.status || '')}` +
-                    (task.completed_at ? ` <span style="font-weight:400; color:var(--text-tertiary);">· ${new Date(task.completed_at).toLocaleString()}</span>` : '') + '</div>';
-                if (task.completion_notes) {
-                    html += `<div style="margin-top:6px; white-space:pre-wrap;">${escapeHtml(task.completion_notes)}</div>`;
-                }
-                // Crew member (from profiles) + GPS check-in from the field.
+                const statusLabels = { pending: 'Dispatched — awaiting crew', in_progress: 'Crew on it', completed: 'Completed', cancelled: 'Cancelled' };
+                const statusLabel = statusLabels[task.status] || task.status || '';
+                const dotColor = task.status === 'completed' ? '#34D399' : (task.status === 'in_progress' ? '#3fe0e8' : (task.status === 'cancelled' ? '#ef4444' : '#f5943a'));
+                const completedAt = task.completed_at ? new Date(task.completed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const lbl = 'font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:2px;';
+                const ico = 'width:30px; height:30px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(140deg, rgba(52,211,153,0.22), rgba(52,211,153,0.05)); color:#86efac;';
+
+                let html = `<div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:14px;">
+                    <span style="display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:999px; background:rgba(52,211,153,0.13); border:1px solid rgba(52,211,153,0.30); color:#a7f3d0; font-size:11px; font-weight:700; letter-spacing:0.3px;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; box-shadow:0 0 7px ${dotColor};"></span>${escapeHtml(statusLabel)}
+                    </span>
+                    ${completedAt ? `<span style="font-size:11.5px; color:var(--text-tertiary);">Completed ${escapeHtml(completedAt)}</span>` : ''}
+                </div>
+                <div style="display:grid; gap:11px;">`;
+
                 const crewProfile = task.assigned_to ? (liveData.profiles || []).find(p => p.id === task.assigned_to) : null;
                 if (crewProfile) {
-                    html += `<div style="margin-top:6px; font-size:12px; color:var(--text-tertiary);">Crew: <span style="color:var(--success);">${escapeHtml(crewProfile.display_name || crewProfile.email || 'Staff')}</span></div>`;
+                    const nm = crewProfile.display_name || crewProfile.email || 'Staff';
+                    const initials = nm.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                    const av = crewProfile.avatar_url ? (crewProfile.avatar_url.split('?')[0]) : null;
+                    html += `<div style="display:flex; align-items:center; gap:11px;">
+                        ${av ? `<img src="${escapeHtml(av)}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid rgba(52,211,153,0.4);">` : `<div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#34D399,#10b981); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#04231a;">${escapeHtml(initials)}</div>`}
+                        <div style="min-width:0;"><div style="${lbl}">Assigned crew</div><div style="font-size:13.5px; font-weight:600; color:var(--text-primary);">${escapeHtml(nm)}</div></div>
+                    </div>`;
                 }
+
                 if (typeof task.gps_lat === 'number' && typeof task.gps_lng === 'number') {
                     const mapsUrl = `https://maps.google.com/?q=${task.gps_lat},${task.gps_lng}`;
-                    const when = task.gps_at ? ` · ${new Date(task.gps_at).toLocaleString()}` : '';
-                    html += `<div style="margin-top:6px; font-size:12px; color:var(--text-tertiary);">📍 Crew check-in: ` +
-                        `<a href="${mapsUrl}" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:none;">` +
-                        `${task.gps_lat.toFixed(5)}, ${task.gps_lng.toFixed(5)}</a>${escapeHtml(when)}</div>`;
+                    const when = task.gps_at ? new Date(task.gps_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                    html += `<div style="display:flex; align-items:center; gap:11px;">
+                        <div style="${ico}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
+                        <div style="min-width:0;"><div style="${lbl}">Crew check-in${when ? ' · ' + escapeHtml(when) : ''}</div><a href="${mapsUrl}" target="_blank" rel="noopener" style="font-size:13px; font-weight:600; color:var(--accent); text-decoration:none;">${task.gps_lat.toFixed(5)}, ${task.gps_lng.toFixed(5)}</a></div>
+                    </div>`;
                 }
+
+                if (task.completion_notes) {
+                    html += `<div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:11px; padding:11px 13px;">
+                        <div style="${lbl}">Field notes</div><div style="font-size:13px; color:var(--text-secondary); line-height:1.55; white-space:pre-wrap;">${escapeHtml(task.completion_notes)}</div>
+                    </div>`;
+                }
+                html += `</div>`;
+
                 const proofs = Array.isArray(task.proof_photos) ? task.proof_photos : [];
                 if (proofs.length) {
                     window.__crewProofPhotos = proofs;
-                    html += '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + proofs.map((u, i) =>
-                        `<div class="report-photo-thumb" onclick="openPhotoLightbox(window.__crewProofPhotos, ${i})" style="width:72px; height:56px; border-radius:8px; overflow:hidden; border:1px solid rgba(52,211,153,0.4); cursor:pointer;">
-                            <img src="${escapeHtml(u)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.opacity='0.2'">
-                        </div>`).join('') + '</div>';
+                    html += `<div style="margin-top:13px;"><div style="${lbl} margin-bottom:7px;">Proof photos (${proofs.length})</div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); gap:8px;">` + proofs.map((u, i) =>
+                        `<div class="ce-proof-thumb" onclick="openPhotoLightbox(window.__crewProofPhotos, ${i})" style="aspect-ratio:1; border-color:rgba(52,211,153,0.3);"><img src="${escapeHtml(u)}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.opacity='0.2'"></div>`).join('') + '</div></div>';
                 }
                 crewBody.innerHTML = html;
                 crewSection.style.display = 'block';
