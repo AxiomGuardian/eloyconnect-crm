@@ -8797,15 +8797,24 @@ async function downloadReportPdf() {
             : new Promise(res => { im.onload = res; im.onerror = res; setTimeout(res, 4000); })));
         await new Promise(r => setTimeout(r, 80)); // let layout settle
 
-        // Standard A4 at natural proportions — never distorted. Flows onto a 2nd
-        // page when the content is long; keeps cards/photos from splitting.
+        // Render as ONE continuous page sized exactly to the content — a pixel-perfect
+        // match to the on-screen preview. No page breaks means nothing gets shuffled,
+        // gapped, warped, or cut. Measurement is accurate because images are loaded.
+        const marginMm = 10;
+        const pageWmm = 210;
+        const usableWmm = pageWmm - marginMm * 2;
+        const contentWpx = paper.scrollWidth || paper.offsetWidth || 760;
+        const contentHpx = paper.scrollHeight || paper.offsetHeight || 0;
+        const contentHmm = contentHpx * (usableWmm / contentWpx);
+        const pageHmm = Math.max(120, Math.ceil(contentHmm + marginMm * 2));
+
         await window.html2pdf().set({
-            margin: 12,
+            margin: marginMm,
             filename: filename,
             image: { type: 'jpeg', quality: 0.95 },
             html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-            pagebreak: { mode: ['css', 'legacy'], avoid: ['.hero', '.cell', '.desc', '.ai', '.photos', '.sec-label', '.foot'] }
+            jsPDF: { unit: 'mm', orientation: 'portrait', compress: true, format: [pageWmm, pageHmm] },
+            pagebreak: { mode: [] }
         }).from(paper).save();
         showToast('PDF downloaded', 'success');
     } catch (e) {
