@@ -1272,7 +1272,42 @@ textarea.form-input {
     background: rgba(26,18,11,0.92); border-bottom: 1px solid rgba(245,148,58,0.20);
     padding: 18px 26px;
 }
-#reportDetail.detail-panel .detail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 26px 30px; }
+#reportDetail.detail-panel .detail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 26px 30px; -webkit-font-smoothing: antialiased; }
+/* moving light trim that sweeps the orange border */
+@property --rp-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+#reportDetail.detail-panel::after {
+    content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1.5px; pointer-events: none; z-index: 6;
+    background: conic-gradient(from var(--rp-a), rgba(245,148,58,0) 0deg, rgba(245,148,58,0) 260deg, rgba(255,200,130,0.95) 320deg, rgba(255,140,40,0.9) 350deg, rgba(245,148,58,0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    animation: rpTrimSpin 4.5s linear infinite;
+}
+@keyframes rpTrimSpin { to { --rp-a: 360deg; } }
+/* premium report cards */
+#reportDetail .detail-body .rpt-card {
+    background: linear-gradient(162deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#reportDetail .detail-body .rpt-card:hover {
+    transform: translateY(-2px); border-color: rgba(245,148,58,0.32);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.34), 0 0 0 1px rgba(245,148,58,0.10), inset 0 1px 0 rgba(255,255,255,0.09);
+}
+#reportDetail .detail-body .rpt-ico {
+    width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    background: linear-gradient(140deg, rgba(245,148,58,0.26), rgba(245,148,58,0.05)); color: #ffc078;
+}
+#reportDetail .detail-body .rpt-ico svg { width: 17px; height: 17px; }
+#reportDetail .detail-body .form-label { letter-spacing: .3px; }
+#reportDetail .detail-body .rpt-mini-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: var(--text-secondary); background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.10); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: transform .15s ease, border-color .15s ease, color .15s ease;
+}
+#reportDetail .detail-body .rpt-mini-btn:hover { transform: translateY(-1px); color: var(--text-primary); border-color: rgba(245,148,58,0.4); }
+#reportDetail .detail-body .rpt-mini-btn svg { width: 14px; height: 14px; }
 
 /* ===== AI Report Triage — dynamic, 3D premium card ===== */
 @property --ai-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -1298,9 +1333,12 @@ textarea.form-input {
     display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;
     background: radial-gradient(circle at 32% 26%, #a5adff, #4f46e5 58%, #3327a0);
     box-shadow: 0 8px 20px rgba(79,70,229,0.55), inset 0 1.5px 2px rgba(255,255,255,0.55), inset 0 -4px 7px rgba(0,0,0,0.35);
-    animation: aiOrbFloat 3.4s ease-in-out infinite;
+    animation: aiOrbPulse 3s ease-in-out infinite;
 }
-@keyframes aiOrbFloat { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
+@keyframes aiOrbPulse {
+    0%,100% { box-shadow: 0 8px 20px rgba(79,70,229,0.5), inset 0 1.5px 2px rgba(255,255,255,0.55), inset 0 -4px 7px rgba(0,0,0,0.35), 0 0 0 0 rgba(99,102,241,0.0); transform: scale(1); }
+    50%     { box-shadow: 0 8px 22px rgba(79,70,229,0.62), inset 0 1.5px 2px rgba(255,255,255,0.6), inset 0 -4px 7px rgba(0,0,0,0.35), 0 0 20px 3px rgba(99,102,241,0.4); transform: scale(1.03); }
+}
 #reportsAITriagePanel .ai-assist-toggle > span:first-of-type { font-size: 15px; font-weight: 700; color: var(--text-primary); }
 #reportsAITriagePanel .ai-assist-chevron { margin-left: auto; color: var(--text-tertiary); transition: transform .25s ease; }
 #reportsAITriagePanel.collapsed .ai-assist-chevron { transform: rotate(-180deg); }
@@ -5016,11 +5054,9 @@ input[type="checkbox"].bulk-check:checked::after {
             <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">—</p>
         </div>
 
-        <div id="reportMapArea" style="background: var(--surface); border-radius: var(--radius-md); padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-                <div style="width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center;">
-                    <span style="font-size:16px;">📍</span>
-                </div>
+        <div id="reportMapArea" class="rpt-card" style="padding: 16px; margin-bottom: 20px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                <div class="rpt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg></div>
                 <div>
                     <div style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Report Location</div>
                     <div id="reportAddress" style="font-size:14px; font-weight:500; color:var(--text-primary);">—</div>
@@ -5033,25 +5069,40 @@ input[type="checkbox"].bulk-check:checked::after {
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-            <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Category</div>
+            <div class="rpt-card">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                    <div class="rpt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><path d="M7 7h.01"/></svg></div>
+                    <div style="font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Category</div>
+                </div>
                 <span class="tag tag-roads">Roads</span>
             </div>
-            <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Submitted by</div>
-                <div id="reportSubmittedBy" style="font-size: 14px; font-weight: 500;">—</div>
+            <div class="rpt-card">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                    <div class="rpt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg></div>
+                    <div style="font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Submitted by</div>
+                </div>
+                <div id="reportSubmittedBy" style="font-size: 14px; font-weight: 600;">—</div>
             </div>
-            <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Photos</div>
-                <div id="reportPhotos" style="font-size: 14px; font-weight: 500;">No photos</div>
+            <div class="rpt-card">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                    <div class="rpt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></div>
+                    <div style="font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Photos</div>
+                </div>
+                <div id="reportPhotos" style="font-size: 14px; font-weight: 600;">No photos</div>
             </div>
-            <div id="reportCrewSection" style="display:none; background: rgba(52,211,153,0.05); padding: 12px; border-radius: var(--radius-sm); border: 1px solid rgba(52,211,153,0.25);">
-                <div style="font-size: 11px; color: var(--success); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Field Crew</div>
-                <div id="reportCrewBody" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;"></div>
+            <div id="reportCrewSection" class="rpt-card" style="display:none; grid-column:1 / -1; background: linear-gradient(160deg, rgba(52,211,153,0.08), rgba(52,211,153,0.02)); border-color: rgba(52,211,153,0.28);">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:8px;">
+                    <div class="rpt-ico" style="background:linear-gradient(140deg, rgba(52,211,153,0.26), rgba(52,211,153,0.05)); color:#86efac;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+                    <div style="font-size:10.5px; color:var(--success); text-transform:uppercase; letter-spacing:0.5px;">Field Crew</div>
+                </div>
+                <div id="reportCrewBody" style="font-size: 13px; color: var(--text-secondary); line-height: 1.55;"></div>
             </div>
-            <div style="background: var(--surface); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
-                <div style="font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Description</div>
-                <div id="reportDescription" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">No description provided.</div>
+            <div class="rpt-card" style="grid-column:1 / -1;">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:9px;">
+                    <div class="rpt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg></div>
+                    <div style="font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Description</div>
+                </div>
+                <div id="reportDescription" style="font-size: 14px; color: var(--text-secondary); line-height: 1.65;">No description provided.</div>
             </div>
         </div>
 
@@ -5093,13 +5144,7 @@ input[type="checkbox"].bulk-check:checked::after {
         </div>
 
         <div style="margin-bottom: 20px;">
-            <label class="form-label" style="display:flex; align-items:center; justify-content:space-between;">
-                <span>Internal Notes</span>
-                <span style="display:inline-flex; align-items:center;">
-                    <button type="button" id="reportNotesMic" class="dictate-btn" onclick="crmDictate('reportNotes', this)" title="Dictate">🎙️ Dictate</button>
-                    <span id="reportNotesWave" class="dictate-wave" aria-hidden="true"></span>
-                </span>
-            </label>
+            <label class="form-label">Internal Notes</label>
             <div class="composer-field">
                 <textarea class="form-input" id="reportNotes" rows="3" placeholder="Add a note for the assigned staff member — type it, or tap Dictate to speak it."></textarea>
             </div>
@@ -9452,8 +9497,8 @@ async function runReportsAITriage() {
     try {
         aiQueryCount++;
         const result = await callGrokAI(
-            'Analyze all open and unassigned reports. For each unassigned report, suggest a priority level (High/Medium/Low) and which staff member should handle it based on their current workload and specialization. Also flag any report clusters or patterns. Format as a clear, actionable triage list.',
-            'Context: This is the Reports page AI Triage panel. The user wants specific assignment recommendations.'
+            'You are the AI triage assistant embedded IN the Reports page (the staff member is already viewing the reports list). Analyze the current reports. For each report that is OPEN or UNASSIGNED, give: the report ID, a suggested priority (High/Medium/Low) with a one-line reason that considers how long it has been open, the category severity, and any safety impact; and which staff member should handle it based on their current workload. Then flag any clusters (same category or same neighborhood) and any reports that are aging or overdue. Be concise and specific, always cite report IDs. If nothing needs action right now, say so in one short line. IMPORTANT: Do NOT tell the user to go to, open, or review the reports page, and do NOT include any navigation link or "Go to Reports" text — they are already on this exact page.',
+            'Rendered inside the Reports page AI Triage panel. Output is shown directly to city staff who already see the reports list. No navigation instructions.'
         );
         resultEl.innerHTML = parseAIResponse(result);
         updateActivityStats();
@@ -10137,17 +10182,17 @@ async function openReportDetail(idOrUuid) {
             if (lat && lng) {
                 const gmapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
                 const amapsUrl = `https://maps.apple.com/?ll=${lat},${lng}&q=${encodeURIComponent(addr || 'Report Location')}`;
-                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Google Maps</a>`;
-                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Apple Maps</a>`;
+                buttons += `<a href="${gmapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Google Maps</a>`;
+                buttons += `<a href="${amapsUrl}" target="_blank" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Apple Maps</a>`;
             }
 
             if (addr) {
-                buttons += `<button data-copy="${escapeHtml(addr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
+                buttons += `<button data-copy="${escapeHtml(addr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy Address', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy Address</button>`;
             }
 
             if (lat && lng) {
                 const coordStr = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                buttons += `<button data-copy="${escapeHtml(coordStr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
+                buttons += `<button data-copy="${escapeHtml(coordStr)}" onclick="navigator.clipboard.writeText(this.dataset.copy); this.innerHTML='Copied!'; setTimeout(() => this.innerHTML='Copy GPS', 1500);" style="${btnStyle} background:var(--surface-hover); color:var(--text-primary);" onmouseover="this.style.background='#F5943A';this.style.color='#0b0b0b'" onmouseout="this.style.background='var(--surface-hover)';this.style.color='var(--text-primary)'">Copy GPS</button>`;
             }
 
             actionsEl.innerHTML = buttons || '<span style="font-size:12px; color:var(--text-tertiary);">No location data available</span>';
