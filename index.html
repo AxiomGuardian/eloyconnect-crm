@@ -3148,8 +3148,24 @@ input[type="checkbox"].bulk-check:checked::after {
   .lg-foot{ margin-top:22px; font-size:11px; color:#5f7488; display:flex; align-items:center; justify-content:center; gap:6px; letter-spacing:.02em; }
   .lg-foot svg{ width:12px; height:12px; }
   @media (max-width:440px){ .lg-card{ padding:36px 24px 26px; } }
+  /* Cinematic login entrance */
+  #loginCinematic{ position:fixed; inset:0; z-index:10001; display:none; align-items:center; justify-content:center; overflow:hidden;
+    background:radial-gradient(1100px 750px at 50% 46%, #0a2740, #05080F 72%); }
+  #loginCinematic.play{ display:flex; }
+  .cine-glow{ position:absolute; width:150vmax; height:70vmax; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(63,224,232,.22), rgba(245,166,35,.10), transparent 72%); filter:blur(46px); animation:cineGlow 1.7s ease-out forwards; }
+  .cine-wave{ position:absolute; inset:0; background:linear-gradient(115deg, transparent 42%, rgba(63,224,232,.16) 50%, transparent 58%); transform:translateX(-100%); animation:cineWave 1.5s ease-in-out forwards; mix-blend-mode:screen; }
+  .cine-inner{ position:relative; text-align:center; animation:cineInner 1.7s cubic-bezier(.2,.8,.2,1) forwards; }
+  .cine-logo{ width:72px; height:72px; margin:0 auto 16px; display:block; filter:drop-shadow(0 0 24px rgba(63,224,232,.6)); animation:cineLogo 1.7s ease-out forwards; }
+  .cine-word{ font-size:clamp(34px,7vw,50px); font-weight:800; letter-spacing:.04em; color:#fff; text-shadow:0 0 32px rgba(63,224,232,.5); }
+  .cine-word span{ color:#3FE0E8; }
+  .cine-sub{ margin-top:10px; font-size:12px; letter-spacing:.34em; text-transform:uppercase; color:#8fd8e0; }
+  @keyframes cineGlow{ 0%{opacity:0; transform:scale(.55);} 28%{opacity:1;} 100%{opacity:0; transform:scale(1.35);} }
+  @keyframes cineWave{ 0%{transform:translateX(-100%);} 100%{transform:translateX(120%);} }
+  @keyframes cineInner{ 0%{opacity:0; transform:scale(.9);} 24%{opacity:1; transform:scale(1);} 76%{opacity:1;} 100%{opacity:0; transform:scale(1.05);} }
+  @keyframes cineLogo{ 0%{opacity:0; transform:rotate(-18deg) scale(.6);} 30%{opacity:1; transform:rotate(0) scale(1);} 100%{opacity:1; transform:none;} }
 </style>
-<div id="loginOverlay" class="lg-overlay" style="display:none;">
+<div id="loginOverlay" class="lg-overlay" style="display:flex;">
   <div class="lg-bg"></div>
   <div class="lg-card">
     <svg class="lg-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -3190,11 +3206,33 @@ input[type="checkbox"].bulk-check:checked::after {
     </div>
   </div>
 </div>
+
+<!-- CINEMATIC LOGIN ENTRANCE -->
+<div id="loginCinematic">
+  <div class="cine-glow"></div>
+  <div class="cine-wave"></div>
+  <div class="cine-inner" style="filter:url(#heatHaze)">
+    <svg class="cine-logo" viewBox="0 0 64 64"><circle cx="32" cy="32" r="21.5" fill="none" stroke="#3FE0E8" stroke-width="4.5"/><circle cx="16.4" cy="16.4" r="5.5" fill="#3FE0E8"/><circle cx="16.4" cy="47.6" r="5.5" fill="#3FE0E8"/><circle cx="47.6" cy="47.6" r="5.5" fill="#3FE0E8"/><circle cx="47.6" cy="16.4" r="5.5" fill="#F5A623"/><circle cx="32" cy="32" r="6.5" fill="#3FE0E8"/></svg>
+    <div class="cine-word">Omnis <span>Connect</span></div>
+    <div class="cine-sub">Command Center</div>
+  </div>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="heatHaze"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.04" numOctaves="2" seed="4" result="n"><animate attributeName="baseFrequency" dur="1.6s" values="0.01 0.02; 0.014 0.09; 0.01 0.02" repeatCount="1"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="12"/></filter></svg>
+
 <script>
 function lgTogglePw(btn){
   var i=document.getElementById('loginPassword'); if(!i) return;
   i.type = (i.type==='password') ? 'text' : 'password';
   btn.style.color = (i.type==='text') ? '#3FE0E8' : '#6E8296';
+}
+// Cinematic heatwave entrance, played once right after a successful login.
+function playCinematicEntrance(){
+  var c=document.getElementById('loginCinematic'); if(!c) return;
+  c.style.transition=''; c.style.opacity='1';
+  void c.offsetWidth; // reflow so the animations restart cleanly
+  c.classList.add('play');
+  setTimeout(function(){ c.style.transition='opacity .45s ease'; c.style.opacity='0'; }, 1500);
+  setTimeout(function(){ c.classList.remove('play'); c.style.opacity=''; c.style.transition=''; }, 2000);
 }
 </script>
 
@@ -6748,8 +6786,9 @@ async function handleLogin(e) {
         // Populate header with the real signed-in user
         applyHeaderUser(profile, data.user.email);
 
-        // Authorized — hide overlay, show CRM
+        // Authorized — hide overlay, play cinematic entrance, show CRM
         document.getElementById('loginOverlay').style.display = 'none';
+        playCinematicEntrance();
         await initCityContext();
     } catch (err) {
         errorEl.textContent = err.message || 'Sign-in failed';
