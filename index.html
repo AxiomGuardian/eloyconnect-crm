@@ -7,7 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Eloy Connect · Civic Relationship Management</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1A2B'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%233FE0E8' stroke-width='6'/%3E%3Ccircle cx='17' cy='17' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='17' cy='47' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='47' cy='47' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='47' cy='17' r='6.5' fill='%23F5A623'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%233FE0E8'/%3E%3C/svg%3E">
+<!-- Same mark as omnisconnect.com so the CRM tab matches the brand. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2338e6f4'/%3E%3Cstop offset='0.55' stop-color='%23a78bfa'/%3E%3Cstop offset='1' stop-color='%231aa5c8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='%2304070d'/%3E%3Crect x='8' y='8' width='48' height='48' rx='12' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='6.5' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='15' fill='none' stroke='url(%23g)' stroke-width='2' opacity='0.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -11649,6 +11650,24 @@ async function openCouncilMeeting(id) {
     if (mdSumTimer) { clearInterval(mdSumTimer); mdSumTimer = null; }
 
     async function loadTranscript() {
+        // Sample meetings have no rows in the database, so serve their transcript
+        // and three-card report straight from the generated set.
+        if (String(m.id).startsWith('sample-')) {
+            try {
+                const loader = document.getElementById('mdTrLoader');
+                if (loader) loader.style.display = 'none';
+                trDot.style.display = 'none';
+                trRecap.style.display = 'none';
+                if (m.sample_transcript) {
+                    trWrap.style.display = 'block';
+                    trLabel.textContent = 'MEETING TRANSCRIPT';
+                    trLabel.style.color = '';
+                    trBox.textContent = m.sample_transcript;
+                }
+                if (m.public_summary) renderSummaryTabs(m.public_summary);
+            } catch (e) { console.warn('sample transcript:', e); }
+            return;
+        }
         try {
             const { data: rows } = await sbClient.from('meeting_transcripts')
                 .select('seq, text').eq('meeting_id', m.id)
@@ -14938,44 +14957,78 @@ function _sampleEvents(city) {
 function _sampleMeetings(city) {
     // Resident-facing recaps written the way the Meeting Intelligence engine
     // produces them: what happened, then what it actually means for residents.
+    // Written in the exact structure renderSummaryTabs() parses, so sample
+    // meetings produce the same three-card report as a real bot recap:
+    // overview, WHAT THIS MEANS FOR YOU, TOPICS DISCUSSED, DECISIONS.
     const recap1 =
-`WHAT HAPPENED
-Council voted 6 to 1 to award the Main Street resurfacing contract. Work runs roughly four weeks between 4th and 9th, starting with grinding and repaving overnight to keep daytime traffic moving.
-
-Staff presented the quarterly water report. Pressure complaints on the east side dropped after the summer valve work, and system loss is down from last quarter.
-
-A resident petition asked for lighting at the park after several evening safety concerns. Council did not vote. It was referred to staff for a cost estimate, due back at the next regular meeting.
+`Council voted 6 to 1 to award the Main Street resurfacing contract, with work running about four weeks between 4th and 9th. Grinding and repaving happen overnight to keep daytime traffic moving. Staff presented the quarterly water report, showing east side pressure complaints dropped after the summer valve work and system loss is down from last quarter. A resident petition asked for lighting at the park following several evening safety concerns; Council did not vote and referred it to staff for a cost estimate.
 
 WHAT THIS MEANS FOR YOU
-If you drive Main between 4th and 9th, expect detours and overnight noise for about four weeks. Access to businesses stays open the whole time.
+If you drive Main between 4th and 9th, expect detours and some overnight noise for about four weeks. Access to every business stays open the entire time.
+If you had low water pressure on the east side, the fix is in and holding. If it returns, report it in the app so it gets tracked.
+If you signed the park lighting petition, it is still alive. Staff is pricing it now and reports back publicly at the next meeting.
 
-If you had low water pressure on the east side, the fix is in and holding. If it comes back, report it so it gets tracked.
+TOPICS DISCUSSED
+• Streets — Main Street resurfacing awarded, roughly four weeks of overnight work
+• Water — Quarterly report shows east side pressure resolved and system loss down
+• Parks — Resident petition for park lighting sent to staff for costing
+• Public Safety — Evening visibility raised during the petition discussion
 
-If you signed the park lighting petition, it is still alive. Staff is pricing it now and will report back publicly at the next meeting.`;
+DECISIONS
+• Main Street resurfacing contract awarded, 6 to 1
+• Quarterly water report accepted as presented
+• Park lighting referred to staff, estimate due at the next regular meeting`;
 
     const recap2 =
-`WHAT HAPPENED
-Staff walked Council through the draft capital plan for the coming year, covering streets, water infrastructure, and parks.
-
-Council asked for options on modernizing utility billing, specifically whether residents could pay online instead of by mail.
-
-No votes were taken. This was a work session, so direction was given to staff and the plan comes back for adoption later.
+`Staff walked Council through the draft capital plan for the coming year, covering streets, water infrastructure, and parks. Council asked for options on modernizing utility billing, specifically whether residents could pay online rather than by mail. No votes were taken; this was a work session, so direction was given to staff and the plan returns for adoption later.
 
 WHAT THIS MEANS FOR YOU
-Nothing changes on your bill today. Council asked staff to bring back real options for paying online, which would end the mail-in only process.
+Nothing changes on your bill today. Council asked staff to bring back real options for paying online, which would end the mail-only process.
+The capital plan decides which streets and water lines get funded next year. It is still a draft, so public comment right now genuinely affects it.
 
-The capital plan decides which streets and water lines get funded next year. It is still a draft, so public comment now genuinely affects it.`;
+TOPICS DISCUSSED
+• Budget — Draft capital plan presented for streets, water, and parks
+• Utilities — Council requested online payment options for residents
+• Streets — Preliminary list of candidate streets reviewed
+
+DECISIONS
+• Draft capital plan received, no vote taken
+• Staff directed to return with online utility payment options`;
+
+    const transcript1 =
+`Mayor: Good evening, we are on the record. First item is the Main Street resurfacing award. Public Works, go ahead. ` +
+`Public Works Director: Thank you. We received three bids. The recommendation is the low responsive bidder. The schedule is about four weeks, and we would do the grinding and paving overnight so we are not shutting the corridor down during business hours. ` +
+`Councilmember: Do the businesses stay open the whole time? ` +
+`Public Works Director: Yes. Access is maintained at all times, and we will sign the detours a week ahead. ` +
+`Mayor: Any further discussion? Seeing none, roll call. Motion carries six to one. ` +
+`Mayor: Next is the quarterly water report. ` +
+`Utilities Manager: Pressure complaints on the east side are down significantly since the valve work this summer, and system loss dropped from the prior quarter. We are continuing to monitor. ` +
+`Mayor: Good news. Report accepted. Last, we have a resident petition regarding lighting at the park. ` +
+`Resident: We have had a few incidents in the evening and the lot is very dark. We are asking for lighting. ` +
+`Mayor: We are not voting tonight. I would like staff to come back with a cost estimate at the next regular meeting. Is there objection? Hearing none, it is referred. We are adjourned.`;
+
+    const transcript2 =
+`Mayor: This is a work session, so no formal action tonight. Finance, walk us through the draft. ` +
+`Finance Director: The draft capital plan covers streets, water infrastructure, and parks. These are preliminary numbers and the list is not final. ` +
+`Councilmember: Where does utility billing sit in this? Residents keep asking me why they still mail a check. ` +
+`Finance Director: Billing modernization is not currently in the draft, but we can price it. ` +
+`Councilmember: I would like to see options. If people can pay online it saves them a trip and saves us processing. ` +
+`Mayor: Let us have staff bring back options at a future session. ` +
+`Finance Director: Understood. We will bring cost and timeline for online payments. ` +
+`Mayor: Anything else on the capital plan? Then we will pick this back up when it comes for adoption. Thank you all.`;
 
     return [
         { id: 'sample-mtg-0', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
           meeting_date: _sdays(9), location: 'Council Chambers, 595 N C St', status: 'completed',
-          public_summary: recap1, live_recap: recap1, live_status: 'ended', bot_status: 'completed',
+          public_summary: recap1, live_recap: null, sample_transcript: transcript1,
+          live_status: 'ended', bot_status: 'ended',
           key_decisions: ['Main Street resurfacing contract awarded 6 to 1','Quarterly water report accepted','Park lighting referred to staff for costing'],
           topics_discussed: ['Streets','Water','Parks','Public Safety'],
           duration_minutes: 96, is_public: true, archived: false, created_at: _sdays(16) },
         { id: 'sample-mtg-1', city_id: city, meeting_type: 'Work Session', title: 'Budget Work Session',
           meeting_date: _sdays(24), location: 'Council Chambers, 595 N C St', status: 'completed',
-          public_summary: recap2, live_recap: recap2, live_status: 'ended', bot_status: 'completed',
+          public_summary: recap2, live_recap: null, sample_transcript: transcript2,
+          live_status: 'ended', bot_status: 'ended',
           key_decisions: ['Draft capital plan received','Staff to return with online utility payment options'],
           topics_discussed: ['Budget','Utilities','Streets'],
           duration_minutes: 74, is_public: true, archived: false, created_at: _sdays(30) },
