@@ -2670,9 +2670,9 @@ input[type="checkbox"].bulk-check:checked::after {
 }
 
 .nav-item.role-hidden {
-    opacity: 0.25;
-    pointer-events: none;
-    filter: grayscale(1);
+    /* Tabs a user cannot access are removed entirely, not dimmed. They should
+       never see a greyed-out hint of something they can't open. */
+    display: none !important;
 }
 
 .nav-item.role-disabled {
@@ -3091,6 +3091,51 @@ input[type="checkbox"].bulk-check:checked::after {
     background: linear-gradient(90deg, transparent, rgba(63,224,232,0.2), transparent);
     z-index: 1;
 }
+
+/* ===== Premium selection controls (replaces native checkboxes) ===== */
+.tab-chip {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 12px; border-radius: 10px; cursor: pointer;
+    font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left;
+    color: var(--text-tertiary);
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+.tab-chip:hover { border-color: rgba(52,211,153,0.35); color: var(--text-secondary); background: rgba(52,211,153,0.05); }
+.tab-chip:active { transform: scale(0.985); }
+.tab-chip.on {
+    color: var(--text-primary);
+    background: linear-gradient(180deg, rgba(52,211,153,0.14), rgba(52,211,153,0.05));
+    border-color: rgba(52,211,153,0.45);
+    box-shadow: 0 4px 16px rgba(52,211,153,0.10);
+}
+.tab-chip-check {
+    width: 17px; height: 17px; border-radius: 6px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.04);
+    transition: all .16s ease;
+}
+.tab-chip-check svg { width: 10px; height: 10px; color: #04121A; opacity: 0; transform: scale(.5); transition: all .16s ease; }
+.tab-chip.on .tab-chip-check { background: linear-gradient(135deg, #34D399, #0FB5C9); border-color: transparent; box-shadow: 0 2px 8px rgba(52,211,153,0.35); }
+.tab-chip.on .tab-chip-check svg { opacity: 1; transform: scale(1); }
+
+/* Premium toggle switch */
+.omni-switch {
+    position: relative; width: 44px; height: 25px; border-radius: 999px; flex: 0 0 auto; cursor: pointer;
+    background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.14);
+    transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.omni-switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%;
+    background: #8FA3B8; transition: left .22s cubic-bezier(.3,.8,.3,1), background .2s ease;
+}
+.omni-switch.on {
+    background: linear-gradient(135deg, rgba(246,196,69,0.9), rgba(224,162,26,0.9));
+    border-color: rgba(246,196,69,0.55);
+    box-shadow: 0 0 18px rgba(246,196,69,0.26);
+}
+.omni-switch.on::after { left: 22px; background: #0B1A2B; }
 
 /* Dark basemap without a keyed provider. Only the tile pane is filtered, so
    report pins, popups and controls keep their real colors. */
@@ -5648,17 +5693,17 @@ function firstEntryTypeEffect(){
             <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Changes apply the next time they sign in or refresh. Staff and Settings stays owner only.</div>
         </div>
 
-        <label for="editAccessSample" style="display:flex; align-items:flex-start; gap:11px; margin-bottom:14px; padding:13px 15px; border-radius:12px; cursor:pointer;
-                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.015)); border:1px solid rgba(246,196,69,0.22);">
-            <input type="checkbox" id="editAccessSample" style="accent-color:#F6C445; width:15px; height:15px; margin-top:2px; cursor:pointer;">
-            <span>
-                <span style="display:block; font-size:13px; font-weight:600; color:#F6C445;">Sample Activity</span>
-                <span style="display:block; font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
-                    Gives them an on/off switch that fills the CRM with realistic demo data, matched to their tabs.
+        <div onclick="toggleOmniSwitch('editAccessSample')" style="display:flex; align-items:center; gap:14px; margin-bottom:16px; padding:14px 16px; border-radius:14px; cursor:pointer;
+                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.012)); border:1px solid rgba(246,196,69,0.22);">
+            <div id="editAccessSample" class="omni-switch" data-on="0"></div>
+            <div>
+                <div style="font-size:13px; font-weight:600; color:#F6C445; letter-spacing:.1px;">Sample Activity</div>
+                <div style="font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
+                    Gives them a switch that fills the CRM with realistic demo data, matched to their tabs.
                     Never writes to the database.
-                </span>
-            </span>
-        </label>
+                </div>
+            </div>
+        </div>
 
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px;">
             <button class="btn btn-ghost" onclick="closeEditAccess()">Cancel</button>
@@ -5724,17 +5769,17 @@ function firstEntryTypeEffect(){
         </div>
 
         <!-- Sample activity: a generated demo view, scoped to the tabs above. -->
-        <label for="newStaffSample" style="display:flex; align-items:flex-start; gap:11px; margin-bottom:14px; padding:13px 15px; border-radius:12px; cursor:pointer;
-                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.015)); border:1px solid rgba(246,196,69,0.22);">
-            <input type="checkbox" id="newStaffSample" style="accent-color:#F6C445; width:15px; height:15px; margin-top:2px; cursor:pointer;">
-            <span>
-                <span style="display:block; font-size:13px; font-weight:600; color:#F6C445;">Give this person Sample Activity</span>
-                <span style="display:block; font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
-                    Adds an on/off switch to their view that fills the CRM with realistic demo data, matched to the tabs above.
+        <div onclick="toggleOmniSwitch('newStaffSample')" style="display:flex; align-items:center; gap:14px; margin-bottom:16px; padding:14px 16px; border-radius:14px; cursor:pointer;
+                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.012)); border:1px solid rgba(246,196,69,0.22);">
+            <div id="newStaffSample" class="omni-switch" data-on="0"></div>
+            <div>
+                <div style="font-size:13px; font-weight:600; color:#F6C445; letter-spacing:.1px;">Sample Activity</div>
+                <div style="font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
+                    Gives them a switch that fills the CRM with realistic demo data, matched to the tabs above.
                     Nothing is written to the database and real records are never changed.
-                </span>
-            </span>
-        </label>
+                </div>
+            </div>
+        </div>
 
         <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:14px;">
             <div>
@@ -6951,7 +6996,11 @@ function renderCitySwitcher() {
             });
         }
     } else {
-        host.innerHTML = `<span style="font-size:12px; color:var(--text-secondary); font-weight:500;">&#127961; ${escapeHtml(activeName)}</span>`;
+        // Clean typographic chip. No emoji.
+        host.innerHTML = `<span style="display:inline-flex; align-items:center; font-size:11px; font-weight:700;
+            letter-spacing:0.14em; text-transform:uppercase; color:var(--text-secondary);
+            padding:5px 12px; border-radius:999px; background:rgba(255,255,255,0.04);
+            border:1px solid rgba(255,255,255,0.09);">${escapeHtml(activeName)}</span>`;
     }
 }
 
@@ -14598,6 +14647,7 @@ function toggleCreateStaffForm() {
             cityWrap.style.display = 'none';
         }
         syncTechLeadOption('newStaffRole');   // only the owner may appoint a Tech Lead
+        setOmniSwitch('newStaffSample', false);
         updateStaffRoleHint();
         renderStaffPageAccess();   // preset the tab checkboxes for the chosen role
     }
@@ -14715,15 +14765,51 @@ function renderStaffPageAccess() {
         return;
     }
     const defaults = ROLE_PAGE_DEFAULTS[role] || ['dashboard'];
-    wrap.innerHTML = CRM_PAGES.map(p => {
-        const on = defaults.includes(p.key);
-        const locked = p.key === 'dashboard';   // everyone needs a landing page
-        return `<label style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-secondary); cursor:${locked ? 'default' : 'pointer'};">
-            <input type="checkbox" class="staff-page-cb" value="${p.key}" ${on ? 'checked' : ''} ${locked ? 'disabled checked' : ''}
-                   style="accent-color:#34D399; width:14px; height:14px; cursor:${locked ? 'default' : 'pointer'};">
-            <span${locked ? ' style="color:var(--text-tertiary);"' : ''}>${p.label}</span>
-        </label>`;
-    }).join('');
+    wrap.innerHTML = renderPageChips(defaults, 'staff-page-cb');
+}
+
+const CHIP_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+// Shared chip renderer. Dashboard is always granted, so it isn't shown at all
+// rather than sitting there greyed out.
+function renderPageChips(selected, cls) {
+    const on = new Set(selected || []);
+    return CRM_PAGES.filter(p => p.key !== 'dashboard').map(p => `
+        <button type="button" class="tab-chip ${cls}${on.has(p.key) ? ' on' : ''}" data-page="${p.key}" onclick="togglePageChip(this)">
+            <span class="tab-chip-check">${CHIP_CHECK_SVG}</span>
+            <span>${p.label}</span>
+        </button>`).join('');
+}
+
+function togglePageChip(el) {
+    el.classList.toggle('on');
+}
+
+// Premium switch helpers (used for Sample Activity in both account forms).
+function toggleOmniSwitch(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const on = el.dataset.on === '1';
+    setOmniSwitch(id, !on);
+}
+function setOmniSwitch(id, on) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.dataset.on = on ? '1' : '0';
+    el.classList.toggle('on', !!on);
+}
+function omniSwitchOn(id) {
+    return document.getElementById(id)?.dataset.on === '1';
+}
+
+function chipValues(cls) {
+    const picked = Array.from(document.querySelectorAll('.' + cls + '.on')).map(el => el.dataset.page);
+    picked.unshift('dashboard');   // always included
+    return Array.from(new Set(picked)).filter(p => !ADMIN_ONLY_PAGES.includes(p) && !OWNER_ONLY_PAGES.includes(p));
+}
+
+function chipSetAll(cls, on) {
+    document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('on', !!on));
 }
 
 // ============================================================
@@ -14850,22 +14936,55 @@ function _sampleEvents(city) {
 }
 
 function _sampleMeetings(city) {
+    // Resident-facing recaps written the way the Meeting Intelligence engine
+    // produces them: what happened, then what it actually means for residents.
+    const recap1 =
+`WHAT HAPPENED
+Council voted 6 to 1 to award the Main Street resurfacing contract. Work runs roughly four weeks between 4th and 9th, starting with grinding and repaving overnight to keep daytime traffic moving.
+
+Staff presented the quarterly water report. Pressure complaints on the east side dropped after the summer valve work, and system loss is down from last quarter.
+
+A resident petition asked for lighting at the park after several evening safety concerns. Council did not vote. It was referred to staff for a cost estimate, due back at the next regular meeting.
+
+WHAT THIS MEANS FOR YOU
+If you drive Main between 4th and 9th, expect detours and overnight noise for about four weeks. Access to businesses stays open the whole time.
+
+If you had low water pressure on the east side, the fix is in and holding. If it comes back, report it so it gets tracked.
+
+If you signed the park lighting petition, it is still alive. Staff is pricing it now and will report back publicly at the next meeting.`;
+
+    const recap2 =
+`WHAT HAPPENED
+Staff walked Council through the draft capital plan for the coming year, covering streets, water infrastructure, and parks.
+
+Council asked for options on modernizing utility billing, specifically whether residents could pay online instead of by mail.
+
+No votes were taken. This was a work session, so direction was given to staff and the plan comes back for adoption later.
+
+WHAT THIS MEANS FOR YOU
+Nothing changes on your bill today. Council asked staff to bring back real options for paying online, which would end the mail-in only process.
+
+The capital plan decides which streets and water lines get funded next year. It is still a draft, so public comment now genuinely affects it.`;
+
     return [
         { id: 'sample-mtg-0', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
           meeting_date: _sdays(9), location: 'Council Chambers, 595 N C St', status: 'completed',
-          public_summary: 'Council approved the street resurfacing contract and reviewed the quarterly water report. A resident petition on park lighting was referred to staff.',
-          key_decisions: ['Resurfacing contract approved','Park lighting referred to staff'],
-          topics_discussed: ['Streets','Water','Parks'], is_public: true, archived: false,
-          created_at: _sdays(16), duration_minutes: 96 },
+          public_summary: recap1, live_recap: recap1, live_status: 'ended', bot_status: 'completed',
+          key_decisions: ['Main Street resurfacing contract awarded 6 to 1','Quarterly water report accepted','Park lighting referred to staff for costing'],
+          topics_discussed: ['Streets','Water','Parks','Public Safety'],
+          duration_minutes: 96, is_public: true, archived: false, created_at: _sdays(16) },
         { id: 'sample-mtg-1', city_id: city, meeting_type: 'Work Session', title: 'Budget Work Session',
           meeting_date: _sdays(24), location: 'Council Chambers, 595 N C St', status: 'completed',
-          public_summary: 'Staff presented the draft capital plan. Council asked for options on utility billing modernization.',
-          key_decisions: ['Draft capital plan received'], topics_discussed: ['Budget','Utilities'],
-          is_public: true, archived: false, created_at: _sdays(30), duration_minutes: 74 },
+          public_summary: recap2, live_recap: recap2, live_status: 'ended', bot_status: 'completed',
+          key_decisions: ['Draft capital plan received','Staff to return with online utility payment options'],
+          topics_discussed: ['Budget','Utilities','Streets'],
+          duration_minutes: 74, is_public: true, archived: false, created_at: _sdays(30) },
         { id: 'sample-mtg-2', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
           meeting_date: _sahead(8), location: 'Council Chambers, 595 N C St', status: 'scheduled',
-          public_summary: null, key_decisions: [], topics_discussed: ['Parks','Public Safety'],
-          is_public: true, archived: false, created_at: _sdays(2), duration_minutes: null }
+          public_summary: 'Agenda in progress. Park lighting cost estimate returns for a vote, plus the quarterly public safety update.',
+          live_recap: null, live_status: null, bot_status: null,
+          key_decisions: [], topics_discussed: ['Parks','Public Safety'],
+          duration_minutes: null, is_public: true, archived: false, created_at: _sdays(2) }
     ];
 }
 
@@ -14945,7 +15064,9 @@ function generateSampleData(pages) {
     }
     if (has('council')) d.meetings = _sampleMeetings(city);
     if (has('enforcement')) d.notices = _sampleNotices(city);
-    if (has('directory')) d.businesses = _sampleBusinesses(city);
+    // Business Directory and Permits engines are not built yet, so sample
+    // activity deliberately leaves them empty rather than faking a product
+    // that does not exist. Add them here once those engines ship.
     if (has('voices')) d.civicVoice = _sampleVoices(city);
     if (has('notifications')) d.notifications = _sampleNotifications(city);
     if (has('leaders')) d.leaders = liveData.leaders || [];   // real leaders are public info
@@ -14999,23 +15120,10 @@ function renderSamplePill() {
         <span style="font-size:11px; font-weight:700; padding:2px 9px; border-radius:999px; letter-spacing:.5px;
                      background:${_sampleOn ? 'rgba(246,196,69,.16)' : 'rgba(255,255,255,.07)'};
                      color:${_sampleOn ? '#F6C445' : 'var(--text-tertiary)'};">${_sampleOn ? 'ON' : 'OFF'}</span>`;
-    if (_sampleOn) _showSampleBanner(); else _removeSampleBanner();
 }
 
-function _showSampleBanner() {
-    let b = document.getElementById('sampleBanner');
-    if (!b) {
-        b = document.createElement('div');
-        b.id = 'sampleBanner';
-        b.style.cssText = `position:fixed; top:0; left:0; right:0; z-index:8999; text-align:center;
-            padding:7px 16px; font-size:12px; font-weight:600; letter-spacing:.3px; color:#0B1A2B;
-            background:linear-gradient(90deg, #F6C445, #E0A21A); box-shadow:0 4px 18px rgba(246,196,69,.25);`;
-        b.innerHTML = `Sample Activity is on. You are viewing generated demo data, not real city records.
-            <span id="sampleBannerOff" style="margin-left:12px; text-decoration:underline; cursor:pointer;">Turn off</span>`;
-        document.body.appendChild(b);
-        b.querySelector('#sampleBannerOff').onclick = () => toggleSampleMode(false);
-    }
-}
+// The pill itself is the indicator. No banner across the top: it covered the
+// nav tabs and got in the way of actually using the CRM.
 function _removeSampleBanner() {
     const b = document.getElementById('sampleBanner');
     if (b) b.remove();
@@ -15155,8 +15263,7 @@ function openEditAccess(userId) {
     } else {
         renderEditAccessPages(resolvePageAccess(sel.value, p.page_access));
     }
-    const sampleCb = document.getElementById('editAccessSample');
-    if (sampleCb) sampleCb.checked = !!p.sample_activity;
+    setOmniSwitch('editAccessSample', !!p.sample_activity);
     document.getElementById('editAccessModal').classList.add('open');
 }
 
@@ -15194,31 +15301,16 @@ function editAccessResetToRole() {
 function renderEditAccessPages(checked) {
     const wrap = document.getElementById('editAccessPages');
     if (!wrap) return;
-    const on = new Set(checked || []);
-    wrap.innerHTML = CRM_PAGES.map(p => {
-        const locked = p.key === 'dashboard';
-        return `<label style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-secondary); cursor:${locked ? 'default' : 'pointer'};">
-            <input type="checkbox" class="edit-page-cb" value="${p.key}" ${on.has(p.key) ? 'checked' : ''} ${locked ? 'disabled checked' : ''}
-                   style="accent-color:#34D399; width:14px; height:14px; cursor:${locked ? 'default' : 'pointer'};">
-            <span${locked ? ' style="color:var(--text-tertiary);"' : ''}>${p.label}</span>
-        </label>`;
-    }).join('');
+    wrap.innerHTML = renderPageChips(checked, 'edit-page-cb');
 }
 
-function editAccessAll(on) {
-    document.querySelectorAll('#editAccessPages .edit-page-cb').forEach(cb => {
-        if (!cb.disabled) cb.checked = on;
-    });
-}
+function editAccessAll(on) { chipSetAll('edit-page-cb', on); }
 
 async function saveEditAccess() {
     if (!_editAccessUser) return;
     const btn = document.getElementById('editAccessSaveBtn');
     const role = document.getElementById('editAccessRole')?.value || 'staff';
-    let pages = Array.from(document.querySelectorAll('#editAccessPages .edit-page-cb'))
-        .filter(cb => cb.checked).map(cb => cb.value);
-    if (!pages.includes('dashboard')) pages.unshift('dashboard');
-    pages = pages.filter(p => !ADMIN_ONLY_PAGES.includes(p));
+    const pages = chipValues('edit-page-cb');
 
     try {
         btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Saving...';
@@ -15232,7 +15324,7 @@ async function saveEditAccess() {
                 user_id: _editAccessUser.id,
                 role,
                 page_access: pages,
-                sample_activity: !!document.getElementById('editAccessSample')?.checked
+                sample_activity: omniSwitchOn('editAccessSample')
             })
         });
         const result = await resp.json().catch(() => ({}));
@@ -15248,18 +15340,8 @@ async function saveEditAccess() {
     }
 }
 
-function staffPageAccessAll(on) {
-    document.querySelectorAll('#newStaffPages .staff-page-cb').forEach(cb => {
-        if (!cb.disabled) cb.checked = on;
-    });
-}
-
-function selectedStaffPages() {
-    const picked = Array.from(document.querySelectorAll('#newStaffPages .staff-page-cb'))
-        .filter(cb => cb.checked).map(cb => cb.value);
-    if (!picked.includes('dashboard')) picked.unshift('dashboard');
-    return picked.filter(p => !ADMIN_ONLY_PAGES.includes(p));
-}
+function staffPageAccessAll(on) { chipSetAll('staff-page-cb', on); }
+function selectedStaffPages() { return chipValues('staff-page-cb'); }
 
 function generateTempPassword() {
     const words = ['Mesa', 'Sol', 'Vista', 'Cactus', 'Canyon', 'Adobe', 'Sierra', 'Aurora'];
@@ -15300,7 +15382,7 @@ async function createStaffAccount() {
                 display_name: name,
                 role,
                 page_access: selectedStaffPages(),
-                sample_activity: !!document.getElementById('newStaffSample')?.checked,
+                sample_activity: omniSwitchOn('newStaffSample'),
                 city_id: isSuperAdmin ? selectedCity : currentCityId
             })
         });
