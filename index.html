@@ -5671,6 +5671,21 @@ function firstEntryTypeEffect(){
             <button class="btn btn-ghost" onclick="closeEditAccess()" style="font-size:15px; padding:5px 11px; line-height:1;">&times;</button>
         </div>
 
+        <!-- Login details. Changing the email changes the actual sign-in address. -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Full Name</label>
+                <input id="editAccessNameInput" class="form-input" type="text" placeholder="Jane Doe" style="margin-top:6px;">
+            </div>
+            <div>
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Login Email</label>
+                <input id="editAccessEmailInput" class="form-input" type="email" placeholder="jane@eloyaz.gov" style="margin-top:6px;">
+            </div>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin:-6px 0 14px;">
+            Changing the email changes the address they sign in with. Their password stays the same.
+        </div>
+
         <div style="margin-bottom:14px;">
             <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
             <select id="editAccessRole" class="form-input" style="margin-top:6px;" onchange="editAccessRoleChanged()">
@@ -15303,6 +15318,11 @@ function openEditAccess(userId) {
     const name = p.display_name || p.email || '—';
     document.getElementById('editAccessName').textContent = name;
     document.getElementById('editAccessEmail').textContent = p.email || '—';
+    // Editable login details
+    const nameInput = document.getElementById('editAccessNameInput');
+    const emailInput = document.getElementById('editAccessEmailInput');
+    if (nameInput) nameInput.value = p.display_name || '';
+    if (emailInput) emailInput.value = p.email || '';
     document.getElementById('editAccessAvatar').textContent =
         name.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).slice(0, 2).join('') || '—';
 
@@ -15377,13 +15397,17 @@ async function saveEditAccess() {
                 user_id: _editAccessUser.id,
                 role,
                 page_access: pages,
-                sample_activity: omniSwitchOn('editAccessSample')
+                sample_activity: omniSwitchOn('editAccessSample'),
+                display_name: document.getElementById('editAccessNameInput')?.value?.trim() || '',
+                email: document.getElementById('editAccessEmailInput')?.value?.trim() || ''
             })
         });
         const result = await resp.json().catch(() => ({}));
         if (!resp.ok) throw new Error(result.error || 'Could not update access');
 
-        showToast('Access updated for ' + (_editAccessUser.display_name || _editAccessUser.email), 'success');
+        showToast(result.email_changed
+            ? 'Saved. Their login email is now ' + result.email
+            : 'Access updated for ' + (result.email || _editAccessUser.email), 'success');
         closeEditAccess();
         await fetchAllData();
     } catch (e) {
