@@ -14866,18 +14866,42 @@ const SAMPLE_NAMES = ['Maria Delgado','James Whitfield','Rosa Mendoza','Curtis B
 
 function _sampleReports(city) {
     const kinds = [
-        { cat: 'Roads',      title: 'Pothole damaging vehicles',     desc: 'Deep pothole in the right lane, several cars have hit it.' },
-        { cat: 'Roads',      title: 'Faded crosswalk striping',      desc: 'Crosswalk paint is nearly invisible at dusk.' },
-        { cat: 'Water',      title: 'Water main leak at curb',       desc: 'Steady water running into the gutter for two days.' },
-        { cat: 'Water',      title: 'Low pressure on the block',     desc: 'Pressure dropped sharply this week for several homes.' },
-        { cat: 'Lighting',   title: 'Streetlight out',               desc: 'Light has been dark for over a week, corner feels unsafe.' },
-        { cat: 'Lighting',   title: 'Flickering light near park',    desc: 'Flickers all night and hums loudly.' },
-        { cat: 'Sanitation', title: 'Illegal dumping in alley',      desc: 'Mattress and construction debris dumped behind the units.' },
-        { cat: 'Sanitation', title: 'Missed trash pickup',           desc: 'Route was skipped Tuesday, bins still full.' },
-        { cat: 'Parks',      title: 'Broken swing at playground',    desc: 'Chain snapped on the swing set, sharp edge exposed.' },
-        { cat: 'Parks',      title: 'Irrigation stuck on',           desc: 'Sprinklers running midday, flooding the walkway.' },
-        { cat: 'Graffiti',   title: 'Graffiti on block wall',        desc: 'Tagging along the wall facing the street.' },
-        { cat: 'Code',       title: 'Overgrown lot',                 desc: 'Weeds over three feet, spilling onto the sidewalk.' }
+        { cat: 'Roads', title: 'Pothole damaging vehicles',
+          desc: 'Deep pothole in the right lane just past the intersection, roughly two feet across and several inches deep. I have watched four or five cars hit it this week and one pulled over afterward to check a tire. It is hard to see until you are on top of it, especially at night.',
+          fix: 'Crew cut out the failed section, patched with hot mix, and compacted. Verified on site.' },
+        { cat: 'Roads', title: 'Faded crosswalk striping near school',
+          desc: 'The crosswalk paint is almost completely gone and is nearly invisible at dusk. Kids cross here every afternoon and drivers do not slow down because it no longer reads as a crosswalk.',
+          fix: 'Crosswalk restriped and advance warning markings refreshed.' },
+        { cat: 'Water', title: 'Water main leak at the curb',
+          desc: 'Steady stream of clean water running from under the curb into the gutter for at least two days. It is running constantly, not just when someone uses water, so I think it is a main rather than a service line.',
+          fix: 'Located and repaired a cracked service saddle. Street restored and area monitored.' },
+        { cat: 'Water', title: 'Low water pressure on the block',
+          desc: 'Pressure dropped noticeably this week for us and at least three neighbors. Showers are weak and it takes a long time to fill anything. Nothing changed on our end and no leaks that we can find.',
+          fix: 'Traced to a partially closed valve after recent line work. Valve reset and pressure confirmed normal.' },
+        { cat: 'Lighting', title: 'Streetlight out at the corner',
+          desc: 'This light has been dark for over a week. The corner is very dark now and people walk through here after dark heading to the store. It feels unsafe and I have seen folks walking in the street to stay visible.',
+          fix: 'Replaced failed fixture head and confirmed operation after dark.' },
+        { cat: 'Lighting', title: 'Flickering light near the park',
+          desc: 'The light flickers all night and makes a loud humming noise. It strobes on and off every few seconds which is worse than it just being out, and you can hear the buzzing from inside the house.',
+          fix: 'Replaced failing ballast and photocell, flicker resolved.' },
+        { cat: 'Sanitation', title: 'Illegal dumping in the alley',
+          desc: 'Someone dumped a mattress, a broken chair, and what looks like construction debris behind the units sometime overnight. It is blocking part of the alley and the trash truck may not be able to get through.',
+          fix: 'Debris removed and disposed of. Area photographed for enforcement follow up.' },
+        { cat: 'Sanitation', title: 'Missed trash pickup on the route',
+          desc: 'The route was skipped Tuesday and bins are still full going into the weekend. Several houses on this street are affected, not just mine, so it looks like the whole leg was missed.',
+          fix: 'Return collection completed and route supervisor notified.' },
+        { cat: 'Parks', title: 'Broken swing at the playground',
+          desc: 'A chain snapped on the swing set and the seat is hanging down with a sharp edge of the broken link exposed right at kid height. I moved my kids away from it but it needs to be taken down before someone gets cut.',
+          fix: 'Damaged swing removed, hardware replaced, and full play structure inspected.' },
+        { cat: 'Parks', title: 'Irrigation stuck on, flooding walkway',
+          desc: 'Sprinklers have been running in the middle of the day and water is pooling across the walkway and running into the street. It has been going for two days and is wasting a lot of water in this heat.',
+          fix: 'Replaced stuck solenoid valve and corrected the controller schedule.' },
+        { cat: 'Graffiti', title: 'Graffiti on the block wall',
+          desc: 'Fresh tagging along the block wall facing the street, roughly ten feet of it. It showed up over the weekend. This wall has been hit twice before in the last year.',
+          fix: 'Wall pressure washed and repainted to match. Location flagged for extra patrol.' },
+        { cat: 'Code', title: 'Overgrown vacant lot',
+          desc: 'The vacant lot has weeds over three feet tall spilling onto the sidewalk, forcing people to walk in the street. With how dry it is, it also looks like a real fire hazard next to the houses.',
+          fix: 'Property owner notified and lot cleared. Compliance verified by inspector.' }
     ];
     const statuses = ['submitted','under_review','assigned','in_progress','resolved','resolved'];
     const out = [];
@@ -14898,7 +14922,7 @@ function _sampleReports(city) {
             longitude: SAMPLE_CENTER.lng + (_sr(i + 31) - 0.5) * 0.075,
             photos: [],
             resolution_photos: [],
-            resolution_notes: st === 'resolved' ? 'Crew completed the work and verified on site.' : null,
+            resolution_notes: st === 'resolved' ? k.fix : null,
             resolved_at: st === 'resolved' ? _sdays(Math.max(1, days - 4)) : null,
             assigned_to: st === 'submitted' ? null : 'sample-staff-1',
             ai_category: k.cat,
@@ -14928,44 +14952,157 @@ function _sampleResidents(city) {
 
 function _sampleNews(city) {
     const items = [
-        ['Street resurfacing begins on Main', 'Crews start a four week resurfacing project through the downtown corridor.'],
-        ['Water system upgrade completed', 'The east side pressure upgrade wrapped ahead of schedule.'],
-        ['Parks master plan open for comment', 'Residents can weigh in on playground and shade improvements.'],
-        ['New online payments coming soon', 'Utility payments will move into the Eloy Connect app this year.']
+        ['Main Street Resurfacing Begins Monday, October 6', 'Infrastructure',
+`Crews begin a four week resurfacing of Main Street between 4th and 9th on Monday, October 6. The work was awarded by City Council on a 6 to 1 vote and replaces pavement that has not been fully resurfaced in over eighteen years.
+
+Grinding and repaving will run overnight, generally 7 p.m. to 5 a.m., so the corridor stays open during business hours. Every business on the stretch remains accessible the entire time, and marked detours go up a full week before work starts.
+
+What to expect: temporary lane restrictions after 7 p.m., some equipment noise for residents living within a block of the corridor, and short closures at individual driveways as each section is paved. Access is always restored by morning.
+
+If you have a delivery, a medical need, or anything else that requires guaranteed driveway access on a given night, call Public Works at 520-466-9201 and crews will schedule around you.`],
+
+        ['East Side Water Pressure Project Complete', 'Utilities',
+`The east side pressure improvement project is finished, and the quarterly water report presented to Council confirms the results are holding.
+
+Pressure complaints from the east side are down sharply since the valve replacement work this summer, and system wide water loss dropped compared to last quarter, which means less treated water is escaping before it reaches homes.
+
+Crews replaced aging valves, corrected two undersized segments, and rebalanced flow across the distribution system. The work was completed without a rate increase.
+
+If you are still seeing low pressure at your home, please report it in the Eloy Connect app rather than waiting. Every report is mapped, and clusters help crews find problems that individual calls can hide.`],
+
+        ['Parks Master Plan Open for Public Comment', 'Parks & Recreation',
+`The draft Parks and Recreation Master Plan is open for public comment through the end of the month, and this is the stage where resident input genuinely changes the outcome.
+
+The draft prioritizes shade structures at existing playgrounds, lighting improvements at evening use areas, restroom renovations, and a phased plan for walking paths connecting neighborhoods to park space.
+
+Shade and lighting rose to the top after repeated resident feedback, including a petition on park lighting that Council referred to staff for costing earlier this month.
+
+Comment in person at City Hall, by phone at 520-466-9201, or through the Eloy Connect app. Every comment is logged and summarized for Council before adoption.`],
+
+        ['Online Utility Payments Coming to Eloy Connect', 'Government',
+`Council has directed staff to bring back options for paying city utility bills online, a change that would end the mail only process many residents have asked about for years.
+
+During the recent budget work session, Council asked Finance to return with cost and timeline for accepting payments directly in the Eloy Connect app, alongside the existing options.
+
+Nothing changes on your bill today. Continue paying as you do now until an official launch date is announced here and in the app.
+
+Staff expects to present options at a future session. When a date is set, residents will be notified in the app before anything changes.`],
+
+        ['Eloy Named Among Arizona Communities to Watch', 'Community',
+`Eloy continues to draw attention for its position along the I-10 corridor between Phoenix and Tucson, and for a community that consistently punches above its size.
+
+City leadership points to steady infrastructure investment, a growing business base downtown, and residents who show up, whether that is at a council meeting, a cleanup, or a Friday night game.
+
+The City continues to invest in the basics that make growth work: streets, water, parks, and public safety.
+
+Have an idea for what Eloy should focus on next? Share it through Speak to the City in the Eloy Connect app. Messages go directly to city staff and are summarized for Council.`]
     ];
     return items.map((it, i) => ({
-        id: 'sample-news-' + i, title_en: it[0], title_es: it[0],
-        excerpt_en: it[1], excerpt_es: it[1], body_en: it[1], body_es: it[1],
-        category: 'City News', image_url: null, image_urls: [], published: true, archived: false,
-        published_at: _sdays(i * 6 + 2), created_at: _sdays(i * 6 + 2), updated_at: _sdays(i * 6 + 2), city_id: city
+        id: 'sample-news-' + i,
+        // Both naming conventions so every view renders, nothing blank.
+        title: it[0], title_en: it[0], title_es: it[0],
+        excerpt: it[2].split('\n')[0], excerpt_en: it[2].split('\n')[0], excerpt_es: it[2].split('\n')[0],
+        body: it[2], body_en: it[2], body_es: it[2],
+        category: it[1], image_url: null, image_urls: [], published: true, archived: false,
+        published_at: _sdays(i * 5 + 2), created_at: _sdays(i * 5 + 2), updated_at: _sdays(i * 5 + 2), city_id: city
     }));
 }
 
 function _sampleAlerts(city) {
     const items = [
-        ['Heat advisory through Friday', 'Cooling centers open at the community center from 10am to 7pm.', 'high'],
-        ['Water main work on Frontier St', 'Brief service interruptions expected Tuesday morning.', 'medium']
+        ['Excessive Heat Warning Through Friday', 'high',
+`The National Weather Service has issued an excessive heat warning for our area through Friday evening, with daytime highs expected between 108 and 112.
+
+Cooling centers are open at the Eloy Community Center and the Santa Cruz Library, 10 a.m. to 7 p.m. daily. Both are air conditioned, free, and open to anyone. Water is provided.
+
+Please check on elderly neighbors, anyone living alone, and anyone without working air conditioning. Never leave children or pets in a vehicle, even briefly.
+
+If you or someone near you shows signs of heat illness, confusion, hot dry skin, or fainting, call 911 immediately.`],
+
+        ['Water Main Work on Frontier Street, Tuesday', 'medium',
+`Crews will perform scheduled water main work on Frontier Street on Tuesday between 8 a.m. and approximately 2 p.m.
+
+Residents and businesses in the immediate area may experience brief service interruptions and temporary discoloration afterward. Discoloration is not a safety concern. Run a cold tap for two to three minutes until it clears.
+
+One lane will be restricted during the work. Please slow down and give crews room.
+
+If service has not returned by mid afternoon, or if discoloration persists past a few hours, report it in the app or call 520-466-9201.`],
+
+        ['Burn Restrictions Now in Effect', 'medium',
+`Seasonal burn restrictions are now in effect across the city and surrounding county areas due to dry conditions and elevated fire risk.
+
+Open burning, including yard waste and debris piles, is prohibited until further notice. Recreational fires in approved, contained fixtures are still permitted but must be attended at all times and fully extinguished.
+
+Fireworks remain prohibited within city limits outside of permitted holiday windows.
+
+Report unattended fires or unsafe burning to the non emergency line, or call 911 if a fire is actively spreading.`]
     ];
     return items.map((it, i) => ({
-        id: 'sample-alert-' + i, title_en: it[0], title_es: it[0],
-        message_en: it[1], message_es: it[1], severity: it[2], active: true, archived: false,
-        expires_at: _sahead(4), created_at: _sdays(i + 1), updated_at: _sdays(i + 1), city_id: city
+        id: 'sample-alert-' + i,
+        title: it[0], title_en: it[0], title_es: it[0],
+        message: it[2], message_en: it[2], message_es: it[2],
+        body: it[2], body_en: it[2],
+        severity: it[1], active: true, archived: false,
+        expires_at: _sahead(4 + i), created_at: _sdays(i + 1), updated_at: _sdays(i + 1), city_id: city
     }));
 }
 
 function _sampleEvents(city) {
     const items = [
-        ['Movie in the Park', 'Toltec Park', 6], ['Council Listening Session', 'City Hall', 12],
-        ['Fall Festival', 'Main Street', 21], ['Household Hazardous Waste Day', 'Public Works Yard', 30]
+        ['Movie in the Park: Family Night', 'Toltec Park, 1400 N Toltec Rd', 6, 'Community', '18:30', '21:00',
+`Bring blankets, low chairs, and the whole family for a free outdoor movie on the lawn at Toltec Park.
+
+Gates open at 6:30 p.m. and the film starts at dusk, around 7:15. Free popcorn while it lasts, and a local food truck will be on site.
+
+The event is free and no registration is required. Restrooms and lighted parking are available.
+
+Pets welcome on leash. In the event of weather, check the Eloy Connect app for a cancellation notice by 4 p.m.`],
+
+        ['Council Listening Session', 'City Hall, 595 N C Street', 12, 'Government', '17:30', '19:00',
+`An open, informal session where residents can talk directly with Council members and city staff. No agenda, no sign up sheet, no three minute timer.
+
+Bring anything on your mind: streets, water, parks, code questions, or an idea you think the city should pursue. Staff from Public Works, Community Development, and the City Manager's Office will be present to answer questions on the spot.
+
+Spanish interpretation is available on request.
+
+Cannot make it? Send your thoughts through Speak to the City in the app and they will be included in the summary Council receives.`],
+
+        ['Fall Festival on Main Street', 'Main Street, Downtown Eloy', 21, 'Community', '16:00', '21:00',
+`Downtown closes to traffic for the annual Fall Festival, with local vendors, live music, a car show, and a kids zone with games and inflatables.
+
+Live music runs from 5 p.m. on the Main Street stage. The car show fills the 4th Street block, and the kids zone is set up near the plaza with free activities all evening.
+
+Local restaurants and food trucks will be serving throughout. Vendor booths feature Eloy businesses and makers.
+
+Free admission and free parking in the municipal lots. Main Street is closed to vehicles from 2 p.m. to 10 p.m.`],
+
+        ['Household Hazardous Waste Collection Day', 'Public Works Yard, 628 N Main St', 30, 'Community Services', '08:00', '12:00',
+`Safely dispose of household chemicals, paint, motor oil, batteries, pesticides, and electronics. Free for Eloy residents with proof of residency.
+
+Accepted: paint and solvents, motor oil and filters, antifreeze, car and household batteries, pesticides and fertilizers, cleaning chemicals, fluorescent bulbs, and small electronics.
+
+Not accepted: explosives, ammunition, medical or biological waste, radioactive material, or commercial quantities from businesses.
+
+Stay in your vehicle. Place items in the trunk or truck bed and staff will unload for you. Last vehicle admitted at 11:45 a.m.`],
+
+        ['Santa Cruz Library Story Time', 'Santa Cruz Library, 1000 N Main St', 4, 'Library', '10:00', '11:00',
+`A free weekly story time for toddlers and preschoolers, with books, songs, and a simple craft.
+
+Designed for ages two through five with a caregiver, though younger and older siblings are always welcome. Sessions run about 45 minutes with time afterward to browse and check out books.
+
+Story time alternates between English and bilingual English and Spanish weeks.
+
+No registration required, just show up. Library cards are free for Eloy residents and can be issued the same day.`]
     ];
     return items.map((it, i) => ({
-        id: 'sample-event-' + i, title_en: it[0], title_es: it[0],
-        description_en: 'An open community event hosted by the City of Eloy.',
-        description_es: 'Un evento comunitario abierto organizado por la Ciudad de Eloy.',
-        event_date: _sahead(it[2]), start_time: '18:00', end_time: '20:00',
-        location_en: it[1], location_es: it[1], category: 'Community',
-        image_url: null, image_urls: [], published: true, archived: false,
-        created_at: _sdays(10), updated_at: _sdays(10), city_id: city
+        id: 'sample-event-' + i,
+        title: it[0], title_en: it[0], title_es: it[0],
+        description: it[6], description_en: it[6], description_es: it[6],
+        body: it[6], body_en: it[6],
+        event_date: _sahead(it[2]), start_time: it[4], end_time: it[5],
+        location: it[1], location_en: it[1], location_es: it[1],
+        category: it[3], image_url: null, image_urls: [], published: true, archived: false,
+        created_at: _sdays(12 - i), updated_at: _sdays(12 - i), city_id: city
     }));
 }
 
@@ -15058,17 +15195,48 @@ DECISIONS
 
 function _sampleNotices(city) {
     const rows = [
-        ['Overgrown Yard Maintenance','Weeds and brush exceed the twelve inch limit.','medium','open'],
-        ['Inoperable Vehicle in Driveway','Unregistered vehicle stored in public view.','low','acknowledged'],
-        ['Trash Container Left at Curb','Container left out beyond collection day.','low','resolved'],
-        ['Structure Without Permit','Carport built without a permit on file.','high','under_review']
+        ['Overgrown Yard Maintenance', 'Weeds & Vegetation', 'medium', 'open',
+`During a routine inspection, weeds and brush in the front and side yard were measured at approximately eighteen inches, exceeding the twelve inch maximum allowed for maintained property.
+
+Dry vegetation this height is a fire risk during our dry season and can harbor pests that spread to neighboring properties.
+
+To resolve: trim or remove vegetation to below twelve inches across the front, side, and any area visible from the street, and haul away the cuttings.
+
+If you need more time, or if a medical or financial hardship makes this difficult, please respond through the app. Extensions are routinely granted when residents communicate with us. We would much rather work with you than escalate.`],
+
+        ['Inoperable Vehicle in Public View', 'Vehicles', 'low', 'acknowledged',
+`An unregistered vehicle with flat tires and expired plates is being stored in the driveway where it is visible from the street.
+
+City code allows vehicle repair on private property but does not allow long term storage of inoperable or unregistered vehicles in public view.
+
+To resolve, choose whichever fits your situation: renew the registration and restore the vehicle to operable condition, move it into a garage or behind a solid fence, or have it removed.
+
+The resident has acknowledged this notice and indicated repairs are underway. No further action is needed as long as progress continues before the deadline.`],
+
+        ['Trash Container Left at Curb', 'Sanitation', 'low', 'resolved',
+`Refuse containers were left at the curb for several days past the scheduled collection day.
+
+Containers should be returned to a side yard, garage, or behind a gate within twenty four hours of pickup.
+
+Resolved. The resident moved the containers the same day this notice was issued and confirmed through the app. Thank you for the quick response, no further action is required and nothing goes on record against the property.`],
+
+        ['Structure Built Without Permit', 'Building & Safety', 'high', 'under_review',
+`A carport structure was constructed at this address without a building permit on file with Planning and Building Safety.
+
+Permits exist to confirm setbacks, footing depth, and wind load. Arizona monsoon winds regularly take down carports that were not engineered or anchored correctly, and an unpermitted structure can also create insurance and resale problems later.
+
+To resolve: contact Planning and Zoning / Building Safety at 520-466-2578 to apply for a permit after the fact. Staff will schedule an inspection and identify whether any modifications are required.
+
+This notice is currently under review while the resident gathers construction documentation. Work with us and this is usually straightforward to bring into compliance.`]
     ];
     return rows.map((r, i) => ({
         id: 'sample-notice-' + i, resident_id: 'sample-resident-' + i,
-        address: (200 + i * 137) + ' ' + _spick(SAMPLE_STREETS, i + 9) + ', Eloy, AZ',
-        type: 'Code Enforcement', title: r[0], description: r[1], severity: r[2], status: r[3],
+        address: (200 + i * 137) + ' ' + _spick(SAMPLE_STREETS, i + 9) + ', Eloy, AZ 85131',
+        type: r[1], title: r[0], description: r[4], severity: r[2], status: r[3],
         deadline: _sahead(14 - i * 3), response: null, proof_photo_urls: [], evidence_photo_urls: [],
         issued_by: 'sample-staff-1', issued_by_name: 'Code Enforcement', physical_mail_sent: false,
+        acknowledged_at: (r[3] === 'acknowledged' || r[3] === 'resolved') ? _sdays(i * 5) : null,
+        resolved_at: r[3] === 'resolved' ? _sdays(i * 5) : null,
         created_at: _sdays(i * 5 + 3), updated_at: _sdays(i * 5 + 1), city_id: city
     }));
 }
@@ -15091,27 +15259,67 @@ function _sampleBusinesses(city) {
 
 function _sampleVoices(city) {
     const rows = [
-        ['Parks','Would love more shade structures at the playground, it gets too hot by noon.','new'],
-        ['Traffic','Cars speed through the school zone on 8th, can we get more signage?','reviewed'],
-        ['Utilities','Paying the water bill online would save me a trip every month.','new'],
-        ['Community','Thank you to the crew that fixed our streetlight so fast.','reviewed']
+        ['Parks', 'new', null,
+`We take our kids to the playground most evenings and by noon the equipment is genuinely too hot to touch. The metal slide and the climbing bars are unusable most of the day from May through September.
+
+Could the city look at shade structures over the main play area? Even partial shade would extend how much of the day families can actually use the park we already have.
+
+I know there is a parks plan being discussed and I wanted to make sure this made it in.`],
+
+        ['Traffic', 'reviewed',
+`Thank you for raising this. Staff has forwarded your message to Public Works and the Police Department for a speed study on 8th Street during school arrival and dismissal windows. Council also has school zone safety on the list for the upcoming public safety update.`,
+`Cars come through the school zone on 8th well above the posted limit, especially in the morning between 7:15 and 8. I have watched cars pass others in the zone while kids were crossing.
+
+The signage is easy to miss coming from the east because of the curve. Could we get flashing beacons, better signage, or an officer present during arrival and dismissal?
+
+I do not want to wait until a child gets hit for this to become a priority.`],
+
+        ['Utilities', 'new', null,
+`Paying the water bill by mail every month is genuinely inconvenient, especially for those of us who work outside Eloy and cannot get to City Hall during business hours.
+
+Being able to pay through the app, or even just online with a card, would save a stamp and a trip. Auto pay would be even better.
+
+I saw the council discussed this at a work session. Please keep it moving, this is a small change that would help a lot of households.`],
+
+        ['Community', 'reviewed',
+`Thank you for taking the time to send this. Your note was shared directly with the Public Works crew and with their supervisor. It genuinely means a lot to the team to hear when something goes right.`,
+`I reported a streetlight out on our corner through the app on a Sunday night, mostly expecting nothing to happen for weeks.
+
+It was fixed by Wednesday, and I got a notification telling me it was done. My wife and I have lived here eleven years and this is the fastest the city has ever turned something around for us.
+
+Whoever is running this, keep going. It is working.`],
+
+        ['Development', 'new', null,
+`With the growth happening along the corridor, I would like to understand what the plan is for downtown. Are we recruiting businesses, and is there support for the ones already here?
+
+Some of us who own small businesses downtown feel like development conversations happen without us. A regular check in with downtown owners would go a long way.
+
+Happy to help organize if that would be useful.`]
     ];
     return rows.map((r, i) => ({
         id: 'sample-voice-' + i, user_id: 'sample-resident-' + (i + 2), city_id: city,
-        category: r[0], message: r[1], status: r[2], response: null, archived: false,
+        category: r[0], message: r[3], body: r[3], status: r[1],
+        response: r[2], responded_by: r[2] ? 'sample-staff-1' : null,
+        responded_at: r[2] ? _sdays(i * 3) : null, archived: false,
         created_at: _sdays(i * 3 + 1), updated_at: _sdays(i * 3 + 1)
     }));
 }
 
 function _sampleNotifications(city) {
     const rows = [
-        ['Heat advisory in effect','Cooling centers are open through Friday.'],
-        ['Street resurfacing starts Monday','Expect detours on Main between 4th and 9th.'],
-        ['Council meeting this Thursday','Agenda is posted in the app.']
+        ['Excessive Heat Warning Through Friday', 'high',
+`Highs of 108 to 112 expected through Friday. Cooling centers are open at the Community Center and Santa Cruz Library, 10 a.m. to 7 p.m. daily, free and open to everyone. Please check on elderly neighbors and anyone without air conditioning.`],
+        ['Main Street Resurfacing Starts Monday', 'normal',
+`Four weeks of overnight resurfacing between 4th and 9th begins Monday, October 6. Work runs 7 p.m. to 5 a.m. so the corridor stays open during the day. All businesses stay accessible. Detour signs go up this week.`],
+        ['Council Meeting This Thursday, 6 p.m.', 'normal',
+`Regular Council Meeting at City Hall, 595 N C Street. On the agenda: the park lighting cost estimate and the quarterly public safety update. The full agenda is in the app, and a plain language recap is posted after the meeting.`],
+        ['Water Main Work on Frontier Street Tuesday', 'normal',
+`Crews will be working 8 a.m. to about 2 p.m. Expect brief service interruptions and possible discoloration afterward. Run a cold tap two to three minutes until it clears. One lane restricted, please slow down for crews.`]
     ];
     return rows.map((r, i) => ({
-        id: 'sample-notif-' + i, user_id: null, title: r[0], message: r[1], type: 'announcement',
-        related_id: null, read: false, audience: 'all', priority: 'normal',
+        id: 'sample-notif-' + i, user_id: null,
+        title: r[0], message: r[2], body: r[2], type: 'announcement',
+        related_id: null, read: false, audience: 'all', priority: r[1],
         sent_at: _sdays(i * 4 + 1), created_at: _sdays(i * 4 + 1), city_id: city
     }));
 }
