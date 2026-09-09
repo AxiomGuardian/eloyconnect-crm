@@ -6,7 +6,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Eloy Connect — Civic Relationship Management</title>
+<title>Eloy Connect · Civic Relationship Management</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1A2B'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%233FE0E8' stroke-width='6'/%3E%3Ccircle cx='17' cy='17' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='17' cy='47' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='47' cy='47' r='6.5' fill='%233FE0E8'/%3E%3Ccircle cx='47' cy='17' r='6.5' fill='%23F5A623'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%233FE0E8'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -3090,6 +3091,19 @@ input[type="checkbox"].bulk-check:checked::after {
     background: linear-gradient(90deg, transparent, rgba(63,224,232,0.2), transparent);
     z-index: 1;
 }
+
+/* Dark basemap without a keyed provider. Only the tile pane is filtered, so
+   report pins, popups and controls keep their real colors. */
+.leaflet-tile-pane {
+    filter: invert(1) hue-rotate(190deg) brightness(0.94) contrast(0.86) saturate(0.6);
+}
+.leaflet-container { background: #0B1A2B; }
+.leaflet-control-attribution {
+    background: rgba(10,20,34,0.72) !important;
+    color: #6E8296 !important;
+    font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: #3FE0E8 !important; }
 </style>
 </head>
 <body>
@@ -3309,6 +3323,7 @@ function firstEntryTypeEffect(){
         <div class="nav-item" data-page="leaders" onclick="navigateTo('leaders')">City Leaders</div>
         <div class="nav-item" data-page="permits" onclick="navigateTo('permits')">Permits <span class="badge badge-info">Soon</span></div>
         <div class="nav-item" data-page="staff" onclick="navigateTo('staff')">Staff & Settings</div>
+        <div class="nav-item" data-page="syslog" onclick="navigateTo('syslog')">System Log</div>
     </div>
 
     <div class="topnav-right">
@@ -4655,10 +4670,12 @@ function firstEntryTypeEffect(){
                                 <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Name</th>
                                 <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Email</th>
                                 <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Role</th>
+                                <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Tabs</th>
+                                <th style="padding:8px 12px; font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px; font-weight:600; text-align:right;">Access</th>
                             </tr>
                         </thead>
                         <tbody id="staffTableBody">
-                            <tr><td colspan="3" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">Loading staff...</td></tr>
+                            <tr><td colspan="5" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">Loading staff...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -4832,6 +4849,68 @@ function firstEntryTypeEffect(){
 
             <div id="leadersGrid" class="staff-grid anim-stagger" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
                 <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- SYSTEM LOG (owner only) -->
+        <div class="page" id="page-syslog">
+            <div class="glass-card aura-host aura-red" style="position:relative; margin-bottom:20px;">
+                <div class="aura-glow"></div>
+                <div class="aura-line"></div>
+                <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#F43F5E; margin-bottom:4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 3.8 8.6 9 9 5.2-.4 9-4 9-9V7z"/><path d="M12 8v4M12 16h.01"/></svg>
+                            Private Diagnostics
+                        </div>
+                        <h3 style="font-size:17px; font-weight:600;">System Log</h3>
+                        <p style="font-size:12px; color:var(--text-tertiary); margin-top:3px;">Every action, request, and crash across the platform. Visible to the owner account only.</p>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <select id="syslogLevel" class="form-input" style="width:auto; padding:8px 12px; font-size:12px;" onchange="renderSystemLog()">
+                            <option value="">All levels</option>
+                            <option value="error">Errors only</option>
+                            <option value="warn">Warnings</option>
+                            <option value="info">Info</option>
+                        </select>
+                        <select id="syslogEvent" class="form-input" style="width:auto; padding:8px 12px; font-size:12px;" onchange="renderSystemLog()">
+                            <option value="">All events</option>
+                            <option value="js.">Crashes</option>
+                            <option value="net.">Network</option>
+                            <option value="auth.">Auth</option>
+                            <option value="nav.">Navigation</option>
+                            <option value="ui.">Interface</option>
+                        </select>
+                        <select id="syslogLimit" class="form-input" style="width:auto; padding:8px 12px; font-size:12px;" onchange="renderSystemLog()">
+                            <option value="100">Last 100</option>
+                            <option value="300">Last 300</option>
+                            <option value="1000">Last 1000</option>
+                        </select>
+                        <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="renderSystemLog()">Refresh</button>
+                        <button class="btn btn-ghost" style="padding:8px 14px; font-size:12px;" onclick="exportSystemLog()">Export</button>
+                    </div>
+                </div>
+                <div id="syslogStats" style="position:relative; display:flex; gap:18px; margin-top:16px; flex-wrap:wrap; font-size:12px; color:var(--text-tertiary);"></div>
+            </div>
+
+            <div class="glass-card">
+                <div style="overflow-x:auto; max-height:62vh; overflow-y:auto;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead style="position:sticky; top:0; background:var(--surface-solid, #0E1729); z-index:2;">
+                            <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.08);">
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">When</th>
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Level</th>
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Event</th>
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Who</th>
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Where</th>
+                                <th style="padding:9px 12px; font-size:10.5px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="syslogBody">
+                            <tr><td colspan="6" style="padding:18px 12px; font-size:13px; color:var(--text-tertiary);">Open this tab to load the log.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -5525,15 +5604,88 @@ function firstEntryTypeEffect(){
     </div>
 </div>
 
+<!-- EDIT ACCESS MODAL -->
+<div class="modal-overlay" id="editAccessModal" onclick="if(event.target===this)closeEditAccess()">
+    <div class="modal modal-glass aura-host aura-green" style="width:min(600px,94vw); max-height:92vh; overflow-y:auto; position:relative; padding:30px 34px;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:22px; position:relative;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div id="editAccessAvatar" style="width:52px; height:52px; border-radius:16px; background:linear-gradient(135deg, #34D399, #0FB5C9); display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#04121A; flex-shrink:0; box-shadow:0 8px 22px rgba(52,211,153,0.28);">—</div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#34D399; margin-bottom:3px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        Edit Access
+                    </div>
+                    <h3 id="editAccessName" style="font-size:19px; font-weight:700; color:var(--text-primary);">—</h3>
+                    <p id="editAccessEmail" style="font-size:12px; color:var(--text-tertiary); margin-top:3px;">—</p>
+                </div>
+            </div>
+            <button class="btn btn-ghost" onclick="closeEditAccess()" style="font-size:15px; padding:5px 11px; line-height:1;">&times;</button>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
+            <select id="editAccessRole" class="form-input" style="margin-top:6px;" onchange="editAccessRoleChanged()">
+                <option value="staff">Staff</option>
+                <option value="council">Council</option>
+                <option value="chamber">Chamber</option>
+            </select>
+            <div id="editAccessRoleHint" style="font-size:12px; color:var(--text-tertiary); margin-top:6px;"></div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Tabs this person can see</label>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn btn-ghost" onclick="editAccessAll(true)" style="padding:4px 10px; font-size:11px;">All</button>
+                    <button type="button" class="btn btn-ghost" onclick="editAccessAll(false)" style="padding:4px 10px; font-size:11px;">None</button>
+                    <button type="button" class="btn btn-ghost" onclick="editAccessResetToRole()" style="padding:4px 10px; font-size:11px;">Role default</button>
+                </div>
+            </div>
+            <div id="editAccessPages" style="margin-top:8px; display:grid; grid-template-columns:repeat(3, 1fr); gap:7px 12px; background:linear-gradient(180deg, rgba(52,211,153,0.05), rgba(255,255,255,0.015)); border:1px solid rgba(52,211,153,0.18); border-radius:12px; padding:14px;"></div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Changes apply the next time they sign in or refresh. Staff and Settings stays owner only.</div>
+        </div>
+
+        <label for="editAccessSample" style="display:flex; align-items:flex-start; gap:11px; margin-bottom:14px; padding:13px 15px; border-radius:12px; cursor:pointer;
+                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.015)); border:1px solid rgba(246,196,69,0.22);">
+            <input type="checkbox" id="editAccessSample" style="accent-color:#F6C445; width:15px; height:15px; margin-top:2px; cursor:pointer;">
+            <span>
+                <span style="display:block; font-size:13px; font-weight:600; color:#F6C445;">Sample Activity</span>
+                <span style="display:block; font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
+                    Gives them an on/off switch that fills the CRM with realistic demo data, matched to their tabs.
+                    Never writes to the database.
+                </span>
+            </span>
+        </label>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px;">
+            <button class="btn btn-ghost" onclick="closeEditAccess()">Cancel</button>
+            <button class="btn" id="editAccessSaveBtn" onclick="saveEditAccess()" style="padding:10px 22px; background:linear-gradient(135deg,#34D399,#0FB5C9); color:#04121A; border:none; font-weight:600; box-shadow:0 8px 24px rgba(52,211,153,0.28);">Save Access</button>
+        </div>
+    </div>
+</div>
+
 <!-- ADD STAFF MEMBER MODAL -->
 <div class="modal-overlay" id="createStaffForm" onclick="if(event.target===this)toggleCreateStaffForm()">
-    <div class="modal" style="width: 520px; padding: 32px;">
-        <div style="display:flex; align-items:center; gap:16px; margin-bottom:22px;">
-            <div id="newStaffAvatar" style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, var(--accent), var(--primary)); display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#04121A; flex-shrink:0; transition: transform .2s ease;">+</div>
-            <div>
-                <h3 style="font-size:18px; font-weight:600;">Add a staff member</h3>
-                <p style="font-size:12px; color:var(--text-tertiary); margin-top:2px;">Creates a real login for the Eloy Connect CRM</p>
+    <div class="modal modal-glass aura-host aura-green" style="width:min(600px,94vw); max-height:92vh; overflow-y:auto; position:relative; padding:30px 34px;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:22px; position:relative;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div id="newStaffAvatar" style="width:52px; height:52px; border-radius:16px; background:linear-gradient(135deg, #34D399, #0FB5C9); display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:700; color:#04121A; flex-shrink:0; transition: transform .2s ease; box-shadow:0 8px 22px rgba(52,211,153,0.28);">+</div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#34D399; margin-bottom:3px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                        Team Access
+                    </div>
+                    <h3 style="font-size:19px; font-weight:700; color:var(--text-primary);">Add a staff member</h3>
+                    <p style="font-size:12px; color:var(--text-tertiary); margin-top:3px;">Creates a real login for the Eloy Connect CRM</p>
+                </div>
             </div>
+            <button class="btn btn-ghost" onclick="toggleCreateStaffForm()" style="font-size:15px; padding:5px 11px; line-height:1;">&times;</button>
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
@@ -5549,14 +5701,40 @@ function firstEntryTypeEffect(){
 
         <div style="margin-bottom:14px;">
             <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Role</label>
-            <select id="newStaffRole" class="form-input" style="margin-top:6px;" onchange="updateStaffRoleHint()">
+            <select id="newStaffRole" class="form-input" style="margin-top:6px;" onchange="updateStaffRoleHint(); renderStaffPageAccess();">
                 <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
                 <option value="council">Council</option>
-                <option value="worker">Worker</option>
+                <option value="chamber">Chamber</option>
             </select>
-            <div id="newStaffRoleHint" style="font-size:12px; color:var(--text-tertiary); margin-top:6px;">Day-to-day city operations — manages reports, content, and residents.</div>
+            <div id="newStaffRoleHint" style="font-size:12px; color:var(--text-tertiary); margin-top:6px;">Day-to-day city operations. Manages reports, content, and residents.</div>
         </div>
+
+        <!-- Per-person tab access. Presets from the role, then tick or untick. -->
+        <div style="margin-bottom:14px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <label style="font-size:11px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.5px;">Tabs this person can see</label>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn btn-ghost" onclick="staffPageAccessAll(true)" style="padding:4px 10px; font-size:11px;">All</button>
+                    <button type="button" class="btn btn-ghost" onclick="staffPageAccessAll(false)" style="padding:4px 10px; font-size:11px;">None</button>
+                    <button type="button" class="btn btn-ghost" onclick="renderStaffPageAccess()" style="padding:4px 10px; font-size:11px;">Reset</button>
+                </div>
+            </div>
+            <div id="newStaffPages" style="margin-top:8px; display:grid; grid-template-columns:repeat(3, 1fr); gap:7px 12px; background:linear-gradient(180deg, rgba(52,211,153,0.05), rgba(255,255,255,0.015)); border:1px solid rgba(52,211,153,0.18); border-radius:12px; padding:14px;"></div>
+            <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">Staff and Settings is reserved for the owner account and is never granted here.</div>
+        </div>
+
+        <!-- Sample activity: a generated demo view, scoped to the tabs above. -->
+        <label for="newStaffSample" style="display:flex; align-items:flex-start; gap:11px; margin-bottom:14px; padding:13px 15px; border-radius:12px; cursor:pointer;
+                    background:linear-gradient(180deg, rgba(246,196,69,0.06), rgba(255,255,255,0.015)); border:1px solid rgba(246,196,69,0.22);">
+            <input type="checkbox" id="newStaffSample" style="accent-color:#F6C445; width:15px; height:15px; margin-top:2px; cursor:pointer;">
+            <span>
+                <span style="display:block; font-size:13px; font-weight:600; color:#F6C445;">Give this person Sample Activity</span>
+                <span style="display:block; font-size:11.5px; color:var(--text-tertiary); margin-top:3px; line-height:1.5;">
+                    Adds an on/off switch to their view that fills the CRM with realistic demo data, matched to the tabs above.
+                    Nothing is written to the database and real records are never changed.
+                </span>
+            </span>
+        </label>
 
         <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:14px;">
             <div>
@@ -5573,7 +5751,7 @@ function firstEntryTypeEffect(){
 
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:22px;">
             <button class="btn btn-ghost" onclick="toggleCreateStaffForm()">Cancel</button>
-            <button class="btn btn-primary" onclick="createStaffAccount()" style="padding:10px 22px;">Create Account</button>
+            <button class="btn" onclick="createStaffAccount()" style="padding:10px 22px; background:linear-gradient(135deg,#34D399,#0FB5C9); color:#04121A; border:none; font-weight:600; box-shadow:0 8px 24px rgba(52,211,153,0.28);">Create Account</button>
         </div>
     </div>
 </div>
@@ -5674,8 +5852,9 @@ var pages = {
     archive: { title: 'Archive', subtitle: 'Closed reports, retired posts, archived messages — nothing is ever lost' },
     council: { title: 'Council Meetings', subtitle: 'Meetings, summaries, and how residents engage with them' },
     leaders: { title: 'City Leaders', subtitle: 'Manage official profiles' },
-    permits: { title: 'Permits', subtitle: 'In-app permit intake — reviewed and paid inside Eloy Connect' },
-    staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' }
+    permits: { title: 'Permits', subtitle: 'In-app permit intake, reviewed and paid inside Eloy Connect' },
+    staff: { title: 'Staff & Settings', subtitle: 'Team management & system config' },
+    syslog: { title: 'System Log', subtitle: 'Private diagnostic log. Owner access only.' }
 };
 // navigateTo and navigateToPage defined in main script block below
 </script>
@@ -6798,16 +6977,16 @@ async function handleLogin(e) {
         // Check role in profiles table
         const { data: profile, error: profileErr } = await sbClient
             .from('profiles')
-            .select('role, city_id, display_name, email')
+            .select('role, city_id, display_name, email, page_access, sample_activity')
             .eq('id', data.user.id)
             .single();
 
-        if (profileErr) throw new Error('Could not verify admin role');
+        if (profileErr) throw new Error('Could not verify your account role');
 
         const role = (profile?.role || '').toLowerCase();
-        if (role !== 'admin' && role !== 'staff' && role !== 'super_admin') {
+        if (!CRM_LOGIN_ROLES.includes(role)) {
             await sbClient.auth.signOut();
-            throw new Error('Access denied — admin role required');
+            throw new Error('This account does not have CRM access');
         }
 
         // Capture role + city for multi-tenant scoping
@@ -6817,7 +6996,12 @@ async function handleLogin(e) {
         activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
 
         // Populate header with the real signed-in user
+        _logActorId = data.user.id;
+        _logActorEmail = profile?.email || data.user.email || null;
         applyHeaderUser(profile, data.user.email);
+        applyPageAccess(role, profile?.page_access);
+        initSampleActivity(profile);
+        logEvent('auth.login', { message: 'Signed in', details: { role, city_id: profile?.city_id || null } });
 
         // Authorized — hide overlay, play cinematic entrance, show CRM
         document.getElementById('loginOverlay').style.display = 'none';
@@ -6839,6 +7023,7 @@ function hideLoginScreen() { document.getElementById('loginOverlay').style.displ
 
 // Sign out of the CRM and return to the login screen.
 async function signOutCRM() {
+    logEvent('auth.signout', { message: 'Signed out' });
     try { if (sbClient) await sbClient.auth.signOut(); } catch (e) { console.warn(e); }
     authRole = ''; currentCityId = null; isSuperAdmin = false; activeCityId = null;
     showLoginScreen();
@@ -6890,18 +7075,23 @@ async function checkExistingSession() {
         // Verify role
         const { data: profile } = await sbClient
             .from('profiles')
-            .select('role, city_id, display_name, email')
+            .select('role, city_id, display_name, email, page_access, sample_activity')
             .eq('id', session.user.id)
             .single();
 
         const role = (profile?.role || '').toLowerCase();
-        if (role === 'admin' || role === 'staff' || role === 'super_admin') {
+        if (CRM_LOGIN_ROLES.includes(role)) {
             // Capture role + city for multi-tenant scoping
             authRole = role;
             currentCityId = profile?.city_id || null;
             isSuperAdmin = (role === 'super_admin');
             activeCityId = isSuperAdmin ? (localStorage.getItem('crmActiveCityId') || null) : currentCityId;
+            _logActorId = session.user.id;
+            _logActorEmail = profile?.email || session.user.email || null;
             applyHeaderUser(profile, session.user.email);
+            applyPageAccess(role, profile?.page_access);
+            initSampleActivity(profile);
+            logEvent('auth.session_restored', { details: { role } });
             hideLoginScreen();
             await initCityContext();
         } else {
@@ -6963,6 +7153,11 @@ async function fetchAllData() {
         if (businesses.status === 'fulfilled' && !businesses.value.error) liveData.businesses = businesses.value.data;
         if (civicVoice.status === 'fulfilled' && !civicVoice.value.error) liveData.civicVoice = civicVoice.value.data;
         if (notices.status === 'fulfilled' && !notices.value.error) liveData.notices = notices.value.data;
+
+        // Sample Activity: swap the in-memory set before anything renders, so
+        // every page below shows generated demo data instead of real records.
+        // Nothing is written; turning it off simply skips this line.
+        if (sampleModeActive()) applySampleData();
 
         buildBusinessListings();
         updateDashboardWithLiveData();
@@ -7907,7 +8102,186 @@ pages.notifications.subtitle = 'Broadcast to Eloy Connect users';
 pages.leaders.subtitle = 'Manage elected officials and city staff profiles';
 pages.staff.subtitle = 'Team management and app configuration';
 
+// ============================================================
+// DATA LOG — private, append-only system log.
+// Every signed-in user can WRITE events; only the owner can READ them
+// (enforced by RLS on public.system_logs). Batched so it never blocks the UI,
+// and fully wrapped so a logging failure can never break the CRM.
+// ============================================================
+const LOG_SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+let _logActorId = null, _logActorEmail = null;
+let _logQueue = [], _logTimer = null;
+
+function _currentPageKey() {
+    const el = document.querySelector('.page.active');
+    return el ? el.id.replace('page-', '') : null;
+}
+
+function logEvent(event, opts) {
+    try {
+        opts = opts || {};
+        _logQueue.push({
+            level: opts.level || 'info',
+            event: String(event || 'unknown').slice(0, 120),
+            message: opts.message != null ? String(opts.message).slice(0, 2000) : null,
+            source: 'crm',
+            actor_id: _logActorId || null,
+            actor_email: _logActorEmail || null,
+            actor_role: (typeof authRole !== 'undefined' && authRole) ? authRole : null,
+            city_id: (typeof activeCityId !== 'undefined' && activeCityId) ? activeCityId
+                   : (typeof currentCityId !== 'undefined' && currentCityId) ? currentCityId : null,
+            context: opts.context || _currentPageKey(),
+            details: opts.details || {},
+            url: location.href.slice(0, 500),
+            user_agent: (navigator.userAgent || '').slice(0, 300),
+            session_id: LOG_SESSION_ID
+        });
+        if (_logQueue.length > 200) _logQueue.splice(0, _logQueue.length - 200);
+        _scheduleLogFlush();
+    } catch (e) { /* logging must never throw */ }
+}
+
+function _scheduleLogFlush() {
+    if (_logTimer) return;
+    _logTimer = setTimeout(async () => {
+        _logTimer = null;
+        try {
+            if (!sbClient || !_logQueue.length) return;
+            const batch = _logQueue.splice(0, 25);
+            await sbClient.from('system_logs').insert(batch);
+        } catch (e) { /* never surface logging failures */ }
+        if (_logQueue.length) _scheduleLogFlush();
+    }, 900);
+}
+
+// Catch crashes: uncaught errors and rejected promises both land in the log.
+window.addEventListener('error', function (e) {
+    logEvent('js.error', {
+        level: 'error',
+        message: e.message,
+        details: {
+            file: e.filename, line: e.lineno, col: e.colno,
+            stack: ((e.error && e.error.stack) || '').slice(0, 1500)
+        }
+    });
+});
+window.addEventListener('unhandledrejection', function (e) {
+    const r = e.reason;
+    logEvent('js.unhandled_rejection', {
+        level: 'error',
+        message: (r && (r.message || String(r))) || 'Unhandled promise rejection',
+        details: { stack: ((r && r.stack) || '').slice(0, 1500) }
+    });
+});
+// Flush anything still queued when the tab closes.
+window.addEventListener('beforeunload', function () {
+    try {
+        if (sbClient && _logQueue.length) sbClient.from('system_logs').insert(_logQueue.splice(0));
+    } catch (e) {}
+});
+
+function _shortUrl(u) {
+    try { const x = new URL(u, location.href); return x.pathname + (x.search ? '?...' : ''); }
+    catch (e) { return String(u).slice(0, 180); }
+}
+
+// ---- Central instrumentation -------------------------------------------
+// One wrapper each for the network, toasts, and clicks. This captures every
+// save, send, delete and failure across the whole CRM without scattering log
+// calls through hundreds of functions.
+(function instrumentNetwork() {
+    const _fetch = window.fetch;
+    window.fetch = async function (input, init) {
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        const method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+        const isLogWrite = url.indexOf('system_logs') !== -1;   // never log the logger
+        const t0 = (window.performance && performance.now()) || 0;
+        try {
+            const res = await _fetch.apply(this, arguments);
+            if (!isLogWrite && (method !== 'GET' || !res.ok)) {
+                logEvent(res.ok ? 'net.request' : 'net.error', {
+                    level: res.ok ? 'info' : 'error',
+                    message: method + ' ' + _shortUrl(url) + ' returned ' + res.status,
+                    details: {
+                        method, path: _shortUrl(url), status: res.status,
+                        ms: Math.round(((window.performance && performance.now()) || 0) - t0)
+                    }
+                });
+            }
+            return res;
+        } catch (err) {
+            if (!isLogWrite) {
+                logEvent('net.failure', {
+                    level: 'error',
+                    message: method + ' ' + _shortUrl(url) + ' failed: ' + (err && err.message),
+                    details: { method, path: _shortUrl(url) }
+                });
+            }
+            throw err;
+        }
+    };
+})();
+
+// Every toast is a user-visible outcome, so it doubles as an action log.
+(function instrumentToasts() {
+    if (typeof showToast !== 'function') return;
+    const _toast = showToast;
+    window.showToast = function (msg, type) {
+        try {
+            logEvent('ui.toast', {
+                level: type === 'error' ? 'error' : (type === 'warning' ? 'warn' : 'info'),
+                message: String(msg).slice(0, 500),
+                details: { type: type || 'info' }
+            });
+        } catch (e) {}
+        return _toast.apply(this, arguments);
+    };
+})();
+
+// Meaningful clicks (buttons, tabs, anything with a handler).
+document.addEventListener('click', function (e) {
+    try {
+        const el = e.target.closest && e.target.closest('button, .nav-item, [onclick]');
+        if (!el) return;
+        const label = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+        if (!label) return;
+        logEvent('ui.click', { details: { label, page: _currentPageKey() } });
+    } catch (err) {}
+}, true);
+
+// Roles allowed to sign in to the CRM at all.
+const CRM_LOGIN_ROLES = ['super_admin', 'admin', 'staff', 'council', 'chamber'];
+
+// Pages the signed-in user may see. Null until a session is applied.
+let allowedPages = null;
+
+// Apply a user's tab permissions to the nav. Admin/super_admin get everything;
+// everyone else gets their saved page_access, or their role defaults.
+function applyPageAccess(role, pageAccess) {
+    try {
+        allowedPages = resolvePageAccess(role, pageAccess);
+        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+            const ok = allowedPages.includes(item.dataset.page);
+            item.classList.toggle('role-hidden', !ok);
+            if (!ok) item.classList.remove('active');
+        });
+        // If they're sitting on a page they may not see, bounce to the dashboard.
+        const active = document.querySelector('.page.active');
+        if (active) {
+            const id = active.id.replace('page-', '');
+            if (!allowedPages.includes(id)) navigateTo('dashboard');
+        }
+    } catch (e) { console.warn('applyPageAccess failed:', e); }
+}
+
 function navigateTo(page) {
+    // Permission guard: never open a tab this user isn't allowed to see.
+    if (allowedPages && !allowedPages.includes(page)) {
+        logEvent('nav.blocked', { level: 'warn', message: 'Blocked navigation to ' + page, details: { requested: page } });
+        page = 'dashboard';
+    }
+    logEvent('nav.page', { details: { page } });
+
     // Hide all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     // Deactivate all nav items
@@ -7959,6 +8333,9 @@ function navigateTo(page) {
 
     // Messages: refresh the send record whenever the tab opens.
     if (page === 'notifications') loadPushHistory();
+
+    // System Log: pull the latest entries whenever the owner opens it.
+    if (page === 'syslog') setTimeout(renderSystemLog, 40);
 
     // Archive: rebuild the current tab's list.
     if (page === 'archive') loadArchivePage();
@@ -8103,8 +8480,12 @@ function initOrUpdateReportsMap() {
             fadeAnimation: true,
             markerZoomAnimation: true
         });
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
+        // OpenStreetMap standard tiles: free, no API key, no watermark. CARTO's
+        // basemaps now require a paid key, which is what stamped "API KEY
+        // REQUIRED" across the map. The dark look is produced by a CSS filter on
+        // .leaflet-tile-pane instead, so we never depend on a keyed provider.
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(reportsMap);
         reportsMapPins = L.layerGroup().addTo(reportsMap);
@@ -14162,7 +14543,7 @@ function renderStaffPage() {
     if (countLabel) countLabel.textContent = staff.length + ' account' + (staff.length === 1 ? '' : 's');
 
     if (!staff.length) {
-        body.innerHTML = `<tr><td colspan="3" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">No staff accounts for this city yet.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="5" style="padding:16px 12px; font-size:13px; color:var(--text-tertiary);">No staff accounts for this city yet.</td></tr>`;
         return;
     }
 
@@ -14170,10 +14551,30 @@ function renderStaffPage() {
         const name = p.display_name || p.full_name || p.name || '—';
         const email = p.email || '—';
         const role = (p.role || '').toLowerCase();
+        const isOwner = role === 'super_admin';
+        const isTechLead = role === 'admin';
+        const fullAccess = isOwner || isTechLead;
+        // How many tabs they actually see today.
+        const tabCount = fullAccess ? allCrmPages().length : resolvePageAccess(role, p.page_access).length;
+        const custom = Array.isArray(p.page_access) && p.page_access.length;
+        const roleTint = isOwner    ? 'rgba(246,196,69,0.14); color:#F6C445'
+                       : isTechLead ? 'rgba(130,110,255,0.16); color:#A99BFF'
+                                    : 'rgba(52,211,153,0.13); color:#34D399';
+        const label = ROLE_LABELS[role] || role;
+        // Owner is never editable here. A Tech Lead is editable only by the owner.
+        const canEdit = !isOwner && (!isTechLead || isSuperAdmin);
         return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
             <td style="padding:10px 12px; font-size:13px; color:var(--text-primary);">${escapeHtml(name)}</td>
             <td style="padding:10px 12px; font-size:13px; color:var(--text-secondary);">${escapeHtml(email)}</td>
-            <td style="padding:10px 12px; font-size:13px;"><span style="font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">${escapeHtml(role)}</span></td>
+            <td style="padding:10px 12px; font-size:13px;"><span style="font-size:11px; padding:2px 9px; border-radius:10px; background:${roleTint};">${escapeHtml(label)}</span></td>
+            <td style="padding:10px 12px; font-size:12px; color:var(--text-tertiary);">
+                ${fullAccess ? 'All tabs' : `${tabCount} tabs${custom ? '' : ' <span style="opacity:.7">(role default)</span>'}`}
+            </td>
+            <td style="padding:10px 12px; text-align:right;">
+                ${canEdit
+                    ? `<button class="btn btn-ghost" style="font-size:11.5px; padding:5px 12px;" onclick="openEditAccess('${p.id}')">Edit access</button>`
+                    : `<span style="font-size:11px; color:var(--text-tertiary);">${isOwner ? 'Owner' : 'Owner only'}</span>`}
+            </td>
         </tr>`;
     }).join('');
 }
@@ -14196,6 +14597,9 @@ function toggleCreateStaffForm() {
         } else if (cityWrap) {
             cityWrap.style.display = 'none';
         }
+        syncTechLeadOption('newStaffRole');   // only the owner may appoint a Tech Lead
+        updateStaffRoleHint();
+        renderStaffPageAccess();   // preset the tab checkboxes for the chosen role
     }
 }
 
@@ -14211,15 +14615,650 @@ function updateStaffAvatarPreview() {
     setTimeout(() => { av.style.transform = 'scale(1)'; }, 150);
 }
 
+// Role labels + descriptions. "admin" is presented as Tech Lead: full access to
+// this city including account management, but not owner-level (no city switching,
+// cannot appoint another Tech Lead). Only a super_admin may assign it.
+const ROLE_LABELS = {
+    super_admin: 'Owner',
+    admin: 'Tech Lead',
+    staff: 'Staff',
+    council: 'Council',
+    chamber: 'Chamber'
+};
+const ROLE_HINTS = {
+    admin: 'Tech Lead. Full access to this city, including creating and managing accounts.',
+    staff: 'Day-to-day city operations. Manages reports, content, and residents.',
+    council: 'Sees dashboards, reports, and council materials. Review focused.',
+    chamber: 'Chamber of Commerce. Manages the local business directory.'
+};
+
+// Add or remove the Tech Lead option based on who is signed in.
+function syncTechLeadOption(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const existing = sel.querySelector('option[value="admin"]');
+    if (isSuperAdmin && !existing) {
+        const opt = document.createElement('option');
+        opt.value = 'admin';
+        opt.textContent = 'Tech Lead';
+        sel.appendChild(opt);
+    } else if (!isSuperAdmin && existing) {
+        existing.remove();
+    }
+}
+
 function updateStaffRoleHint() {
-    const hints = {
-        staff: 'Day-to-day city operations — manages reports, content, and residents.',
-        admin: 'Full control of this city\'s CRM, including staff and settings.',
-        council: 'Sees reports, dashboards, and council materials. No editing.',
-        worker: 'Field crew — sees assigned jobs in the Public Works app.'
-    };
     const el = document.getElementById('newStaffRoleHint');
-    if (el) el.textContent = hints[document.getElementById('newStaffRole')?.value] || '';
+    if (el) el.textContent = ROLE_HINTS[document.getElementById('newStaffRole')?.value] || '';
+}
+
+// ============================================================
+// CRM PAGE ACCESS — which nav tabs a role/person can see.
+// Admin and super_admin always see everything; ADMIN_ONLY_PAGES can never be
+// granted to staff, council, or chamber accounts.
+// ============================================================
+const CRM_PAGES = [
+    { key: 'dashboard',     label: 'Dashboard' },
+    { key: 'reports',       label: 'Reports' },
+    { key: 'content',       label: 'Content' },
+    { key: 'council',       label: 'Council Meetings' },
+    { key: 'residents',     label: 'Residents' },
+    { key: 'grok',          label: 'AI Briefing' },
+    { key: 'directory',     label: 'Business Directory' },
+    { key: 'enforcement',   label: 'Code Enforcement' },
+    { key: 'notifications', label: 'Messages' },
+    { key: 'voices',        label: 'Citizens Voices' },
+    { key: 'archive',       label: 'Archive' },
+    { key: 'leaders',       label: 'City Leaders' },
+    { key: 'permits',       label: 'Permits' }
+];
+const ADMIN_ONLY_PAGES = ['staff'];    // Staff & Settings — Tech Lead and Owner.
+const OWNER_ONLY_PAGES = ['syslog'];   // System Log — Owner only, never granted.
+
+const ROLE_PAGE_DEFAULTS = {
+    staff:   ['dashboard','reports','content','council','residents','grok','enforcement','notifications','voices','archive','permits'],
+    council: ['dashboard','reports','council','grok','content'],
+    chamber: ['dashboard','directory']
+};
+
+// Everything a Tech Lead sees (all tabs + Staff & Settings, but not the log).
+function allCrmPages() { return CRM_PAGES.map(p => p.key).concat(ADMIN_ONLY_PAGES); }
+
+// Resolve what a signed-in user may see. One ladder, one place:
+//   super_admin -> everything, including the System Log
+//   admin       -> everything except the System Log
+//   others      -> their saved tabs, else their role defaults
+function resolvePageAccess(role, pageAccess) {
+    const r = (role || '').toLowerCase();
+    if (r === 'super_admin') return allCrmPages().concat(OWNER_ONLY_PAGES);
+    if (r === 'admin') return allCrmPages();
+    let pages = Array.isArray(pageAccess) && pageAccess.length
+        ? pageAccess.slice()
+        : (ROLE_PAGE_DEFAULTS[r] || ['dashboard']).slice();
+    // Hard stop: these can never be granted to a non-owner/non-admin account.
+    pages = pages.filter(p => !ADMIN_ONLY_PAGES.includes(p) && !OWNER_ONLY_PAGES.includes(p));
+    if (!pages.includes('dashboard')) pages.unshift('dashboard');
+    return pages;
+}
+
+// Render the tab checkboxes, preset from the chosen role.
+function renderStaffPageAccess() {
+    const wrap = document.getElementById('newStaffPages');
+    if (!wrap) return;
+    const role = document.getElementById('newStaffRole')?.value || 'staff';
+    // Tech Lead sees the entire product by definition, so the picker is locked on.
+    if (role === 'admin') {
+        wrap.innerHTML = `<div style="grid-column:1/-1; font-size:12.5px; color:var(--text-secondary); line-height:1.6;">
+            <strong style="color:#34D399;">Tech Lead sees every tab</strong>, including Staff and Settings, so they can create and manage accounts.
+            Tab selection does not apply to this role.
+        </div>`;
+        return;
+    }
+    const defaults = ROLE_PAGE_DEFAULTS[role] || ['dashboard'];
+    wrap.innerHTML = CRM_PAGES.map(p => {
+        const on = defaults.includes(p.key);
+        const locked = p.key === 'dashboard';   // everyone needs a landing page
+        return `<label style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-secondary); cursor:${locked ? 'default' : 'pointer'};">
+            <input type="checkbox" class="staff-page-cb" value="${p.key}" ${on ? 'checked' : ''} ${locked ? 'disabled checked' : ''}
+                   style="accent-color:#34D399; width:14px; height:14px; cursor:${locked ? 'default' : 'pointer'};">
+            <span${locked ? ' style="color:var(--text-tertiary);"' : ''}>${p.label}</span>
+        </label>`;
+    }).join('');
+}
+
+// ============================================================
+// SAMPLE ACTIVITY — a generated demo view of the CRM.
+// Never writes to the database. Built in the browser, only for accounts the
+// owner has flagged, and scoped to the tabs that person actually has.
+// Turning it off restores the real data instantly.
+// ============================================================
+let _sampleEnabledForUser = false;   // from profiles.sample_activity
+let _sampleOn = false;               // current view state
+
+const SAMPLE_CENTER = { lat: 32.7559, lng: -111.5548 };   // Eloy, AZ
+function _sr(seed) { const x = Math.sin(seed * 12.9898) * 43758.5453; return x - Math.floor(x); }
+function _spick(arr, seed) { return arr[Math.floor(_sr(seed) * arr.length) % arr.length]; }
+function _sdays(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); }
+function _sahead(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString(); }
+
+const SAMPLE_STREETS = ['N Main St','W Frontier St','E 8th St','S Sunshine Blvd','N Pinal Ave','W Phoenix Ave','E Cholla St','N Stuart Blvd','W Alsdorf Rd','S Sunland Gin Rd'];
+const SAMPLE_NAMES = ['Maria Delgado','James Whitfield','Rosa Mendoza','Curtis Boyd','Elena Vasquez','Dwayne Parker','Alicia Nguyen','Marcus Ellis','Teresa Salinas','Owen Bradley','Priya Raman','Hector Ruiz','Danielle Moore','Samuel Ortiz','Grace Kimura'];
+
+function _sampleReports(city) {
+    const kinds = [
+        { cat: 'Roads',      title: 'Pothole damaging vehicles',     desc: 'Deep pothole in the right lane, several cars have hit it.' },
+        { cat: 'Roads',      title: 'Faded crosswalk striping',      desc: 'Crosswalk paint is nearly invisible at dusk.' },
+        { cat: 'Water',      title: 'Water main leak at curb',       desc: 'Steady water running into the gutter for two days.' },
+        { cat: 'Water',      title: 'Low pressure on the block',     desc: 'Pressure dropped sharply this week for several homes.' },
+        { cat: 'Lighting',   title: 'Streetlight out',               desc: 'Light has been dark for over a week, corner feels unsafe.' },
+        { cat: 'Lighting',   title: 'Flickering light near park',    desc: 'Flickers all night and hums loudly.' },
+        { cat: 'Sanitation', title: 'Illegal dumping in alley',      desc: 'Mattress and construction debris dumped behind the units.' },
+        { cat: 'Sanitation', title: 'Missed trash pickup',           desc: 'Route was skipped Tuesday, bins still full.' },
+        { cat: 'Parks',      title: 'Broken swing at playground',    desc: 'Chain snapped on the swing set, sharp edge exposed.' },
+        { cat: 'Parks',      title: 'Irrigation stuck on',           desc: 'Sprinklers running midday, flooding the walkway.' },
+        { cat: 'Graffiti',   title: 'Graffiti on block wall',        desc: 'Tagging along the wall facing the street.' },
+        { cat: 'Code',       title: 'Overgrown lot',                 desc: 'Weeds over three feet, spilling onto the sidewalk.' }
+    ];
+    const statuses = ['submitted','under_review','assigned','in_progress','resolved','resolved'];
+    const out = [];
+    for (let i = 0; i < 24; i++) {
+        const k = kinds[i % kinds.length];
+        const st = _spick(statuses, i + 3);
+        const days = Math.floor(_sr(i + 11) * 88) + 1;
+        out.push({
+            id: 'sample-report-' + i,
+            user_id: 'sample-resident-' + (i % 12),
+            title: k.title,
+            description: k.desc,
+            category: k.cat,
+            status: st,
+            priority: Math.floor(_sr(i + 5) * 3),
+            address: (100 + Math.floor(_sr(i + 7) * 1800)) + ' ' + _spick(SAMPLE_STREETS, i + 2) + ', Eloy, AZ',
+            latitude: SAMPLE_CENTER.lat + (_sr(i + 21) - 0.5) * 0.055,
+            longitude: SAMPLE_CENTER.lng + (_sr(i + 31) - 0.5) * 0.075,
+            photos: [],
+            resolution_photos: [],
+            resolution_notes: st === 'resolved' ? 'Crew completed the work and verified on site.' : null,
+            resolved_at: st === 'resolved' ? _sdays(Math.max(1, days - 4)) : null,
+            assigned_to: st === 'submitted' ? null : 'sample-staff-1',
+            ai_category: k.cat,
+            ai_summary: k.desc,
+            created_at: _sdays(days),
+            updated_at: _sdays(Math.max(0, days - 2)),
+            city_id: city
+        });
+    }
+    return out.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+function _sampleResidents(city) {
+    return SAMPLE_NAMES.map((n, i) => ({
+        id: 'sample-resident-' + i,
+        display_name: n,
+        email: n.toLowerCase().replace(/[^a-z]+/g, '.') + '@example.com',
+        role: 'resident',
+        language_pref: i % 5 === 0 ? 'es' : 'en',
+        city_id: city,
+        page_access: null,
+        sample_activity: false,
+        created_at: _sdays(Math.floor(_sr(i + 41) * 120) + 3),
+        last_active_at: _sdays(Math.floor(_sr(i + 51) * 9))
+    }));
+}
+
+function _sampleNews(city) {
+    const items = [
+        ['Street resurfacing begins on Main', 'Crews start a four week resurfacing project through the downtown corridor.'],
+        ['Water system upgrade completed', 'The east side pressure upgrade wrapped ahead of schedule.'],
+        ['Parks master plan open for comment', 'Residents can weigh in on playground and shade improvements.'],
+        ['New online payments coming soon', 'Utility payments will move into the Eloy Connect app this year.']
+    ];
+    return items.map((it, i) => ({
+        id: 'sample-news-' + i, title_en: it[0], title_es: it[0],
+        excerpt_en: it[1], excerpt_es: it[1], body_en: it[1], body_es: it[1],
+        category: 'City News', image_url: null, image_urls: [], published: true, archived: false,
+        published_at: _sdays(i * 6 + 2), created_at: _sdays(i * 6 + 2), updated_at: _sdays(i * 6 + 2), city_id: city
+    }));
+}
+
+function _sampleAlerts(city) {
+    const items = [
+        ['Heat advisory through Friday', 'Cooling centers open at the community center from 10am to 7pm.', 'high'],
+        ['Water main work on Frontier St', 'Brief service interruptions expected Tuesday morning.', 'medium']
+    ];
+    return items.map((it, i) => ({
+        id: 'sample-alert-' + i, title_en: it[0], title_es: it[0],
+        message_en: it[1], message_es: it[1], severity: it[2], active: true, archived: false,
+        expires_at: _sahead(4), created_at: _sdays(i + 1), updated_at: _sdays(i + 1), city_id: city
+    }));
+}
+
+function _sampleEvents(city) {
+    const items = [
+        ['Movie in the Park', 'Toltec Park', 6], ['Council Listening Session', 'City Hall', 12],
+        ['Fall Festival', 'Main Street', 21], ['Household Hazardous Waste Day', 'Public Works Yard', 30]
+    ];
+    return items.map((it, i) => ({
+        id: 'sample-event-' + i, title_en: it[0], title_es: it[0],
+        description_en: 'An open community event hosted by the City of Eloy.',
+        description_es: 'Un evento comunitario abierto organizado por la Ciudad de Eloy.',
+        event_date: _sahead(it[2]), start_time: '18:00', end_time: '20:00',
+        location_en: it[1], location_es: it[1], category: 'Community',
+        image_url: null, image_urls: [], published: true, archived: false,
+        created_at: _sdays(10), updated_at: _sdays(10), city_id: city
+    }));
+}
+
+function _sampleMeetings(city) {
+    return [
+        { id: 'sample-mtg-0', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
+          meeting_date: _sdays(9), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: 'Council approved the street resurfacing contract and reviewed the quarterly water report. A resident petition on park lighting was referred to staff.',
+          key_decisions: ['Resurfacing contract approved','Park lighting referred to staff'],
+          topics_discussed: ['Streets','Water','Parks'], is_public: true, archived: false,
+          created_at: _sdays(16), duration_minutes: 96 },
+        { id: 'sample-mtg-1', city_id: city, meeting_type: 'Work Session', title: 'Budget Work Session',
+          meeting_date: _sdays(24), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: 'Staff presented the draft capital plan. Council asked for options on utility billing modernization.',
+          key_decisions: ['Draft capital plan received'], topics_discussed: ['Budget','Utilities'],
+          is_public: true, archived: false, created_at: _sdays(30), duration_minutes: 74 },
+        { id: 'sample-mtg-2', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
+          meeting_date: _sahead(8), location: 'Council Chambers, 595 N C St', status: 'scheduled',
+          public_summary: null, key_decisions: [], topics_discussed: ['Parks','Public Safety'],
+          is_public: true, archived: false, created_at: _sdays(2), duration_minutes: null }
+    ];
+}
+
+function _sampleNotices(city) {
+    const rows = [
+        ['Overgrown Yard Maintenance','Weeds and brush exceed the twelve inch limit.','medium','open'],
+        ['Inoperable Vehicle in Driveway','Unregistered vehicle stored in public view.','low','acknowledged'],
+        ['Trash Container Left at Curb','Container left out beyond collection day.','low','resolved'],
+        ['Structure Without Permit','Carport built without a permit on file.','high','under_review']
+    ];
+    return rows.map((r, i) => ({
+        id: 'sample-notice-' + i, resident_id: 'sample-resident-' + i,
+        address: (200 + i * 137) + ' ' + _spick(SAMPLE_STREETS, i + 9) + ', Eloy, AZ',
+        type: 'Code Enforcement', title: r[0], description: r[1], severity: r[2], status: r[3],
+        deadline: _sahead(14 - i * 3), response: null, proof_photo_urls: [], evidence_photo_urls: [],
+        issued_by: 'sample-staff-1', issued_by_name: 'Code Enforcement', physical_mail_sent: false,
+        created_at: _sdays(i * 5 + 3), updated_at: _sdays(i * 5 + 1), city_id: city
+    }));
+}
+
+function _sampleBusinesses(city) {
+    const rows = [
+        ['Desert Bloom Cafe','Restaurant'], ['Eloy Hardware & Supply','Retail'],
+        ['Sunland Auto Care','Automotive'], ['Cactus Cuts Barbershop','Services'],
+        ['Frontier Feed & Ranch','Agriculture'], ['Main Street Dental','Health']
+    ];
+    return rows.map((r, i) => ({
+        id: 'sample-biz-' + i, owner_id: null, name: r[0], category: r[1],
+        description: 'A locally owned business serving the Eloy community.',
+        address: (300 + i * 95) + ' ' + _spick(SAMPLE_STREETS, i + 4) + ', Eloy, AZ',
+        phone: '(520) 466-0' + (100 + i), hours: 'Mon to Fri, 8am to 5pm', website: null,
+        photos: [], status: 'approved', ai_review: null, ai_score: null,
+        created_at: _sdays(40 - i * 3), updated_at: _sdays(10), city_id: city
+    }));
+}
+
+function _sampleVoices(city) {
+    const rows = [
+        ['Parks','Would love more shade structures at the playground, it gets too hot by noon.','new'],
+        ['Traffic','Cars speed through the school zone on 8th, can we get more signage?','reviewed'],
+        ['Utilities','Paying the water bill online would save me a trip every month.','new'],
+        ['Community','Thank you to the crew that fixed our streetlight so fast.','reviewed']
+    ];
+    return rows.map((r, i) => ({
+        id: 'sample-voice-' + i, user_id: 'sample-resident-' + (i + 2), city_id: city,
+        category: r[0], message: r[1], status: r[2], response: null, archived: false,
+        created_at: _sdays(i * 3 + 1), updated_at: _sdays(i * 3 + 1)
+    }));
+}
+
+function _sampleNotifications(city) {
+    const rows = [
+        ['Heat advisory in effect','Cooling centers are open through Friday.'],
+        ['Street resurfacing starts Monday','Expect detours on Main between 4th and 9th.'],
+        ['Council meeting this Thursday','Agenda is posted in the app.']
+    ];
+    return rows.map((r, i) => ({
+        id: 'sample-notif-' + i, user_id: null, title: r[0], message: r[1], type: 'announcement',
+        related_id: null, read: false, audience: 'all', priority: 'normal',
+        sent_at: _sdays(i * 4 + 1), created_at: _sdays(i * 4 + 1), city_id: city
+    }));
+}
+
+// Build the sample set, including only what this person's tabs can show.
+function generateSampleData(pages) {
+    const city = activeCityId || currentCityId || null;
+    const has = k => pages.includes(k);
+    const d = {
+        reports: [], news: [], alerts: [], events: [], meetings: [], leaders: [],
+        profiles: [], notifications: [], businesses: [], civicVoice: [], notices: []
+    };
+    // Dashboard summarises reports and residents, so it needs both.
+    if (has('reports') || has('dashboard')) d.reports = _sampleReports(city);
+    if (has('residents') || has('dashboard')) d.profiles = _sampleResidents(city);
+    if (has('content') || has('dashboard')) {
+        d.news = _sampleNews(city); d.alerts = _sampleAlerts(city); d.events = _sampleEvents(city);
+    }
+    if (has('council')) d.meetings = _sampleMeetings(city);
+    if (has('enforcement')) d.notices = _sampleNotices(city);
+    if (has('directory')) d.businesses = _sampleBusinesses(city);
+    if (has('voices')) d.civicVoice = _sampleVoices(city);
+    if (has('notifications')) d.notifications = _sampleNotifications(city);
+    if (has('leaders')) d.leaders = liveData.leaders || [];   // real leaders are public info
+    return d;
+}
+
+function sampleModeActive() { return _sampleEnabledForUser && _sampleOn; }
+
+// Swap the in-memory data for the generated set. Real rows are never touched.
+function applySampleData() {
+    const pages = allowedPages || ['dashboard'];
+    const d = generateSampleData(pages);
+    Object.keys(d).forEach(k => { liveData[k] = d[k]; });
+}
+
+function _sampleStorageKey() { return 'crmSampleMode:' + (_logActorId || 'anon'); }
+
+async function toggleSampleMode(force) {
+    if (!_sampleEnabledForUser) return;
+    _sampleOn = (typeof force === 'boolean') ? force : !_sampleOn;
+    try { localStorage.setItem(_sampleStorageKey(), _sampleOn ? '1' : '0'); } catch (e) {}
+    logEvent('sample.toggle', { message: 'Sample activity ' + (_sampleOn ? 'on' : 'off'), details: { on: _sampleOn } });
+    renderSamplePill();
+    showToast(_sampleOn ? 'Sample activity on. This is demo data.' : 'Sample activity off. Showing real city data.', _sampleOn ? 'warning' : 'success');
+    await fetchAllData();   // re-render everything through the normal path
+}
+
+// Floating control + banner. Only exists for flagged accounts.
+function renderSamplePill() {
+    let pill = document.getElementById('samplePill');
+    if (!_sampleEnabledForUser) { if (pill) pill.remove(); _removeSampleBanner(); return; }
+    if (!pill) {
+        pill = document.createElement('div');
+        pill.id = 'samplePill';
+        document.body.appendChild(pill);
+    }
+    pill.style.cssText = `position:fixed; right:22px; bottom:22px; z-index:9000; display:flex; align-items:center; gap:10px;
+        padding:10px 16px; border-radius:999px; cursor:pointer; user-select:none;
+        background:linear-gradient(180deg, rgba(20,32,52,.94), rgba(12,22,38,.96));
+        border:1px solid ${_sampleOn ? 'rgba(246,196,69,.55)' : 'rgba(255,255,255,.12)'};
+        box-shadow:0 14px 40px rgba(0,0,0,.5)${_sampleOn ? ', 0 0 28px rgba(246,196,69,.22)' : ''};
+        backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); transition:all .25s ease;`;
+    pill.onclick = () => toggleSampleMode();
+    pill.title = 'Sample activity is generated demo data. It never changes real city records.';
+    pill.innerHTML = `
+        <span style="width:9px; height:9px; border-radius:50%; background:${_sampleOn ? '#F6C445' : '#5A6B7B'};
+                     box-shadow:${_sampleOn ? '0 0 10px #F6C445' : 'none'};"></span>
+        <span style="font-size:12.5px; font-weight:600; color:${_sampleOn ? '#F6C445' : 'var(--text-secondary)'}; letter-spacing:.2px;">
+            Sample Activity
+        </span>
+        <span style="font-size:11px; font-weight:700; padding:2px 9px; border-radius:999px; letter-spacing:.5px;
+                     background:${_sampleOn ? 'rgba(246,196,69,.16)' : 'rgba(255,255,255,.07)'};
+                     color:${_sampleOn ? '#F6C445' : 'var(--text-tertiary)'};">${_sampleOn ? 'ON' : 'OFF'}</span>`;
+    if (_sampleOn) _showSampleBanner(); else _removeSampleBanner();
+}
+
+function _showSampleBanner() {
+    let b = document.getElementById('sampleBanner');
+    if (!b) {
+        b = document.createElement('div');
+        b.id = 'sampleBanner';
+        b.style.cssText = `position:fixed; top:0; left:0; right:0; z-index:8999; text-align:center;
+            padding:7px 16px; font-size:12px; font-weight:600; letter-spacing:.3px; color:#0B1A2B;
+            background:linear-gradient(90deg, #F6C445, #E0A21A); box-shadow:0 4px 18px rgba(246,196,69,.25);`;
+        b.innerHTML = `Sample Activity is on. You are viewing generated demo data, not real city records.
+            <span id="sampleBannerOff" style="margin-left:12px; text-decoration:underline; cursor:pointer;">Turn off</span>`;
+        document.body.appendChild(b);
+        b.querySelector('#sampleBannerOff').onclick = () => toggleSampleMode(false);
+    }
+}
+function _removeSampleBanner() {
+    const b = document.getElementById('sampleBanner');
+    if (b) b.remove();
+}
+
+// Called right after sign-in / session restore.
+function initSampleActivity(profile) {
+    try {
+        _sampleEnabledForUser = !!(profile && profile.sample_activity);
+        let saved = null;
+        try { saved = localStorage.getItem(_sampleStorageKey()); } catch (e) {}
+        // Flagged accounts land in sample mode by default the first time.
+        _sampleOn = _sampleEnabledForUser && (saved === null ? true : saved === '1');
+        renderSamplePill();
+    } catch (e) { console.warn('sample init failed:', e); }
+}
+
+// ============================================================
+// SYSTEM LOG VIEWER — owner only. RLS also blocks reads for everyone else,
+// so even if this page were reached, it would return nothing.
+// ============================================================
+let _syslogRows = [];
+
+async function renderSystemLog() {
+    const body = document.getElementById('syslogBody');
+    if (!body || !sbClient) return;
+    if (!isSuperAdmin) {
+        body.innerHTML = `<tr><td colspan="6" style="padding:18px 12px; font-size:13px; color:var(--text-tertiary);">The system log is restricted to the owner account.</td></tr>`;
+        return;
+    }
+
+    const level = document.getElementById('syslogLevel')?.value || '';
+    const evt = document.getElementById('syslogEvent')?.value || '';
+    const limit = parseInt(document.getElementById('syslogLimit')?.value || '100', 10);
+
+    body.innerHTML = `<tr><td colspan="6" style="padding:18px 12px; font-size:13px; color:var(--text-tertiary);">Loading log...</td></tr>`;
+
+    try {
+        let q = sbClient.from('system_logs').select('*').order('created_at', { ascending: false }).limit(limit);
+        if (level) q = q.eq('level', level);
+        if (evt) q = q.like('event', evt + '%');
+        const { data, error } = await q;
+        if (error) throw error;
+        _syslogRows = data || [];
+
+        // Summary line
+        const stats = document.getElementById('syslogStats');
+        if (stats) {
+            const errs = _syslogRows.filter(r => r.level === 'error').length;
+            const warns = _syslogRows.filter(r => r.level === 'warn').length;
+            const newest = _syslogRows[0]?.created_at ? new Date(_syslogRows[0].created_at).toLocaleString() : '—';
+            stats.innerHTML = `
+                <span><strong style="color:var(--text-primary);">${_syslogRows.length}</strong> entries</span>
+                <span style="color:#F43F5E;"><strong>${errs}</strong> errors</span>
+                <span style="color:#F6C445;"><strong>${warns}</strong> warnings</span>
+                <span>Most recent: ${escapeHtml(newest)}</span>`;
+        }
+
+        if (!_syslogRows.length) {
+            body.innerHTML = `<tr><td colspan="6" style="padding:18px 12px; font-size:13px; color:var(--text-tertiary);">Nothing logged yet for these filters.</td></tr>`;
+            return;
+        }
+
+        body.innerHTML = _syslogRows.map((r, i) => {
+            const when = r.created_at ? new Date(r.created_at).toLocaleString() : '—';
+            const tint = r.level === 'error' ? 'rgba(244,63,94,0.15); color:#FF8A9B'
+                       : r.level === 'warn'  ? 'rgba(246,196,69,0.15); color:#F6C445'
+                                             : 'rgba(255,255,255,0.06); color:var(--text-secondary)';
+            const who = r.actor_email || (r.actor_id ? r.actor_id.slice(0, 8) : 'anonymous');
+            const detail = r.message || '';
+            const hasJson = r.details && Object.keys(r.details).length;
+            return `<tr style="border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:top;">
+                <td style="padding:8px 12px; font-size:11.5px; color:var(--text-tertiary); white-space:nowrap;">${escapeHtml(when)}</td>
+                <td style="padding:8px 12px;"><span style="font-size:10.5px; padding:2px 8px; border-radius:9px; background:${tint}; text-transform:uppercase; letter-spacing:.4px;">${escapeHtml(r.level || 'info')}</span></td>
+                <td style="padding:8px 12px; font-size:12px; color:var(--text-primary); white-space:nowrap;">${escapeHtml(r.event || '')}</td>
+                <td style="padding:8px 12px; font-size:11.5px; color:var(--text-secondary);">${escapeHtml(who)}${r.actor_role ? `<div style="color:var(--text-tertiary); font-size:10.5px;">${escapeHtml(r.actor_role)}</div>` : ''}</td>
+                <td style="padding:8px 12px; font-size:11.5px; color:var(--text-tertiary);">${escapeHtml(r.context || '—')}</td>
+                <td style="padding:8px 12px; font-size:11.5px; color:var(--text-secondary); max-width:420px;">
+                    ${escapeHtml(detail)}
+                    ${hasJson ? `<button class="btn btn-ghost" style="font-size:10px; padding:2px 8px; margin-left:6px;" onclick="toggleSyslogDetail(${i})">details</button>
+                    <pre id="sysdet${i}" style="display:none; margin-top:6px; font-size:10.5px; color:var(--text-tertiary); white-space:pre-wrap; word-break:break-word; background:rgba(0,0,0,0.25); padding:8px; border-radius:8px; max-height:220px; overflow:auto;">${escapeHtml(JSON.stringify(r.details, null, 2))}</pre>` : ''}
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        body.innerHTML = `<tr><td colspan="6" style="padding:18px 12px; font-size:13px; color:#FF8A9B;">Could not load the log: ${escapeHtml(e.message || String(e))}</td></tr>`;
+    }
+}
+
+function toggleSyslogDetail(i) {
+    const el = document.getElementById('sysdet' + i);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function exportSystemLog() {
+    if (!_syslogRows.length) { showToast('Nothing to export yet', 'warning'); return; }
+    const cols = ['created_at','level','event','message','actor_email','actor_role','context','url','details'];
+    const esc = v => '"' + String(v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : v)).replace(/"/g, '""') + '"';
+    const csv = [cols.join(',')].concat(_syslogRows.map(r => cols.map(c => esc(r[c])).join(','))).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'eloy-system-log-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+}
+
+// ── Edit Access (existing accounts) ──
+let _editAccessUser = null;
+
+function openEditAccess(userId) {
+    const p = (liveData.profiles || []).find(x => x.id === userId);
+    if (!p) { showToast('Could not find that account', 'error'); return; }
+    const role = (p.role || '').toLowerCase();
+    if (role === 'super_admin') {
+        showToast('The owner account cannot be edited here', 'warning');
+        return;
+    }
+    if (role === 'admin' && !isSuperAdmin) {
+        showToast('Only the owner can change a Tech Lead', 'warning');
+        return;
+    }
+    _editAccessUser = p;
+    syncTechLeadOption('editAccessRole');
+
+    const name = p.display_name || p.email || '—';
+    document.getElementById('editAccessName').textContent = name;
+    document.getElementById('editAccessEmail').textContent = p.email || '—';
+    document.getElementById('editAccessAvatar').textContent =
+        name.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).slice(0, 2).join('') || '—';
+
+    const sel = document.getElementById('editAccessRole');
+    sel.value = ['staff', 'council', 'chamber', 'admin'].includes(role) ? role : 'staff';
+    editAccessHint();
+
+    // Pre-tick with what they have today (saved picks, else role defaults).
+    if (sel.value === 'admin') {
+        renderEditAccessTechLead();
+    } else {
+        renderEditAccessPages(resolvePageAccess(sel.value, p.page_access));
+    }
+    const sampleCb = document.getElementById('editAccessSample');
+    if (sampleCb) sampleCb.checked = !!p.sample_activity;
+    document.getElementById('editAccessModal').classList.add('open');
+}
+
+function closeEditAccess() {
+    document.getElementById('editAccessModal').classList.remove('open');
+    _editAccessUser = null;
+}
+
+function editAccessHint() {
+    const el = document.getElementById('editAccessRoleHint');
+    if (el) el.textContent = ROLE_HINTS[document.getElementById('editAccessRole')?.value] || '';
+}
+
+function renderEditAccessTechLead() {
+    const wrap = document.getElementById('editAccessPages');
+    if (!wrap) return;
+    wrap.innerHTML = `<div style="grid-column:1/-1; font-size:12.5px; color:var(--text-secondary); line-height:1.6;">
+        <strong style="color:#34D399;">Tech Lead sees every tab</strong>, including Staff and Settings, so they can create and manage accounts.
+        Tab selection does not apply to this role.
+    </div>`;
+}
+
+// Changing the role re-presets the tabs to that role's defaults.
+function editAccessRoleChanged() {
+    editAccessHint();
+    editAccessResetToRole();
+}
+
+function editAccessResetToRole() {
+    const role = document.getElementById('editAccessRole')?.value || 'staff';
+    if (role === 'admin') { renderEditAccessTechLead(); return; }
+    renderEditAccessPages((ROLE_PAGE_DEFAULTS[role] || ['dashboard']).slice());
+}
+
+function renderEditAccessPages(checked) {
+    const wrap = document.getElementById('editAccessPages');
+    if (!wrap) return;
+    const on = new Set(checked || []);
+    wrap.innerHTML = CRM_PAGES.map(p => {
+        const locked = p.key === 'dashboard';
+        return `<label style="display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-secondary); cursor:${locked ? 'default' : 'pointer'};">
+            <input type="checkbox" class="edit-page-cb" value="${p.key}" ${on.has(p.key) ? 'checked' : ''} ${locked ? 'disabled checked' : ''}
+                   style="accent-color:#34D399; width:14px; height:14px; cursor:${locked ? 'default' : 'pointer'};">
+            <span${locked ? ' style="color:var(--text-tertiary);"' : ''}>${p.label}</span>
+        </label>`;
+    }).join('');
+}
+
+function editAccessAll(on) {
+    document.querySelectorAll('#editAccessPages .edit-page-cb').forEach(cb => {
+        if (!cb.disabled) cb.checked = on;
+    });
+}
+
+async function saveEditAccess() {
+    if (!_editAccessUser) return;
+    const btn = document.getElementById('editAccessSaveBtn');
+    const role = document.getElementById('editAccessRole')?.value || 'staff';
+    let pages = Array.from(document.querySelectorAll('#editAccessPages .edit-page-cb'))
+        .filter(cb => cb.checked).map(cb => cb.value);
+    if (!pages.includes('dashboard')) pages.unshift('dashboard');
+    pages = pages.filter(p => !ADMIN_ONLY_PAGES.includes(p));
+
+    try {
+        btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Saving...';
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (!session) { showToast('Not signed in', 'error'); return; }
+
+        const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/update-staff-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+            body: JSON.stringify({
+                user_id: _editAccessUser.id,
+                role,
+                page_access: pages,
+                sample_activity: !!document.getElementById('editAccessSample')?.checked
+            })
+        });
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(result.error || 'Could not update access');
+
+        showToast('Access updated for ' + (_editAccessUser.display_name || _editAccessUser.email), 'success');
+        closeEditAccess();
+        await fetchAllData();
+    } catch (e) {
+        showToast('Could not update access: ' + (e.message || e), 'error');
+    } finally {
+        btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Save Access';
+    }
+}
+
+function staffPageAccessAll(on) {
+    document.querySelectorAll('#newStaffPages .staff-page-cb').forEach(cb => {
+        if (!cb.disabled) cb.checked = on;
+    });
+}
+
+function selectedStaffPages() {
+    const picked = Array.from(document.querySelectorAll('#newStaffPages .staff-page-cb'))
+        .filter(cb => cb.checked).map(cb => cb.value);
+    if (!picked.includes('dashboard')) picked.unshift('dashboard');
+    return picked.filter(p => !ADMIN_ONLY_PAGES.includes(p));
 }
 
 function generateTempPassword() {
@@ -14260,6 +15299,8 @@ async function createStaffAccount() {
                 password,
                 display_name: name,
                 role,
+                page_access: selectedStaffPages(),
+                sample_activity: !!document.getElementById('newStaffSample')?.checked,
                 city_id: isSuperAdmin ? selectedCity : currentCityId
             })
         });
