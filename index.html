@@ -14861,8 +14861,8 @@ function _spick(arr, seed) { return arr[Math.floor(_sr(seed) * arr.length) % arr
 function _sdays(n) { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); }
 function _sahead(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString(); }
 
-const SAMPLE_STREETS = ['N Main St','W Frontier St','E 8th St','S Sunshine Blvd','N Pinal Ave','W Phoenix Ave','E Cholla St','N Stuart Blvd','W Alsdorf Rd','S Sunland Gin Rd'];
-const SAMPLE_NAMES = ['Maria Delgado','James Whitfield','Rosa Mendoza','Curtis Boyd','Elena Vasquez','Dwayne Parker','Alicia Nguyen','Marcus Ellis','Teresa Salinas','Owen Bradley','Priya Raman','Hector Ruiz','Danielle Moore','Samuel Ortiz','Grace Kimura'];
+const SAMPLE_STREETS = ['N Main St','W Frontier St','E 8th St','S Sunshine Blvd','N Pinal Ave','W Phoenix Ave','E Cholla St','N Stuart Blvd','W Alsdorf Rd','S Sunland Gin Rd','E 4th St','W Battaglia Rd','N Toltec Rd','E Milligan Ln','S Eleven Mile Corner Rd','W Hanna Rd','N C St','E 11th St','W Curry Rd','S Overfield Rd'];
+const SAMPLE_NAMES = ['Maria Delgado','James Whitfield','Rosa Mendoza','Curtis Boyd','Elena Vasquez','Dwayne Parker','Alicia Nguyen','Marcus Ellis','Teresa Salinas','Owen Bradley','Priya Raman','Hector Ruiz','Danielle Moore','Samuel Ortiz','Grace Kimura','Andre Coleman','Lucia Fuentes','Brandon Hale','Yolanda Reyes','Tyler Brooks','Nadia Haddad','Ruben Castillo','Shauna Pierce','Emilio Navarro','Karen Whitaker','Devon Marsh','Sofia Aguirre','Nathan Cole','Bianca Torres','Gregory Lin','Monica Salazar','Isaiah Bennett','Camila Duarte','Eric Vaughn','Renata Lopez','Damien Frost','Alina Petrov','Wesley Grant','Paloma Rivas','Clayton Reed'];
 
 function _sampleReports(city) {
     const kinds = [
@@ -14901,17 +14901,65 @@ function _sampleReports(city) {
           fix: 'Wall pressure washed and repainted to match. Location flagged for extra patrol.' },
         { cat: 'Code', title: 'Overgrown vacant lot',
           desc: 'The vacant lot has weeds over three feet tall spilling onto the sidewalk, forcing people to walk in the street. With how dry it is, it also looks like a real fire hazard next to the houses.',
-          fix: 'Property owner notified and lot cleared. Compliance verified by inspector.' }
+          fix: 'Property owner notified and lot cleared. Compliance verified by inspector.' },
+        { cat: 'Roads', title: 'Missing stop sign at intersection',
+          desc: 'The stop sign is gone, only the bare post is left. Drivers are rolling straight through and there have been two near misses since I noticed it Saturday.',
+          fix: 'Temporary sign installed same day, permanent replacement mounted within 48 hours.' },
+        { cat: 'Roads', title: 'Large crack across the roadway',
+          desc: 'A wide crack has opened across both lanes and it has gotten noticeably worse over the last month. Motorcycles have to swerve around it.',
+          fix: 'Crack sealed and section leveled. Added to the resurfacing candidate list.' },
+        { cat: 'Water', title: 'Discolored water at the tap',
+          desc: 'Water has been coming out brown and rusty since yesterday morning. It clears after running a few minutes but comes back. Two neighbors say the same thing.',
+          fix: 'Hydrant flushed in the area and samples tested clear. Cause traced to nearby line work.' },
+        { cat: 'Water', title: 'Hydrant leaking steadily',
+          desc: 'Water is seeping from the base of the fire hydrant and has been running long enough to leave a permanent wet patch and some algae on the sidewalk.',
+          fix: 'Hydrant reseated and gasket replaced. Leak confirmed stopped.' },
+        { cat: 'Lighting', title: 'Dark stretch along the walking path',
+          desc: 'The path lights are out along a long section. People walk it in the mornings before sunrise and it is completely dark for a hundred yards or more.',
+          fix: 'Repaired underground feed and restored all fixtures along the path.' },
+        { cat: 'Sanitation', title: 'Dumpster overflowing behind businesses',
+          desc: 'The shared dumpster has been overflowing for several days and trash is blowing into the parking lot and the street behind it.',
+          fix: 'Extra pickup scheduled and service frequency increased for the location.' },
+        { cat: 'Sanitation', title: 'Shopping carts abandoned in the wash',
+          desc: 'There are five or six shopping carts dumped down in the wash. They collect debris when it rains and it looks terrible from the road.',
+          fix: 'Carts recovered and returned to the retailer. Area cleared.' },
+        { cat: 'Parks', title: 'Restroom door lock broken',
+          desc: 'The lock on the park restroom is broken so the door will not secure. It has been left open overnight and there has been vandalism inside.',
+          fix: 'Lock assembly replaced and interior cleaned. Nightly lockup schedule confirmed.' },
+        { cat: 'Parks', title: 'Damaged picnic table and bench',
+          desc: 'One of the picnic tables has a cracked and splintered top and a bench slat is missing entirely. Splinters are a hazard for kids.',
+          fix: 'Table top and bench slats replaced, hardware tightened across all park furniture.' },
+        { cat: 'Graffiti', title: 'Tagging on the park restroom building',
+          desc: 'Someone spray painted the side of the restroom building facing the playground. Kids see it every time they come to the park.',
+          fix: 'Surface repainted and an anti graffiti coating applied.' },
+        { cat: 'Code', title: 'Fence collapsing onto sidewalk',
+          desc: 'A section of block fence is leaning badly and part of it has already fallen onto the sidewalk. It looks like it could come down completely.',
+          fix: 'Owner notified, area barricaded, and fence section rebuilt to code.' },
+        { cat: 'Traffic', title: 'Speeding through the neighborhood',
+          desc: 'Cars regularly come through this residential street well over the limit, especially in the evening. Lots of kids on bikes here and it is only a matter of time.',
+          fix: 'Speed study completed and additional signage installed. Added to patrol rotation.' },
+        { cat: 'Traffic', title: 'Traffic signal timing too short',
+          desc: 'The left turn arrow only lets two or three cars through per cycle, so the turn lane backs up into the through lane during the afternoon.',
+          fix: 'Signal timing adjusted and queue length re measured during peak hours.' },
+        { cat: 'Animal', title: 'Stray dogs roaming the block',
+          desc: 'There are two stray dogs that have been around for several days. They seem friendly but they follow kids walking to the bus stop and people are nervous.',
+          fix: 'Animal control responded, both animals safely picked up and taken in.' },
+        { cat: 'Drainage', title: 'Street floods after every rain',
+          desc: 'This corner floods every single time it rains, deep enough that cars stall in it. The storm drain looks like it is completely blocked.',
+          fix: 'Storm drain cleared of debris and inlet grate replaced. Drainage confirmed.' },
+        { cat: 'Sidewalk', title: 'Sidewalk lifted and cracked',
+          desc: 'A tree root has pushed the sidewalk up about three inches. It is a serious trip hazard and someone in a wheelchair cannot get past it at all.',
+          fix: 'Panel removed and replaced, root pruned. ADA clearance restored.' }
     ];
     const statuses = ['submitted','under_review','assigned','in_progress','resolved','resolved'];
     const out = [];
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 34; i++) {
         const k = kinds[i % kinds.length];
         const st = _spick(statuses, i + 3);
-        const days = Math.floor(_sr(i + 11) * 88) + 1;
+        const days = Math.floor(_sr(i + 11) * 94) + 1;
         out.push({
             id: 'sample-report-' + i,
-            user_id: 'sample-resident-' + (i % 12),
+            user_id: 'sample-resident-' + (i % 40),
             title: k.title,
             description: k.desc,
             category: k.cat,
@@ -14995,7 +15043,124 @@ City leadership points to steady infrastructure investment, a growing business b
 
 The City continues to invest in the basics that make growth work: streets, water, parks, and public safety.
 
-Have an idea for what Eloy should focus on next? Share it through Speak to the City in the Eloy Connect app. Messages go directly to city staff and are summarized for Council.`]
+Have an idea for what Eloy should focus on next? Share it through Speak to the City in the Eloy Connect app. Messages go directly to city staff and are summarized for Council.`],
+
+        ['City Hall Holiday Closure Schedule', 'Government',
+`City Hall, the Santa Cruz Library, and non emergency city offices will be closed for the upcoming holiday. Police, fire, and emergency services operate normally without interruption.
+
+Trash and recycling collection will run one day later than usual for the entire week following the holiday. If your normal pickup is Monday, set containers out Tuesday.
+
+Utility payments can be dropped in the secure box outside City Hall at any time, and anything received during the closure will be posted without late penalty.
+
+Report urgent issues through the Eloy Connect app as always. Reports are monitored during the closure and routed to on call staff.`],
+
+        ['Police Department Launches Community Patrol Update', 'Public Safety',
+`The Eloy Police Department is expanding neighborhood patrol coverage during evening hours in response to resident feedback about visibility and speeding on residential streets.
+
+Officers will increase presence in areas flagged repeatedly through the Eloy Connect app, including school zones during arrival and dismissal windows.
+
+The department credits residents for the data. Reports filed in the app are mapped, and clusters help identify problems that individual phone calls tend to hide.
+
+Non emergency concerns can be reported in the app. Always call 911 for anything in progress or an emergency.`],
+
+        ['Library Expands Weekend Hours', 'Library',
+`The Santa Cruz Library is extending Saturday hours, staying open until 4 p.m. beginning this month, after residents asked for more weekend access.
+
+The change adds study space, public computer time, and weekend access to the printer and copier, which many residents rely on for job applications and school paperwork.
+
+Library cards remain free for Eloy residents and can be issued same day with a photo ID and proof of address.
+
+Weekly bilingual story time continues on its regular schedule. See the Events tab for dates.`],
+
+        ['Recycling Program Reminders', 'Community Services',
+`A reminder on what belongs in your recycling container, since contamination has been forcing loads to be landfilled.
+
+Yes: clean cardboard, paper, plastic bottles and jugs, aluminum and steel cans, and glass bottles and jars.
+
+No: plastic bags, food soiled containers like greasy pizza boxes, styrofoam, garden hoses, clothing, or electronics. Plastic bags are the single biggest problem because they jam the sorting equipment.
+
+Rinse containers and put items in loose, not bagged. One contaminated container can send an entire truckload to the landfill.`],
+
+        ['Downtown Business Spotlight', 'Development',
+`Downtown Eloy continues to add and retain small businesses, and the Downtown Development office is working to make it easier for owners to open and grow here.
+
+Support available to local businesses includes help navigating permits and licensing, guidance on signage and facade requirements, and connections to county and state small business resources.
+
+The city is also exploring ways to feature local businesses directly to residents inside the Eloy Connect app.
+
+Own a business downtown and want to be included? Contact the Downtown Development office or send a message through the app.`],
+
+        ['Street Sweeping Schedule Now Available', 'Infrastructure',
+`The updated street sweeping schedule is now published, and knowing your day makes a real difference in how clean the route gets.
+
+Sweepers cannot reach the gutter line when vehicles are parked along it, which leaves debris that eventually washes into storm drains and contributes to the flooding some neighborhoods see after heavy rain.
+
+If possible, move vehicles off the street on your scheduled day.
+
+Missed street or a sweeper that skipped your block? Report it in the app and it gets routed to Public Works.`],
+
+        ['Water Conservation Tips for the Dry Season', 'Utilities',
+`With triple digit temperatures and dry conditions, a few adjustments meaningfully lower both water use and your bill.
+
+Water landscaping in the early morning or after sunset. Midday watering loses a large share to evaporation before roots ever get it. Check irrigation for stuck or broken heads, a single one running unnoticed can waste hundreds of gallons.
+
+Indoors, a running toilet is the most common hidden waste. Put a few drops of food coloring in the tank and if color appears in the bowl without flushing, the flapper needs replacing.
+
+Seeing an unexplained spike on your bill? Contact Utilities and staff will help you track it down.`],
+
+        ['Airport Improvements Underway', 'Infrastructure',
+`Improvements are underway at Eloy Municipal Airport, which supports general aviation, skydiving operations, and the businesses that come with them.
+
+The airport is a genuine economic asset for a city our size, drawing visitors and supporting local jobs well beyond the airfield itself.
+
+Work is scheduled to minimize disruption to operations. No impact to surrounding neighborhoods is expected.
+
+Aviation questions can be directed to airport administration through City Hall.`],
+
+        ['Volunteer Opportunities Across the City', 'Community',
+`Several city programs are looking for volunteers, and these are the roles residents tell us they find most rewarding.
+
+Current needs include library reading assistance, park cleanup events, help at community events like the Fall Festival, and the citizen advisory boards that give Council direct resident input.
+
+Board and commission seats are a real chance to shape decisions before they reach a vote, and several have openings now.
+
+Interested? Contact City Hall at 520-466-9201 or send a message through the app and staff will point you to the right department.`],
+
+        ['Understanding Your Utility Bill', 'Utilities',
+`Residents ask regularly what each line on the utility bill actually means, so here is a plain explanation.
+
+The base rate covers the fixed cost of maintaining the water system itself, the pipes, valves, storage, and treatment, and it does not change with how much you use. The usage charge is based on the water you actually consumed during the billing period.
+
+Sewer and sanitation charges cover wastewater treatment and trash collection respectively.
+
+Questions about a specific bill, or need to discuss a payment arrangement? Call 520-466-9201. Staff would much rather work with you early than deal with a shutoff later.`],
+
+        ['Emergency Preparedness for Monsoon Season', 'Public Safety',
+`Monsoon season brings sudden heavy rain, dust storms, and flash flooding, sometimes within minutes.
+
+Never drive into a flooded wash or roadway. Water depth is nearly impossible to judge and just a foot of moving water can carry a vehicle. Turn around and find another route.
+
+In a dust storm, pull completely off the roadway, turn off your headlights and taillights, take your foot off the brake, and wait it out. Leaving lights on causes drivers behind to follow you off the road.
+
+Keep water, flashlights, and a charged phone battery on hand. Storm related hazards can be reported in the app.`],
+
+        ['Parks and Recreation Youth Programs', 'Parks & Recreation',
+`Registration is open for youth recreation programs, which fill quickly each season.
+
+Offerings include youth sports leagues, after school activities, and seasonal camps during school breaks. Programs are built to stay affordable, and scholarship assistance is available for families who need it, no complicated application.
+
+Volunteer coaches are always needed. If you can commit a couple of evenings a week, it makes these leagues possible.
+
+Register at City Hall or the Community Center, or call Parks and Recreation for details.`],
+
+        ['Code Compliance: Working With Residents First', 'Government',
+`The city's code compliance approach starts with communication, not penalties, and it helps to explain how the process actually works.
+
+Most cases begin with a courtesy notice describing what was observed and what would bring the property into compliance. The overwhelming majority resolve at that stage with no fine and nothing on record.
+
+Extensions are routinely granted when residents respond, particularly for medical or financial hardship. Staff would rather work with you on a timeline than escalate.
+
+Notices now appear directly in the Eloy Connect app, where you can respond, submit photos showing the work is done, and track the status without a trip to City Hall.`]
     ];
     return items.map((it, i) => ({
         id: 'sample-news-' + i,
@@ -15092,7 +15257,79 @@ Designed for ages two through five with a caregiver, though younger and older si
 
 Story time alternates between English and bilingual English and Spanish weeks.
 
-No registration required, just show up. Library cards are free for Eloy residents and can be issued the same day.`]
+No registration required, just show up. Library cards are free for Eloy residents and can be issued the same day.`],
+
+        ['Regular City Council Meeting', 'City Hall, 595 N C Street', 8, 'Government', '18:00', '20:00',
+`Regular meeting of the Eloy City Council. Open to the public, with time reserved for resident comment.
+
+On the agenda: the park lighting cost estimate returning for a vote, and the quarterly public safety update.
+
+Residents may speak during the public comment period. Sign up before the meeting begins.
+
+Cannot attend? A plain language recap is published in the app afterward explaining what was decided and what it means for you.`],
+
+        ['Community Cleanup Day', 'Meet at City Hall parking lot', 17, 'Community', '07:00', '11:00',
+`Join neighbors and city staff for a morning cleanup of public areas, washes, and the downtown corridor.
+
+Gloves, bags, grabbers, and water are provided. Wear closed toe shoes, long pants, and a hat. We start early to stay ahead of the heat and wrap by 11 a.m.
+
+Great for service hours. Students, bring your form and staff will sign it.
+
+Groups of five or more, let us know ahead so we can assign a zone.`],
+
+        ['Farmers and Makers Market', 'Downtown Plaza, Main Street', 11, 'Community', '08:00', '12:00',
+`Local growers, bakers, and makers set up in the downtown plaza with produce, prepared foods, and handmade goods.
+
+A great way to put money directly into the hands of Eloy families and neighbors rather than a chain.
+
+Vendor spots are available for local residents and businesses at a low fee. Contact Downtown Development to reserve.
+
+Free to attend and family friendly. Leashed pets welcome.`],
+
+        ['Senior Coffee and Connect', 'Eloy Community Center', 9, 'Community Services', '09:00', '11:00',
+`A relaxed weekly morning for Eloy seniors with free coffee, pastries, and good conversation.
+
+City staff drop in regularly to help with practical things: utility billing questions, how to use the Eloy Connect app, and connecting to county services.
+
+Sometimes there is a guest speaker or a health screening, sometimes it is just coffee and company. Both are worth showing up for.
+
+No registration needed. Transportation assistance may be available, call the Community Center to ask.`],
+
+        ['Planning and Zoning Commission Meeting', 'City Hall, 595 N C Street', 15, 'Government', '18:00', '19:30',
+`Regular meeting of the Planning and Zoning Commission, reviewing development applications, rezoning requests, and land use items.
+
+This is where development decisions get shaped before they ever reach Council. If a project near you is on the agenda, this is the meeting that matters most.
+
+Agendas are posted in advance at City Hall and in the app. Public comment is taken on agenda items.
+
+Questions about a specific application? Call Planning and Zoning at 520-466-2578.`],
+
+        ['Free Rabies and Microchip Clinic', 'Public Works Yard, 628 N Main St', 24, 'Community Services', '09:00', '12:00',
+`Low cost rabies vaccination and microchipping for dogs and cats, hosted with county animal care.
+
+Dogs must be leashed, cats must be in carriers. Bring prior vaccination records if you have them. Licensing is available on site.
+
+Microchipping dramatically improves the odds of getting a lost pet home, and it is the single best thing you can do for an animal that gets out.
+
+First come, first served. Arrive early, the line moves but it does form.`],
+
+        ['Movie in the Park: Halloween Edition', 'Toltec Park, 1400 N Toltec Rd', 27, 'Community', '18:30', '21:00',
+`A family friendly Halloween movie night on the lawn, with costumes encouraged for kids and adults alike.
+
+Gates at 6:30, movie at dusk. Free popcorn, a costume contest before the film, and treats for the kids.
+
+Bring blankets and low chairs. Restrooms and lighted parking available.
+
+Weather cancellation, if any, will be posted in the app by 4 p.m.`],
+
+        ['Neighborhood Watch Kickoff Meeting', 'Eloy Community Center', 19, 'Public Safety', '18:00', '19:30',
+`Residents interested in starting or joining a neighborhood watch group are invited to meet with Eloy Police Department officers.
+
+Officers will cover how watch groups actually work, what to report and how, the difference between 911 and non emergency, and how to use the Eloy Connect app to document issues so patterns get seen.
+
+Bring specific concerns about your street. This is a working meeting, not a lecture.
+
+Open to all residents. No commitment required to attend.`]
     ];
     return items.map((it, i) => ({
         id: 'sample-event-' + i,
@@ -15169,6 +15406,206 @@ DECISIONS
 `Finance Director: Understood. We will bring cost and timeline for online payments. ` +
 `Mayor: Anything else on the capital plan? Then we will pick this back up when it comes for adoption. Thank you all.`;
 
+    const recap3 =
+`Council heard the quarterly public safety report and approved two police officer positions that had been frozen since last budget. Response times were presented by district, with the north side running longer than the rest of the city. Council also approved a splash pad at the community park using a state parks grant that covers most of the cost, and adopted a reduced business license fee for first year businesses.
+
+WHAT THIS MEANS FOR YOU
+Two more officers means shorter waits on non-emergency calls, especially on the north side. Hiring takes several months, so this is not immediate.
+The splash pad is funded and moving to design. Expect it open before next summer, at the community park, free to use.
+If you are opening a business in Eloy this year, your first year license fee just dropped. Ask the Clerk's office when you apply.
+
+TOPICS DISCUSSED
+• Public Safety — Quarterly report and response times by district
+• Public Safety — Two frozen officer positions unfrozen and funded
+• Parks — Splash pad approved using state grant funding
+• Economic Development — Reduced first year business license fee
+
+DECISIONS
+• Two police officer positions approved, unanimous
+• Splash pad project approved and sent to design
+• First year business license fee reduced, effective immediately`;
+
+    const transcript3 =
+`Mayor: Next item is the quarterly public safety report. Chief, go ahead. ` +
+`Police Chief: Overall call volume is steady. Response times are within target citywide, but the north side is running longer than I would like. That is a staffing issue more than a traffic issue. ` +
+`Councilmember: We froze two positions last budget. Are we in a position to unfreeze them? ` +
+`Finance Director: We can absorb both this cycle without touching reserves. ` +
+`Councilmember: Then I move we unfreeze both positions. ` +
+`Mayor: Second? All in favor? That is unanimous. Chief, get them posted. ` +
+`Police Chief: Will do. Realistically we are looking at several months to hire and train. ` +
+`Mayor: Understood. Next, Parks has a grant item. ` +
+`Parks Director: We were awarded a state parks grant that covers the bulk of a splash pad at the community park. Our share is the remainder plus ongoing water and maintenance. ` +
+`Councilmember: Kids in this town deserve this. I move approval. ` +
+`Mayor: All in favor? Approved. Last item, the business license fee proposal. ` +
+`Clerk: The proposal reduces the first year fee for new businesses to lower the barrier to opening here. ` +
+`Councilmember: This is the kind of thing the Chamber has been asking for. Move to approve. ` +
+`Mayor: Approved. We are adjourned.`;
+
+    const recap4 =
+`A special meeting was held for the public hearing on the rezoning request for the parcel off Sunshine Boulevard, from agricultural to residential, for a proposed subdivision. Twenty three residents spoke, most raising traffic and water capacity concerns. Council continued the hearing rather than voting, directing staff to return with a traffic study and a water capacity analysis before any decision.
+
+WHAT THIS MEANS FOR YOU
+Nothing is approved. The developer did not get a yes, and Council did not say no. It is paused pending two studies.
+If you live near Sunshine Boulevard, the traffic study and water analysis are the documents that will decide this. They will be public before the vote.
+The hearing stays open, which means you can still submit comment. You do not have to attend in person to be counted.
+
+TOPICS DISCUSSED
+• Planning — Rezoning request from agricultural to residential
+• Traffic — Resident concerns about Sunshine Boulevard capacity
+• Water — Whether current infrastructure supports added homes
+• Public Comment — Twenty three residents spoke
+
+DECISIONS
+• Public hearing continued, no vote taken
+• Staff directed to produce a traffic study
+• Staff directed to produce a water capacity analysis
+• Record remains open for written public comment`;
+
+    const transcript4 =
+`Mayor: This is a special meeting for the Sunshine Boulevard rezoning hearing. Planning, summarize the request. ` +
+`Planning Director: The applicant requests rezoning from agricultural to residential to allow a single family subdivision. Staff has reviewed it against the general plan. ` +
+`Mayor: We will open public comment. Please keep it to three minutes. ` +
+`Resident: I have lived out there twenty years. That road cannot handle what is already on it. ` +
+`Resident: My question is water. Where is the water coming from for all these houses? ` +
+`Resident: I am not against growth. I am against growth we did not plan for. ` +
+`Mayor: That is twenty three speakers. Councilmembers, thoughts? ` +
+`Councilmember: I am not prepared to vote without a traffic study. That is the concern I heard the most tonight. ` +
+`Councilmember: Add water capacity to that. We should know the answer before we approve, not after. ` +
+`Mayor: Then I would suggest we continue this hearing rather than vote, and direct staff to bring back both studies. ` +
+`Councilmember: So moved. ` +
+`Mayor: All in favor? The hearing is continued and the record stays open. Thank you all for coming out.`;
+
+    const recap5 =
+`A work session on the parks and recreation master plan. Staff presented survey results from residents, which ranked shade, restrooms, and lighting well above new facilities. Council discussed prioritizing maintenance and basic amenities at existing parks before building anything new. No votes were taken.
+
+WHAT THIS MEANS FOR YOU
+If you took the parks survey, your answers shaped this. Shade, restrooms, and lighting came out on top and Council heard it.
+The direction is fix and improve what we have first. That means the parks you already use are the priority.
+The master plan comes back for formal adoption later, so there is still room for public input.
+
+TOPICS DISCUSSED
+• Parks — Resident survey results presented
+• Parks — Shade structures, restrooms, and lighting ranked highest
+• Budget — Maintenance backlog at existing parks
+• Planning — Draft master plan priorities
+
+DECISIONS
+• Work session, no formal action taken
+• Direction given to prioritize existing park improvements
+• Master plan returns for adoption at a future meeting`;
+
+    const transcript5 =
+`Mayor: Work session tonight, no action. Parks, take us through the survey. ` +
+`Parks Director: We had strong response. The top three requests were shade, restrooms, and lighting. New facilities ranked well below those. ` +
+`Councilmember: That tracks with what I hear. People want the parks we have to be usable in July. ` +
+`Parks Director: Shade is the number one comment by a wide margin. ` +
+`Councilmember: I would rather put shade over every playground in town than break ground on something new. ` +
+`Councilmember: Agreed. What is the maintenance backlog looking like? ` +
+`Parks Director: It is real. We can put a number to it and bring it back. ` +
+`Mayor: Let us do that. Bring the master plan back with those priorities reflected and the backlog quantified. ` +
+`Parks Director: Understood. ` +
+`Mayor: Thank you. That concludes the work session.`;
+
+    const recap6 =
+`Council received the water rate study and took no action, setting a public hearing before any rate change. Staff explained that current rates do not cover the cost of planned infrastructure replacement. Council also approved an updated animal control services agreement and accepted a donation for the library summer reading program.
+
+WHAT THIS MEANS FOR YOU
+Your water rate did not change tonight. A study was presented, nothing was adopted. Any change requires a public hearing first, and you will be notified.
+The reason this is being discussed is aging pipe. The study lays out what replacement costs and how it would be paid for.
+Animal control coverage continues without interruption under the updated agreement.
+
+TOPICS DISCUSSED
+• Water — Rate study presented, no action taken
+• Water — Infrastructure replacement costs and funding
+• Animal Control — Services agreement renewed
+• Library — Donation accepted for summer reading
+
+DECISIONS
+• Water rate study received and filed, no rate change adopted
+• Public hearing to be scheduled before any rate action
+• Animal control services agreement approved
+• Library donation accepted with thanks`;
+
+    const transcript6 =
+`Mayor: First item is the water rate study. I want to be clear up front that we are not voting on rates tonight. ` +
+`Public Works Director: Correct. This is presentation only. The study looks at what it costs to replace aging line over the next ten years. ` +
+`Councilmember: And current rates do not cover that? ` +
+`Public Works Director: Not for the replacement schedule we need. They cover operations. ` +
+`Councilmember: I want residents to hear this before we act, not after. ` +
+`Mayor: Agreed. Any rate action gets a public hearing, properly noticed. Staff, schedule it. ` +
+`City Clerk: Understood. ` +
+`Mayor: Next, animal control agreement. ` +
+`City Manager: Renewal on the existing terms with a modest adjustment. No gap in coverage. ` +
+`Councilmember: Move to approve. ` +
+`Mayor: Approved. And we have a donation for the library summer reading program. ` +
+`Librarian: We are very grateful. It funds books and prizes for the whole program. ` +
+`Mayor: Accepted with our thanks. Adjourned.`;
+
+    const recap7 =
+`Planning and Zoning Commission reviewed a conditional use permit for a solar installation on the parcel south of the industrial area. The commission recommended approval with conditions covering fencing, glare mitigation, decommissioning, and a road maintenance agreement for construction traffic. The recommendation now goes to Council.
+
+WHAT THIS MEANS FOR YOU
+This was a recommendation, not a final approval. Council still votes on it.
+The conditions attached are the substance here: fencing, glare control, a requirement that the site be restored if the project ever shuts down, and the company paying to repair roads their trucks damage.
+If you live near the industrial area, construction traffic is the effect you would notice most, and that is what the road agreement addresses.
+
+TOPICS DISCUSSED
+• Planning — Conditional use permit for solar installation
+• Land Use — Setbacks, fencing, and glare mitigation
+• Streets — Construction traffic and road maintenance agreement
+• Planning — Decommissioning and site restoration requirements
+
+DECISIONS
+• Recommended approval to Council with four conditions
+• Fencing and glare mitigation required
+• Decommissioning and restoration bond required
+• Road maintenance agreement required before construction`;
+
+    const transcript7 =
+`Chair: Item one is the conditional use permit for the solar project. Staff report. ` +
+`Planner: The applicant proposes a solar installation on the parcel south of the industrial area. Staff recommends approval with conditions. ` +
+`Commissioner: What about glare? That is the first thing people ask me. ` +
+`Planner: Panels are non reflective by design, but we can condition glare mitigation to be safe. ` +
+`Commissioner: I want fencing conditioned too. ` +
+`Commissioner: My bigger concern is the trucks during construction. Those roads were not built for that. ` +
+`Planner: We can require a road maintenance agreement so the applicant is responsible for repair. ` +
+`Commissioner: And what happens in twenty years if the company walks away? ` +
+`Planner: A decommissioning requirement with a bond handles that. The site gets restored. ` +
+`Chair: Then let us recommend approval with those four conditions. All in favor? Carried. This goes to Council.`;
+
+    const recap8 =
+`Council approved a new hangar lease at the municipal airport and extended library hours on Saturdays. Staff reported on summer heat response, including the cooling center usage numbers, and Council directed staff to plan earlier outreach next season.
+
+WHAT THIS MEANS FOR YOU
+The library is now open later on Saturdays. If you have used it for internet access or a quiet place to work, you have more hours.
+The airport hangar lease brings in revenue without any cost to residents.
+If you or a neighbor needed the cooling center this summer, Council wants that information out earlier next year. Watch for it in the app before the first heat wave.
+
+TOPICS DISCUSSED
+• Airport — New hangar lease approved
+• Library — Saturday hours extended
+• Public Health — Summer cooling center usage report
+• Communications — Earlier heat season outreach directed
+
+DECISIONS
+• Airport hangar lease approved
+• Extended Saturday library hours adopted
+• Staff directed to begin heat season outreach earlier next year`;
+
+    const transcript8 =
+`Mayor: Airport item first. ` +
+`City Manager: We have a hangar lease ready for execution. It is revenue positive and the tenant is local. ` +
+`Councilmember: Move to approve. ` +
+`Mayor: Approved. Library next. ` +
+`Librarian: We are requesting extended Saturday hours. Saturday is our busiest day and we are turning people out at closing. ` +
+`Councilmember: How are we covering staffing? ` +
+`Librarian: Within the existing schedule. It is a shift, not an addition. ` +
+`Councilmember: Then I am in favor. Move to approve. ` +
+`Mayor: Approved. Last, the summer heat report. ` +
+`City Manager: Cooling center usage was up. What we heard repeatedly is that people did not know about it until well into the season. ` +
+`Councilmember: That is on us. We should be pushing that out in April, not June. ` +
+`Mayor: Staff, plan earlier outreach next year and use the app for it. We are adjourned.`;
+
     return [
         { id: 'sample-mtg-0', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
           meeting_date: _sdays(9), location: 'Council Chambers, 595 N C St', status: 'completed',
@@ -15189,7 +15626,55 @@ DECISIONS
           public_summary: 'Agenda in progress. Park lighting cost estimate returns for a vote, plus the quarterly public safety update.',
           live_recap: null, live_status: null, bot_status: null,
           key_decisions: [], topics_discussed: ['Parks','Public Safety'],
-          duration_minutes: null, is_public: true, archived: false, created_at: _sdays(2) }
+          duration_minutes: null, is_public: true, archived: false, created_at: _sdays(2) },
+        { id: 'sample-mtg-3', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
+          meeting_date: _sdays(38), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap3, live_recap: null, sample_transcript: transcript3,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['Two police officer positions unfrozen and funded','Splash pad approved using state grant','First year business license fee reduced'],
+          topics_discussed: ['Public Safety','Parks','Economic Development'],
+          duration_minutes: 88, is_public: true, archived: false, created_at: _sdays(45) },
+        { id: 'sample-mtg-4', city_id: city, meeting_type: 'Special', title: 'Special Meeting — Rezoning Hearing',
+          meeting_date: _sdays(45), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap4, live_recap: null, sample_transcript: transcript4,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['Public hearing continued, no vote taken','Traffic study directed','Water capacity analysis directed'],
+          topics_discussed: ['Planning','Traffic','Water','Public Comment'],
+          duration_minutes: 132, is_public: true, archived: false, created_at: _sdays(52) },
+        { id: 'sample-mtg-5', city_id: city, meeting_type: 'Work Session', title: 'Parks Master Plan Work Session',
+          meeting_date: _sdays(52), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap5, live_recap: null, sample_transcript: transcript5,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['No formal action, work session','Direction to prioritize existing park improvements'],
+          topics_discussed: ['Parks','Budget','Planning'],
+          duration_minutes: 61, is_public: true, archived: false, created_at: _sdays(58) },
+        { id: 'sample-mtg-6', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
+          meeting_date: _sdays(59), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap6, live_recap: null, sample_transcript: transcript6,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['Water rate study received, no rate change adopted','Animal control agreement approved','Library donation accepted'],
+          topics_discussed: ['Water','Animal Control','Library'],
+          duration_minutes: 79, is_public: true, archived: false, created_at: _sdays(66) },
+        { id: 'sample-mtg-7', city_id: city, meeting_type: 'Planning & Zoning', title: 'Planning and Zoning Commission',
+          meeting_date: _sdays(66), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap7, live_recap: null, sample_transcript: transcript7,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['Recommended approval to Council with four conditions','Decommissioning bond required','Road maintenance agreement required'],
+          topics_discussed: ['Planning','Land Use','Streets'],
+          duration_minutes: 54, is_public: true, archived: false, created_at: _sdays(72) },
+        { id: 'sample-mtg-8', city_id: city, meeting_type: 'Regular', title: 'Regular Council Meeting',
+          meeting_date: _sdays(73), location: 'Council Chambers, 595 N C St', status: 'completed',
+          public_summary: recap8, live_recap: null, sample_transcript: transcript8,
+          live_status: 'ended', bot_status: 'ended',
+          key_decisions: ['Airport hangar lease approved','Extended Saturday library hours adopted','Earlier heat season outreach directed'],
+          topics_discussed: ['Airport','Library','Public Health','Communications'],
+          duration_minutes: 67, is_public: true, archived: false, created_at: _sdays(80) },
+        { id: 'sample-mtg-9', city_id: city, meeting_type: 'Work Session', title: 'Council Work Session',
+          meeting_date: _sahead(22), location: 'Council Chambers, 595 N C St', status: 'scheduled',
+          public_summary: 'Scheduled. Water rate public hearing and the Sunshine Boulevard traffic study are both expected on this agenda.',
+          live_recap: null, live_status: null, bot_status: null,
+          key_decisions: [], topics_discussed: ['Water','Planning','Traffic'],
+          duration_minutes: null, is_public: true, archived: false, created_at: _sdays(1) }
     ];
 }
 
@@ -15227,18 +15712,148 @@ Permits exist to confirm setbacks, footing depth, and wind load. Arizona monsoon
 
 To resolve: contact Planning and Zoning / Building Safety at 520-466-2578 to apply for a permit after the fact. Staff will schedule an inspection and identify whether any modifications are required.
 
-This notice is currently under review while the resident gathers construction documentation. Work with us and this is usually straightforward to bring into compliance.`]
+This notice is currently under review while the resident gathers construction documentation. Work with us and this is usually straightforward to bring into compliance.`],
+
+        ['Junk and Debris Accumulation', 'Property Maintenance', 'medium', 'open',
+`Accumulated household debris, scrap material, and discarded furniture were observed in the side yard and along the rear fence line.
+
+Beyond appearance, piles like this hold moisture and shade, which is exactly what scorpions, roaches, and rodents look for in our climate. Neighbors are usually affected before the property owner notices.
+
+To resolve: remove the debris and dispose of it properly. The transfer station accepts household bulk items, and the city runs periodic free bulk pickup weeks that are announced in this app.
+
+If hauling is the obstacle, tell us. We can point you to the next bulk pickup week rather than expecting you to rent a truck.`],
+
+        ['Fence in Disrepair', 'Property Maintenance', 'low', 'open',
+`Sections of the perimeter fence are leaning, with several panels detached and one section down entirely.
+
+A fence that is failing can become a wind hazard during monsoon season and, where it borders a pool or a street, a safety issue.
+
+To resolve: repair or replace the damaged sections so the fence is upright, secured, and structurally sound. Like for like repair does not require a permit. A full replacement or a change in height or material does, so call Building Safety at 520-466-2578 first if that is the direction you are going.`],
+
+        ['Grass and Weeds Exceeding Height Limit', 'Weeds & Vegetation', 'medium', 'acknowledged',
+`Vegetation in the rear and side yard was measured above the twelve inch maximum during a follow up inspection.
+
+To resolve: cut the vegetation below twelve inches and remove the clippings.
+
+The resident has acknowledged this notice and requested a short extension due to an equipment issue. The extension was granted. No penalty applies as long as the work is completed by the revised date.`],
+
+        ['Illegal Dumping on Vacant Lot', 'Sanitation', 'high', 'under_review',
+`Construction material and household waste were dumped on the vacant parcel adjoining this property. Reported by a neighboring resident through the app with photographs.
+
+Illegal dumping is treated seriously. It creates fire load, attracts more dumping once a pile starts, and cleanup cost falls on the city and ultimately on taxpayers.
+
+This notice is under review. Code Enforcement is working to establish responsibility before any penalty is assessed. If the material is not yours, respond and tell us what you know. Property owners are not held responsible for dumping they did not do and could not reasonably prevent.`],
+
+        ['Sign Placed Without Permit', 'Signs', 'low', 'resolved',
+`A freestanding advertising sign was installed in the right of way without a sign permit.
+
+Signs in the public right of way block sightlines at intersections and driveways, which is why they are regulated rather than banned.
+
+Resolved. The business owner relocated the sign onto private property the same week and applied for the permit. Nothing further is required and no penalty was assessed.`],
+
+        ['Recreational Vehicle Parked in Right of Way', 'Vehicles', 'low', 'open',
+`A recreational vehicle has been parked in the street for longer than the seventy two hour maximum for oversized vehicles.
+
+Extended street parking of oversized vehicles narrows the travel lane, blocks sightlines for drivers pulling out of driveways, and interferes with street sweeping and emergency access.
+
+To resolve: move the vehicle to a driveway, a side or rear yard, or off site storage. If you are actively loading or unloading for a trip, respond and let us know your timeline. We are not trying to make travel harder, we just need it off the street between trips.`],
+
+        ['Pool Left Unmaintained', 'Health & Safety', 'high', 'open',
+`The swimming pool at this address is holding standing green water and appears to be out of service.
+
+This is one of the few violations we act on quickly, and the reason is mosquitoes. A neglected pool can produce thousands of mosquitoes in a week, and in Arizona that means West Nile risk for the entire block.
+
+To resolve, any of these work: restore normal circulation and chemical treatment, drain the pool completely, or cover it with a secured cover after draining. Pinal County Environmental Health also offers free mosquito fish for pools that cannot be treated immediately.
+
+If cost is the barrier, respond and tell us. There are options and we would rather help you find one.`],
+
+        ['Address Numbers Not Visible', 'Property Maintenance', 'low', 'resolved',
+`House numbers were either missing or not legible from the street.
+
+This matters more than it sounds. When an ambulance is looking for you at night, visible numbers are the difference between arriving and driving past.
+
+Resolved. The resident installed reflective four inch numbers within a week. Thank you for handling it quickly.`],
+
+        ['Commercial Vehicle in Residential Zone', 'Vehicles', 'medium', 'acknowledged',
+`A commercial vehicle exceeding the size allowed in a residential zone is being parked overnight at this address.
+
+Residential streets and driveways are not built for the weight and turning radius of commercial equipment, and the code limits overnight parking accordingly.
+
+To resolve: park the vehicle at a commercial yard or approved storage location overnight.
+
+The resident has acknowledged this notice and stated they are arranging yard space with their employer. We are holding the file open while that is worked out.`],
+
+        ['Graffiti Not Removed', 'Property Maintenance', 'medium', 'open',
+`Graffiti was reported on the exterior wall facing the street and remains uncovered.
+
+Graffiti that stays up invites more of it. Removing it quickly is the single most effective thing that reduces repeat tagging on a property.
+
+To resolve: paint over or remove the graffiti. The city maintains a graffiti abatement program and in many cases can supply matching paint at no cost, or handle removal outright.
+
+You are the victim here, not the offender. This notice exists to connect you with help, and if you would rather the city handle it, just respond and say so.`],
+
+        ['Obstructed Sidewalk', 'Streets & Right of Way', 'medium', 'resolved',
+`Landscaping and stored material were encroaching into the public sidewalk, reducing the clear path below the required width.
+
+A blocked sidewalk pushes pedestrians into the street. For anyone using a wheelchair or a stroller it can make the route impassable entirely.
+
+Resolved. The property owner trimmed the landscaping and relocated the stored material, restoring full sidewalk width. Confirmed on reinspection.`],
+
+        ['Short Term Rental Operating Without Registration', 'Business Licensing', 'medium', 'under_review',
+`Records indicate a short term rental is being operated at this address without the required city registration.
+
+Registration is not a prohibition. It exists so the city has an emergency contact for the property and so transient lodging tax is handled correctly.
+
+To resolve: complete the short term rental registration with the City Clerk and provide a local contact who can respond within one hour.
+
+This notice is under review while the owner submits documentation. Most of these are resolved with paperwork and nothing more.`],
+
+        ['Open Storage of Building Materials', 'Property Maintenance', 'low', 'acknowledged',
+`Lumber, block, and roofing material are being stored in the front yard in public view.
+
+Storing materials for an active project is expected and permitted. The code addresses open storage that stays in place well past the work.
+
+To resolve: move materials behind a fence or into a garage, or complete the project and remove the surplus.
+
+The resident has acknowledged this notice and confirmed the roofing project finishes this month. We will reinspect after that date.`],
+
+        ['Water Running Onto Public Street', 'Water', 'medium', 'open',
+`Irrigation runoff from this property is flowing across the sidewalk and into the street on a recurring basis.
+
+In a desert city this is water we cannot get back, and standing water on pavement creates an algae slick that is a genuine slip hazard on the sidewalk.
+
+To resolve: adjust irrigation timing and head placement so water stays on the landscape. A broken valve or a stuck head is the cause more often than not, so it is worth checking before assuming it is a scheduling issue.
+
+Eloy Water can help you evaluate your system. Respond through the app and we will connect you.`],
+
+        ['Animal Waste Accumulation', 'Health & Safety', 'medium', 'open',
+`Accumulated animal waste in the rear yard was documented following a neighbor complaint about odor and flies.
+
+Beyond the nuisance, accumulated waste is a genuine health issue, drawing flies that carry bacteria to neighboring properties and food areas.
+
+To resolve: remove the accumulated waste and establish a regular cleanup routine.
+
+If the number of animals at the property has become more than can reasonably be maintained, tell us. Pinal County Animal Care has resources and we would rather help than cite.`]
     ];
-    return rows.map((r, i) => ({
-        id: 'sample-notice-' + i, resident_id: 'sample-resident-' + i,
-        address: (200 + i * 137) + ' ' + _spick(SAMPLE_STREETS, i + 9) + ', Eloy, AZ 85131',
-        type: r[1], title: r[0], description: r[4], severity: r[2], status: r[3],
-        deadline: _sahead(14 - i * 3), response: null, proof_photo_urls: [], evidence_photo_urls: [],
-        issued_by: 'sample-staff-1', issued_by_name: 'Code Enforcement', physical_mail_sent: false,
-        acknowledged_at: (r[3] === 'acknowledged' || r[3] === 'resolved') ? _sdays(i * 5) : null,
-        resolved_at: r[3] === 'resolved' ? _sdays(i * 5) : null,
-        created_at: _sdays(i * 5 + 3), updated_at: _sdays(i * 5 + 1), city_id: city
-    }));
+    return rows.map((r, i) => {
+        // Spread the notices across the last two months rather than stacking
+        // them, and keep every live deadline in the future so the queue reads
+        // like a real working caseload instead of a wall of overdue items.
+        const openedDaysAgo = 2 + i * 3;                 // 2 to 59 days back
+        const deadlineDaysOut = 3 + ((i * 7) % 21);      // 3 to 23 days ahead
+        const closed = (r[3] === 'acknowledged' || r[3] === 'resolved');
+        return {
+            id: 'sample-notice-' + i, resident_id: 'sample-resident-' + i,
+            address: (200 + i * 137) + ' ' + _spick(SAMPLE_STREETS, i + 9) + ', Eloy, AZ 85131',
+            type: r[1], title: r[0], description: r[4], severity: r[2], status: r[3],
+            deadline: r[3] === 'resolved' ? _sdays(Math.max(1, openedDaysAgo - 4)) : _sahead(deadlineDaysOut),
+            response: null, proof_photo_urls: [], evidence_photo_urls: [],
+            issued_by: 'sample-staff-1', issued_by_name: 'Code Enforcement', physical_mail_sent: false,
+            acknowledged_at: closed ? _sdays(Math.max(1, openedDaysAgo - 2)) : null,
+            resolved_at: r[3] === 'resolved' ? _sdays(Math.max(1, openedDaysAgo - 3)) : null,
+            created_at: _sdays(openedDaysAgo), updated_at: _sdays(Math.max(1, openedDaysAgo - 1)), city_id: city
+        };
+    });
 }
 
 function _sampleBusinesses(city) {
