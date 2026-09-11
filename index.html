@@ -3172,6 +3172,101 @@ input[type="checkbox"].bulk-check:checked::after {
     font-size: 10px !important;
 }
 .leaflet-control-attribution a { color: #3FE0E8 !important; }
+
+/* ============================================================
+   PHONE AND TABLET LAYOUT
+   The CRM is built for a desk, but partners open links on their
+   phone. This block makes every page readable and usable on a
+   375px screen instead of letting it overflow sideways.
+   Many grids are set with inline style attributes, so a few of
+   these rules use attribute selectors and !important to win.
+   ============================================================ */
+@media (max-width: 820px) {
+
+    /* Kill sideways scroll of the whole page. Individual tables
+       still scroll on their own, which is what we want. */
+    html, body { overflow-x: hidden; max-width: 100vw; }
+
+    /* Top navigation */
+    .topnav { padding: 0 10px; gap: 6px; }
+    .topnav-brand { gap: 8px; }
+    .topnav-brand h1 { font-size: 11px; letter-spacing: 0.03em; }
+    .topnav-tabs { padding: 0 6px; gap: 0; -webkit-overflow-scrolling: touch; }
+    .nav-item { padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+    .topnav-right { gap: 6px; }
+
+    /* Page header */
+    .topbar {
+        padding: 14px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .topbar-left h2 { font-size: 18px; }
+    .topbar-left p { font-size: 12px; }
+    .topbar-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+
+    /* Body */
+    .content { padding: 16px 14px 40px; }
+    .glass-card { padding: 16px; border-radius: 14px; }
+
+    /* Every multi-column grid collapses to one column. Grids that
+       already use auto-fit or auto-fill size themselves correctly,
+       so they are left alone. */
+    .metrics-grid,
+    .charts-row,
+    .composer-grid,
+    .staff-grid,
+    .command-grid,
+    .biz-info-grid,
+    [style*="grid-template-columns"]:not([style*="auto-fill"]):not([style*="auto-fit"]) {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tables keep their shape and scroll sideways inside their card
+       rather than stretching the page. The cards that hold tables are
+       set to overflow:hidden inline, which would clip the table dead,
+       so this flips them to a horizontal scroller on small screens. */
+    .glass-card:has(.data-table) {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .data-table { min-width: 620px; }
+    .data-table thead th,
+    .data-table tbody td { padding-left: 10px; padding-right: 10px; font-size: 12px; }
+
+    /* Modals fit the screen instead of running off the edge. */
+    .modal,
+    .modal.modal-glass {
+        width: 94vw !important;
+        max-width: 94vw !important;
+        max-height: 88vh !important;
+        overflow-y: auto;
+        padding: 22px 18px !important;
+        border-radius: 16px;
+    }
+    .modal-title { font-size: 17px; }
+    .modal-actions { flex-wrap: wrap; gap: 8px; }
+    .modal-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+    /* Comfortable tap targets. Anything under about 40px is a
+       frustrating target on a phone. */
+    .btn { padding: 10px 14px; min-height: 40px; }
+    input, select, textarea { font-size: 16px; }  /* stops iOS zooming on focus */
+
+    /* Charts and maps stay inside their container */
+    canvas { max-width: 100% !important; }
+    #reportsMap, .map-shell, .leaflet-container { max-width: 100%; }
+}
+
+@media (max-width: 560px) {
+    .topnav-brand h1 { display: none; }   /* mark only, buys room for tabs */
+    .content { padding: 14px 12px 40px; }
+    .glass-card { padding: 14px; }
+    .topbar { padding: 12px 14px; }
+    .metrics-grid { gap: 10px; }
+}
 </style>
 </head>
 <body>
