@@ -3462,45 +3462,62 @@ input[type="checkbox"].bulk-check:checked::after {
      login overlay, which is where the recovery case lands.
      ============================================================ -->
 <div id="pwModal" style="display:none; position:fixed; inset:0; z-index:12000; align-items:center; justify-content:center;
-     background:rgba(3,7,14,0.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); padding:20px;">
-  <div style="width:100%; max-width:420px; border-radius:20px; padding:32px 30px 26px; text-align:center;
-       background:linear-gradient(180deg, rgba(18,30,48,0.96), rgba(10,18,30,0.96));
-       border:1px solid rgba(63,224,232,0.22); box-shadow:0 30px 90px rgba(0,0,0,.6);">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#3FE0E8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
-         style="width:34px; height:34px; margin-bottom:12px;">
-      <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+     background:radial-gradient(1200px 700px at 50% -10%, rgba(63,224,232,.10), transparent 60%), rgba(3,7,14,.90);
+     backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); padding:20px;">
+  <div class="lg-card">
+    <svg class="lg-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="21.5" fill="none" stroke="#3FE0E8" stroke-width="4.5"/>
+      <circle cx="16.4" cy="16.4" r="5.5" fill="#3FE0E8"/>
+      <circle cx="16.4" cy="47.6" r="5.5" fill="#3FE0E8"/>
+      <circle cx="47.6" cy="47.6" r="5.5" fill="#3FE0E8"/>
+      <circle cx="47.6" cy="16.4" r="5.5" fill="#F5A623"/>
+      <circle cx="32" cy="32" r="6.5" fill="#3FE0E8"/>
     </svg>
-    <h2 id="pwTitle" style="margin:0 0 6px; font-size:20px; font-weight:700; color:#EAF4FB; letter-spacing:-0.01em;">Set a new password</h2>
-    <p id="pwSub" style="margin:0 0 20px; font-size:13.5px; line-height:1.55; color:#8FA3B5;">Choose something only you know.</p>
+    <div class="lg-word">Omnis <span>Connect</span></div>
+    <div class="lg-badge" id="pwBadge">Account Security</div>
+    <h2 class="lg-h" id="pwTitle">Set a new password</h2>
+    <p class="lg-sub" id="pwSub">Choose something only you know.</p>
 
-    <div style="position:relative; margin-bottom:10px;">
-      <input id="pwNew" type="password" placeholder="New password" autocomplete="new-password"
-        style="width:100%; padding:13px 44px 13px 14px; border-radius:11px; font-family:inherit; font-size:15px;
-               background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#EAF4FB; outline:none;">
-      <button type="button" onclick="pwToggle('pwNew', this)" aria-label="Show password"
-        style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#6E8296; padding:6px;">
+    <div class="lg-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input id="pwNew" class="lg-input" type="password" placeholder="New password" autocomplete="new-password" style="padding-right:44px;">
+      <button type="button" class="lg-eye" onclick="pwToggle('pwNew', this)" aria-label="Show password">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
     </div>
-    <input id="pwConfirm" type="password" placeholder="Confirm new password" autocomplete="new-password"
-      style="width:100%; padding:13px 14px; border-radius:11px; font-family:inherit; font-size:15px; margin-bottom:6px;
-             background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#EAF4FB; outline:none;">
 
-    <p id="pwStrength" style="margin:6px 0 0; font-size:11.5px; text-align:left; color:#6E8296; min-height:15px;"></p>
-    <p id="pwError" style="display:none; margin:8px 0 0; font-size:12.5px; color:#FF8A9B;"></p>
+    <div class="lg-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <input id="pwConfirm" class="lg-input" type="password" placeholder="Confirm new password" autocomplete="new-password">
+    </div>
 
-    <button type="button" id="pwSaveBtn" onclick="submitPasswordChange()"
-      style="width:100%; margin-top:16px; padding:14px; border:none; border-radius:12px; cursor:pointer; font-family:inherit;
-             font-size:15px; font-weight:700; color:#04121A; background:linear-gradient(180deg,#5FE9F0,#22B6C6);
-             box-shadow:0 8px 30px rgba(63,224,232,.35);">Update password</button>
+    <!-- Strength meter. Three segments that fill and shift colour as the rules are met. -->
+    <div style="display:flex; gap:5px; margin:2px 2px 0;">
+      <span class="pw-seg" style="flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.08); transition:background .25s ease;"></span>
+      <span class="pw-seg" style="flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.08); transition:background .25s ease;"></span>
+      <span class="pw-seg" style="flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.08); transition:background .25s ease;"></span>
+    </div>
+    <p id="pwStrength" style="margin:7px 2px 0; font-size:11.5px; text-align:left; color:#6E8296; min-height:15px;"></p>
+
+    <p id="pwError" class="lg-err"></p>
+
+    <button type="button" id="pwSaveBtn" class="lg-btn" onclick="submitPasswordChange()">Update password
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </button>
 
     <button type="button" id="pwCancelBtn" onclick="closePasswordModal()"
-      style="width:100%; margin-top:8px; padding:11px; border:none; border-radius:11px; cursor:pointer; font-family:inherit;
-             font-size:13.5px; font-weight:600; color:#8FA3B5; background:transparent;">Cancel</button>
+      style="display:block; margin:12px auto 0; background:none; border:none; cursor:pointer; font-family:inherit;
+             font-size:12.5px; color:#6E8296; text-decoration:underline; text-underline-offset:3px;"
+      onmouseover="this.style.color='#3FE0E8'" onmouseout="this.style.color='#6E8296'">Cancel</button>
 
-    <p id="pwForcedNote" style="display:none; margin:14px 0 0; font-size:11.5px; line-height:1.55; color:#6E8296;">
-      Your account was issued a temporary password. You need to set your own before continuing.
+    <p id="pwForcedNote" style="display:none; margin:12px auto 0; max-width:310px; font-size:11.5px; line-height:1.55; color:#6E8296;">
+      Your account was issued a temporary password. Set your own to continue.
     </p>
+
+    <div class="lg-foot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Secured by Omnis Technologies
+    </div>
   </div>
 </div>
 
@@ -7346,6 +7363,8 @@ function openPasswordModal(mode) {
     document.getElementById('pwSub').textContent =
         forced ? 'This account is still on the temporary password it was issued with.'
                : (recovery ? 'Enter a new password for your account.' : 'Choose something only you know.');
+    document.getElementById('pwBadge').textContent =
+        forced ? 'Required' : (recovery ? 'Account Recovery' : 'Account Security');
 
     // A forced rotation cannot be dismissed. The other two can.
     document.getElementById('pwCancelBtn').style.display = forced ? 'none' : 'block';
@@ -7354,6 +7373,7 @@ function openPasswordModal(mode) {
     document.getElementById('pwNew').value = '';
     document.getElementById('pwConfirm').value = '';
     document.getElementById('pwStrength').textContent = '';
+    document.querySelectorAll('.pw-seg').forEach(x => x.style.background = 'rgba(255,255,255,.08)');
     const err = document.getElementById('pwError');
     err.style.display = 'none'; err.textContent = '';
 
@@ -7367,11 +7387,29 @@ function openPasswordModal(mode) {
         newEl._pwWired = true;
         newEl.addEventListener('input', () => {
             const v = newEl.value;
-            const s = document.getElementById('pwStrength');
-            if (!v) { s.textContent = ''; return; }
+            const label = document.getElementById('pwStrength');
+            const segs = document.querySelectorAll('.pw-seg');
+            const EMPTY = 'rgba(255,255,255,.08)';
+
+            if (!v) {
+                label.textContent = '';
+                segs.forEach(x => x.style.background = EMPTY);
+                return;
+            }
+
+            // Score out of 3: length, then variety, then real strength.
+            const classes = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(v)).length;
+            let score = 0;
+            if (v.length >= 10) score = 1;
+            if (v.length >= 10 && classes >= 3) score = 2;
+            if (v.length >= 14 && classes >= 3) score = 3;
+
+            const colors = ['#F5A623', '#F5A623', '#34D399'];
+            segs.forEach((x, i) => { x.style.background = i < score ? colors[score - 1] : EMPTY; });
+
             const r = _pwCheck(v);
-            s.textContent = r.msg;
-            s.style.color = r.ok ? '#34D399' : '#6E8296';
+            label.textContent = r.ok ? (score === 3 ? 'Strong password.' : 'Strong enough.') : r.msg;
+            label.style.color = r.ok ? '#34D399' : '#6E8296';
         });
         const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); submitPasswordChange(); } };
         newEl.addEventListener('keydown', onEnter);
