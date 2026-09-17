@@ -4371,26 +4371,6 @@ function firstEntryTypeEffect(){
                     </div>
 
                     <!-- WHAT RESIDENTS ARE ASKING -->
-                    <!-- Per-person activity record. Owner only, same as the panel above. -->
-            <div class="modal-overlay" id="personActivityModal" onclick="if(event.target===this)closePersonActivity()">
-                <div class="modal modal-glass aura-host aura-blue" style="width:min(760px,94vw); max-height:88vh; overflow-y:auto; position:relative; padding:28px 30px;">
-                    <div class="aura-glow"></div>
-                    <div class="aura-line"></div>
-                    <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px;">
-                        <div style="min-width:0;">
-                            <div style="font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#3FE0E8; margin-bottom:5px;">Account Record</div>
-                            <h3 id="personActivityName" style="font-size:20px; font-weight:600; margin-bottom:2px;"></h3>
-                            <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
-                                <span id="personActivityEmail" style="font-size:12.5px; color:var(--text-tertiary);"></span>
-                                <span id="personActivityRole" style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:6px; background:rgba(63,224,232,.10); border:1px solid rgba(63,224,232,.22); color:#3FE0E8;"></span>
-                            </div>
-                        </div>
-                        <button onclick="closePersonActivity()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary); width:30px; height:30px; border-radius:8px; cursor:pointer; flex:none; font-size:15px; line-height:1; font-family:inherit;">&times;</button>
-                    </div>
-                    <div id="personActivityBody" style="position:relative;"></div>
-                </div>
-            </div>
-
             <div class="glass-card">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Top Ask Eloy questions today</div>
                         <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No resident questions logged yet. Ask Eloy queries will rank here as residents use the app.</div>
@@ -5323,6 +5303,26 @@ function firstEntryTypeEffect(){
 </div><!-- /main -->
 
 <!-- CITY LEADER EDITOR MODAL -->
+        <!-- Per-person activity record. Owner only, same as the panel above. -->
+<div class="modal-overlay" id="personActivityModal" onclick="if(event.target===this)closePersonActivity()">
+    <div class="modal modal-glass aura-host aura-blue" style="width:min(760px,94vw); max-height:88vh; overflow-y:auto; position:relative; padding:28px 30px;">
+        <div class="aura-glow"></div>
+        <div class="aura-line"></div>
+        <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px;">
+            <div style="min-width:0;">
+                <div style="font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#3FE0E8; margin-bottom:5px;">Account Record</div>
+                <h3 id="personActivityName" style="font-size:20px; font-weight:600; margin-bottom:2px;"></h3>
+                <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+                    <span id="personActivityEmail" style="font-size:12.5px; color:var(--text-tertiary);"></span>
+                    <span id="personActivityRole" style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:6px; background:rgba(63,224,232,.10); border:1px solid rgba(63,224,232,.22); color:#3FE0E8;"></span>
+                </div>
+            </div>
+            <button onclick="closePersonActivity()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary); width:30px; height:30px; border-radius:8px; cursor:pointer; flex:none; font-size:15px; line-height:1; font-family:inherit;">&times;</button>
+        </div>
+        <div id="personActivityBody" style="position:relative;"></div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="leaderModal">
     <div class="modal" style="width: 680px; max-height: 88vh;">
         <div class="modal-title">
