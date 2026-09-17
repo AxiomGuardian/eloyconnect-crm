@@ -5191,6 +5191,40 @@ function firstEntryTypeEffect(){
                 <div id="syslogStats" style="position:relative; display:flex; gap:18px; margin-top:16px; flex-wrap:wrap; font-size:12px; color:var(--text-tertiary);"></div>
             </div>
 
+            <!-- ==========================================================
+                 SIGN-IN ACTIVITY
+                 Answers one question at a glance: has this person actually
+                 opened the dashboard, when, and on what. Owner account only.
+                 ========================================================== -->
+            <div class="glass-card aura-host aura-blue" style="position:relative; margin-bottom:20px;">
+                <div class="aura-glow"></div>
+                <div class="aura-line"></div>
+                <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#3FE0E8; margin-bottom:4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Who Has Been In
+                        </div>
+                        <h3 style="font-size:17px; font-weight:600;">Sign-in Activity</h3>
+                        <p style="font-size:12px; color:var(--text-tertiary); margin-top:3px;">Every account with dashboard access, when they were last in, and on what device.</p>
+                    </div>
+                    <button class="btn btn-secondary" style="padding:8px 14px; font-size:12px;" onclick="renderSignInActivity()">Refresh</button>
+                </div>
+                <div id="signInCards" style="position:relative; display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px;"></div>
+
+                <div style="position:relative; margin-top:22px;">
+                    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:10px;">Recent sessions</div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" style="min-width:600px;">
+                            <thead>
+                                <tr><th>Person</th><th>When</th><th>Device</th><th>Browser</th></tr>
+                            </thead>
+                            <tbody id="signInRecent"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="glass-card">
                 <div style="overflow-x:auto; max-height:62vh; overflow-y:auto;">
                     <table style="width:100%; border-collapse:collapse;">
@@ -8875,7 +8909,7 @@ function navigateTo(page) {
     if (page === 'notifications') loadPushHistory();
 
     // System Log: pull the latest entries whenever the owner opens it.
-    if (page === 'syslog') setTimeout(renderSystemLog, 40);
+    if (page === 'syslog') { setTimeout(renderSystemLog, 40); setTimeout(renderSignInActivity, 60); }
 
     // Archive: rebuild the current tab's list.
     if (page === 'archive') loadArchivePage();
@@ -16505,6 +16539,190 @@ function initSampleActivity(profile) {
         _sampleOn = _sampleEnabledForUser && (saved === null ? true : saved === '1');
         renderSamplePill();
     } catch (e) { console.warn('sample init failed:', e); }
+}
+
+// ============================================================
+// SIGN-IN ACTIVITY — owner only.
+// Reads the auth events already being written to system_logs and answers the
+// only question that matters when you have handed someone a login: did they
+// actually open it, when, and on what.
+// ============================================================
+
+// Turn a user agent string into something a human reads at a glance.
+function _parseAgent(ua) {
+    if (!ua) return { device: 'Unknown', browser: 'Unknown', icon: 'desktop' };
+    const s = String(ua);
+
+    let device = 'Computer', icon = 'desktop';
+    if (/iPhone/i.test(s))            { device = 'iPhone';        icon = 'phone'; }
+    else if (/iPad/i.test(s))         { device = 'iPad';          icon = 'tablet'; }
+    else if (/Android/i.test(s))      { device = /Mobile/i.test(s) ? 'Android phone' : 'Android tablet'; icon = /Mobile/i.test(s) ? 'phone' : 'tablet'; }
+    else if (/Macintosh|Mac OS X/i.test(s)) { device = 'Mac';     icon = 'desktop'; }
+    else if (/Windows/i.test(s))      { device = 'Windows PC';    icon = 'desktop'; }
+    else if (/Linux/i.test(s))        { device = 'Linux';         icon = 'desktop'; }
+
+    // Order matters. Edge and Chrome both claim to be Safari, Edge also claims Chrome.
+    let browser = 'Unknown';
+    if (/Edg\//i.test(s))             browser = 'Edge';
+    else if (/OPR\/|Opera/i.test(s))  browser = 'Opera';
+    else if (/Firefox\//i.test(s))    browser = 'Firefox';
+    else if (/Chrome\//i.test(s))     browser = 'Chrome';
+    else if (/Safari\//i.test(s))     browser = 'Safari';
+
+    return { device, browser, icon };
+}
+
+function _relTime(iso) {
+    if (!iso) return 'Never';
+    const then = new Date(iso).getTime();
+    const mins = Math.floor((Date.now() - then) / 60000);
+    if (mins < 1)      return 'Just now';
+    if (mins < 60)     return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)      return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+    const days = Math.floor(hrs / 24);
+    if (days === 1)    return 'Yesterday';
+    if (days < 30)     return days + ' days ago';
+    return new Date(iso).toLocaleDateString();
+}
+
+function _exactTime(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+    });
+}
+
+const _deviceIcon = {
+    phone:   '<path d="M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M11 18h2"/>',
+    tablet:  '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M11 18h2"/>',
+    desktop: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>'
+};
+
+async function renderSignInActivity() {
+    const cards = document.getElementById('signInCards');
+    const recent = document.getElementById('signInRecent');
+    if (!cards || !sbClient) return;
+
+    if (!isSuperAdmin) {
+        cards.innerHTML = `<p style="font-size:13px; color:var(--text-tertiary);">Sign-in activity is restricted to the owner account.</p>`;
+        recent.innerHTML = '';
+        return;
+    }
+
+    cards.innerHTML = `<p style="font-size:13px; color:var(--text-tertiary);">Loading...</p>`;
+
+    try {
+        // Everyone who can reach the dashboard, whether or not they have ever used it.
+        const { data: people } = await sbClient
+            .from('profiles')
+            .select('id, display_name, email, role, must_change_password')
+            .in('role', CRM_LOGIN_ROLES);
+
+        // Their auth trail. session_restored counts: it means the dashboard was open.
+        const { data: events } = await sbClient
+            .from('system_logs')
+            .select('event, actor_id, actor_email, created_at, user_agent')
+            .in('event', ['auth.login', 'auth.session_restored'])
+            .order('created_at', { ascending: false })
+            .limit(500);
+
+        const rows = events || [];
+        const byEmail = {};
+        rows.forEach(r => {
+            const key = (r.actor_email || '').toLowerCase();
+            if (!key) return;
+            if (!byEmail[key]) byEmail[key] = [];
+            byEmail[key].push(r);
+        });
+
+        // Sort: people who have actually been in first, most recent at the top.
+        const list = (people || []).map(p => {
+            const hist = byEmail[(p.email || '').toLowerCase()] || [];
+            return { p, hist, last: hist[0] || null };
+        }).sort((a, b) => {
+            if (!a.last && !b.last) return 0;
+            if (!a.last) return 1;
+            if (!b.last) return -1;
+            return new Date(b.last.created_at) - new Date(a.last.created_at);
+        });
+
+        if (!list.length) {
+            cards.innerHTML = `<p style="font-size:13px; color:var(--text-tertiary);">No dashboard accounts found.</p>`;
+            recent.innerHTML = '';
+            return;
+        }
+
+        cards.innerHTML = list.map(({ p, hist, last }) => {
+            const seen = !!last;
+            const agent = _parseAgent(last?.user_agent);
+            const initials = (p.display_name || p.email || '?').trim().split(/\s+/)
+                .slice(0, 2).map(w => w[0]).join('').toUpperCase();
+
+            const dotColor = !seen ? '#6E8296'
+                : (Date.now() - new Date(last.created_at).getTime() < 86400000 ? '#34D399' : '#F5A623');
+            const statusText = !seen ? 'Never signed in' : _relTime(last.created_at);
+
+            return `
+            <div style="border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:15px 16px;
+                        background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008));">
+              <div style="display:flex; align-items:center; gap:11px; margin-bottom:11px;">
+                <div style="width:36px; height:36px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center;
+                            font-size:12.5px; font-weight:700; color:#04121A;
+                            background:linear-gradient(135deg,#5FE9F0,#22B6C6);">${escapeHtml(initials)}</div>
+                <div style="min-width:0;">
+                  <div style="font-size:14px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.display_name || '(no name)')}</div>
+                  <div style="font-size:11px; color:var(--text-tertiary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(p.email || '')}</div>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:7px; margin-bottom:8px;">
+                <span style="width:7px; height:7px; border-radius:50%; flex:none; background:${dotColor}; box-shadow:0 0 8px ${dotColor};"></span>
+                <span style="font-size:12.5px; font-weight:600; color:${seen ? 'var(--text-primary)' : 'var(--text-tertiary)'};">${escapeHtml(statusText)}</span>
+              </div>
+
+              ${seen ? `
+              <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:9px;">${escapeHtml(_exactTime(last.created_at))}</div>
+              <div style="display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-secondary);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${_deviceIcon[agent.icon]}</svg>
+                ${escapeHtml(agent.device)} &middot; ${escapeHtml(agent.browser)}
+              </div>` : `
+              <div style="font-size:11.5px; color:var(--text-tertiary); line-height:1.5;">
+                This account has never opened the dashboard.
+              </div>`}
+
+              <div style="display:flex; gap:6px; margin-top:11px; flex-wrap:wrap;">
+                <span style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:6px;
+                             background:rgba(63,224,232,.10); border:1px solid rgba(63,224,232,.22); color:#3FE0E8;">${escapeHtml(p.role || '')}</span>
+                ${seen ? `<span style="font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px;
+                             background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); color:var(--text-tertiary);">${hist.length} session${hist.length === 1 ? '' : 's'}</span>` : ''}
+                ${p.must_change_password ? `<span style="font-size:10px; font-weight:600; padding:3px 8px; border-radius:6px;
+                             background:rgba(245,166,35,.10); border:1px solid rgba(245,166,35,.25); color:#F5A623;">Temp password</span>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+
+        // Recent sessions table
+        const nameFor = {};
+        (people || []).forEach(p => { nameFor[(p.email || '').toLowerCase()] = p.display_name || p.email; });
+
+        recent.innerHTML = rows.slice(0, 25).map(r => {
+            const a = _parseAgent(r.user_agent);
+            const who = nameFor[(r.actor_email || '').toLowerCase()] || r.actor_email || 'Unknown';
+            return `<tr>
+                <td style="font-weight:600;">${escapeHtml(who)}</td>
+                <td><span style="color:var(--text-primary);">${escapeHtml(_relTime(r.created_at))}</span>
+                    <div style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(_exactTime(r.created_at))}</div></td>
+                <td>${escapeHtml(a.device)}</td>
+                <td>${escapeHtml(a.browser)}</td>
+            </tr>`;
+        }).join('') || `<tr><td colspan="4" style="padding:18px 12px; font-size:13px; color:var(--text-tertiary);">No sign-ins recorded yet.</td></tr>`;
+
+    } catch (e) {
+        console.warn('sign-in activity failed:', e);
+        cards.innerHTML = `<p style="font-size:13px; color:#FF8A9B;">Could not load sign-in activity: ${escapeHtml(e.message || String(e))}</p>`;
+    }
 }
 
 // ============================================================
