@@ -3347,7 +3347,7 @@ input[type="checkbox"].bulk-check:checked::after {
 </style>
 <div id="loginOverlay" class="lg-overlay" style="display:flex;">
   <div class="lg-bg"></div>
-  <div class="lg-card">
+  <div class="lg-card" id="loginCard">
     <svg class="lg-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
       <circle cx="32" cy="32" r="21.5" fill="none" stroke="#3FE0E8" stroke-width="4.5"/>
       <circle cx="16.4" cy="16.4" r="5.5" fill="#3FE0E8"/>
@@ -3380,11 +3380,68 @@ input[type="checkbox"].bulk-check:checked::after {
 
     <p id="loginError" class="lg-err"></p>
     <p id="loginLoading" class="lg-loading">Signing in...</p>
-    <button type="button" id="forgotPwLink" onclick="sendPasswordReset()"
+    <button type="button" id="forgotPwLink" onclick="showResetScreen()"
       style="display:block; margin:10px auto 0; background:none; border:none; cursor:pointer; font-family:inherit;
              font-size:12.5px; color:#6E8296; text-decoration:underline; text-underline-offset:3px;"
       onmouseover="this.style.color='#3FE0E8'" onmouseout="this.style.color='#6E8296'">Forgot your password?</button>
-    <p id="forgotPwNote" style="display:none; margin:8px auto 0; max-width:300px; font-size:12px; line-height:1.5; color:#34D399;"></p>
+    <div class="lg-foot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Secured by Omnis Technologies
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       RESET PASSWORD CARD
+       Swaps in place of the sign-in card rather than a modal, so it
+       reads as its own page. Never shown at the same time as the
+       sign-in card.
+       ========================================================== -->
+  <div class="lg-card" id="resetCard" style="display:none;">
+    <svg class="lg-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="21.5" fill="none" stroke="#3FE0E8" stroke-width="4.5"/>
+      <circle cx="16.4" cy="16.4" r="5.5" fill="#3FE0E8"/>
+      <circle cx="16.4" cy="47.6" r="5.5" fill="#3FE0E8"/>
+      <circle cx="47.6" cy="47.6" r="5.5" fill="#3FE0E8"/>
+      <circle cx="47.6" cy="16.4" r="5.5" fill="#F5A623"/>
+      <circle cx="32" cy="32" r="6.5" fill="#3FE0E8"/>
+    </svg>
+    <div class="lg-word">Omnis <span>Connect</span></div>
+    <div class="lg-badge">Account Recovery</div>
+    <h2 class="lg-h">Reset your password</h2>
+    <p class="lg-sub">Enter the email address on your Command CRM account and we will send you a link to set a new password.</p>
+
+    <form id="resetForm" onsubmit="submitResetRequest(event)" autocomplete="on">
+      <div class="lg-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        <input id="resetEmail" class="lg-input" type="email" placeholder="Email address" required autocomplete="email">
+      </div>
+      <button type="submit" id="resetBtn" class="lg-btn">Send reset link
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    <p id="resetError" class="lg-err"></p>
+    <p id="resetLoading" class="lg-loading">Checking your account...</p>
+
+    <!-- Success state. Replaces the form entirely so there is no ambiguity
+         about whether anything was sent. -->
+    <div id="resetSent" style="display:none; margin-top:6px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+           style="width:34px;height:34px;margin:4px auto 10px;display:block;">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+      </svg>
+      <p style="margin:0 0 6px; font-size:15px; font-weight:600; color:#EAF4FB;">Check your email</p>
+      <p id="resetSentTo" style="margin:0 0 14px; font-size:13px; line-height:1.55; color:#8FA3B5;"></p>
+      <p style="margin:0; font-size:11.5px; line-height:1.5; color:#6E8296;">
+        The link expires in one hour. If it does not arrive within a few minutes, check your spam folder.
+      </p>
+    </div>
+
+    <button type="button" onclick="showSignInScreen()"
+      style="display:block; margin:14px auto 0; background:none; border:none; cursor:pointer; font-family:inherit;
+             font-size:12.5px; color:#6E8296; text-decoration:underline; text-underline-offset:3px;"
+      onmouseover="this.style.color='#3FE0E8'" onmouseout="this.style.color='#6E8296'">Back to sign in</button>
+
     <div class="lg-foot">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
       Secured by Omnis Technologies
@@ -7380,28 +7437,73 @@ async function submitPasswordChange() {
     }
 }
 
-// Sends a reset link. Deliberately does NOT reveal whether the address exists,
-// so this cannot be used to discover who has a CRM account.
-async function sendPasswordReset() {
-    const emailEl = document.getElementById('loginEmail');
-    const note = document.getElementById('forgotPwNote');
-    const errorEl = document.getElementById('loginError');
-    const email = (emailEl?.value || '').trim();
+// ----- Reset password screen -----
+// Its own card that swaps in place of the sign-in card. Carries across whatever
+// was already typed in the email field so nobody retypes their address.
+function showResetScreen() {
+    const typed = (document.getElementById('loginEmail')?.value || '').trim();
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('resetCard').style.display = 'block';
 
-    errorEl.style.display = 'none';
-    if (!email) {
-        errorEl.textContent = 'Enter your email address above first, then tap this again.';
-        errorEl.style.display = 'block';
-        emailEl?.focus();
-        return;
-    }
+    document.getElementById('resetForm').style.display = 'block';
+    document.getElementById('resetSent').style.display = 'none';
+    const err = document.getElementById('resetError');
+    err.style.display = 'none'; err.textContent = '';
+    document.getElementById('resetLoading').style.display = 'none';
+
+    const field = document.getElementById('resetEmail');
+    field.value = typed;
+    setTimeout(() => { try { field.focus(); } catch (e) {} }, 60);
+}
+
+function showSignInScreen() {
+    document.getElementById('resetCard').style.display = 'none';
+    document.getElementById('loginCard').style.display = 'block';
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'none';
+}
+
+// The profiles table is locked down, so the browser can no longer look up an
+// email. The crm-password-reset edge function does the check with the service
+// role and only sends when the address is a real CRM account.
+async function submitResetRequest(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value.trim();
+    const err = document.getElementById('resetError');
+    const loading = document.getElementById('resetLoading');
+    const btn = document.getElementById('resetBtn');
+
+    err.style.display = 'none';
+    loading.style.display = 'block';
+    btn.disabled = true; btn.style.opacity = '0.6';
+
+    const fail = (m) => { err.textContent = m; err.style.display = 'block'; };
+
     try {
-        await sbClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-    } catch (e) {
-        console.warn('reset request failed:', e);
+        const res = await fetch(SUPABASE_URL + '/functions/v1/crm-password-reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+            body: JSON.stringify({ email })
+        });
+        const out = await res.json().catch(() => ({}));
+
+        if (out.ok) {
+            document.getElementById('resetForm').style.display = 'none';
+            document.getElementById('resetSentTo').textContent = 'We sent a reset link to ' + email + '.';
+            document.getElementById('resetSent').style.display = 'block';
+            return;
+        }
+
+        if (out.reason === 'invalid_email') fail('That does not look like a valid email address.');
+        else if (out.reason === 'not_found') fail('There is no Command CRM account for that email address. Check the spelling, or contact your administrator.');
+        else fail('Something went wrong sending the link. Try again in a moment.');
+    } catch (ex) {
+        console.warn('reset request failed:', ex);
+        fail('Could not reach the server. Check your connection and try again.');
+    } finally {
+        loading.style.display = 'none';
+        btn.disabled = false; btn.style.opacity = '1';
     }
-    note.textContent = 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam.';
-    note.style.display = 'block';
 }
 
 // A reset link drops the user back here with a recovery session.
@@ -7414,7 +7516,10 @@ try {
 } catch (e) { console.warn('auth listener not attached:', e); }
 
 // Show/hide the login overlay.
-function showLoginScreen() { document.getElementById('loginOverlay').style.display = 'flex'; }
+function showLoginScreen() {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    try { showSignInScreen(); } catch (e) {}
+}
 function hideLoginScreen() { document.getElementById('loginOverlay').style.display = 'none'; }
 
 // Sign out of the CRM and return to the login screen.
