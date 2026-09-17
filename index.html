@@ -4371,7 +4371,27 @@ function firstEntryTypeEffect(){
                     </div>
 
                     <!-- WHAT RESIDENTS ARE ASKING -->
-                    <div class="glass-card">
+                    <!-- Per-person activity record. Owner only, same as the panel above. -->
+            <div class="modal-overlay" id="personActivityModal" onclick="if(event.target===this)closePersonActivity()">
+                <div class="modal modal-glass aura-host aura-blue" style="width:min(760px,94vw); max-height:88vh; overflow-y:auto; position:relative; padding:28px 30px;">
+                    <div class="aura-glow"></div>
+                    <div class="aura-line"></div>
+                    <div style="position:relative; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px;">
+                        <div style="min-width:0;">
+                            <div style="font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#3FE0E8; margin-bottom:5px;">Account Record</div>
+                            <h3 id="personActivityName" style="font-size:20px; font-weight:600; margin-bottom:2px;"></h3>
+                            <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+                                <span id="personActivityEmail" style="font-size:12.5px; color:var(--text-tertiary);"></span>
+                                <span id="personActivityRole" style="font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:6px; background:rgba(63,224,232,.10); border:1px solid rgba(63,224,232,.22); color:#3FE0E8;"></span>
+                            </div>
+                        </div>
+                        <button onclick="closePersonActivity()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--text-secondary); width:30px; height:30px; border-radius:8px; cursor:pointer; flex:none; font-size:15px; line-height:1; font-family:inherit;">&times;</button>
+                    </div>
+                    <div id="personActivityBody" style="position:relative;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card">
                         <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Top Ask Eloy questions today</div>
                         <div style="text-align:center; padding:28px 0; color:var(--text-tertiary); font-size:13px;">No resident questions logged yet. Ask Eloy queries will rank here as residents use the app.</div>
                     </div>
@@ -16610,6 +16630,149 @@ const _deviceIcon = {
     desktop: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>'
 };
 
+// ---- Per-person detail ----
+// Opens the full record for one account: every session, every page opened,
+// devices used, and anything that broke while they were in.
+const PAGE_LABELS = {
+    dashboard:'Dashboard', reports:'Reports', content:'Content', council:'Council Meetings',
+    residents:'Residents', grok:'Ask AI', enforcement:'Code Enforcement', notifications:'Notifications',
+    voices:'Citizens Voices', archive:'Archive', permits:'Permits', staff:'Staff & Settings',
+    syslog:'System Log', leaders:'City Leaders', business:'Business Directory'
+};
+
+async function openPersonActivity(email, displayName, role) {
+    const overlay = document.getElementById('personActivityModal');
+    const body = document.getElementById('personActivityBody');
+    if (!overlay || !sbClient || !isSuperAdmin) return;
+
+    document.getElementById('personActivityName').textContent = displayName || email;
+    document.getElementById('personActivityEmail').textContent = email;
+    document.getElementById('personActivityRole').textContent = role || '';
+    body.innerHTML = `<p style="font-size:13px; color:var(--text-tertiary); padding:20px 0;">Loading record...</p>`;
+    overlay.classList.add('open');
+
+    try {
+        const { data } = await sbClient
+            .from('system_logs')
+            .select('event, context, details, created_at, user_agent, level')
+            .eq('actor_email', email)
+            .order('created_at', { ascending: false })
+            .limit(400);
+
+        const rows = data || [];
+        if (!rows.length) {
+            body.innerHTML = `
+              <div style="text-align:center; padding:40px 20px;">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#6E8296" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                <p style="font-size:15px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">No record yet</p>
+                <p style="font-size:13px; color:var(--text-tertiary); line-height:1.6; max-width:340px; margin:0 auto;">
+                  This account has never opened the dashboard, so there is nothing to show.
+                  The record begins the first time they sign in.
+                </p>
+              </div>`;
+            return;
+        }
+
+        const sessions = rows.filter(r => r.event === 'auth.login' || r.event === 'auth.session_restored');
+        const firstSeen = rows[rows.length - 1].created_at;
+        const lastSeen  = rows[0].created_at;
+
+        // Unique devices, most recent first.
+        const devSeen = new Set(); const devices = [];
+        rows.forEach(r => {
+            if (!r.user_agent) return;
+            const a = _parseAgent(r.user_agent);
+            const k = a.device + '|' + a.browser;
+            if (!devSeen.has(k)) { devSeen.add(k); devices.push(a); }
+        });
+
+        // Which pages they actually opened, and how often.
+        const pageHits = {};
+        rows.filter(r => r.event === 'nav.page').forEach(r => {
+            const p = (r.details && r.details.page) || r.context;
+            if (!p) return;
+            pageHits[p] = (pageHits[p] || 0) + 1;
+        });
+        const pages = Object.entries(pageHits).sort((a,b) => b[1]-a[1]);
+        const errors = rows.filter(r => r.level === 'error');
+
+        const stat = (label, value) => `
+          <div>
+            <div style="font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:4px;">${label}</div>
+            <div style="font-size:14px; font-weight:600; color:var(--text-primary);">${value}</div>
+          </div>`;
+
+        body.innerHTML = `
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:16px; padding:16px 18px; margin-bottom:18px;
+                      border:1px solid rgba(255,255,255,0.07); border-radius:12px; background:rgba(255,255,255,0.02);">
+            ${stat('First seen', escapeHtml(_exactTime(firstSeen)))}
+            ${stat('Last active', escapeHtml(_relTime(lastSeen)))}
+            ${stat('Sessions', sessions.length)}
+            ${stat('Actions logged', rows.length)}
+          </div>
+
+          <div style="font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:9px;">Devices used</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+            ${devices.length ? devices.map(d => `
+              <span style="display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:6px 11px; border-radius:9px;
+                           background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09); color:var(--text-secondary);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${_deviceIcon[d.icon]}</svg>
+                ${escapeHtml(d.device)} &middot; ${escapeHtml(d.browser)}
+              </span>`).join('') : `<span style="font-size:12px; color:var(--text-tertiary);">No device recorded.</span>`}
+          </div>
+
+          <div style="font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:9px;">What they opened</div>
+          ${pages.length ? `
+          <div style="display:flex; flex-direction:column; gap:7px; margin-bottom:22px;">
+            ${pages.map(([p,n]) => {
+                const pct = Math.round((n / pages[0][1]) * 100);
+                return `
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <div style="width:150px; flex:none; font-size:12.5px; color:var(--text-secondary);">${escapeHtml(PAGE_LABELS[p] || p)}</div>
+                  <div style="flex:1; height:6px; border-radius:6px; background:rgba(255,255,255,.05); overflow:hidden;">
+                    <div style="height:100%; width:${pct}%; border-radius:6px; background:linear-gradient(90deg,#3FE0E8,#22B6C6);"></div>
+                  </div>
+                  <div style="width:34px; flex:none; text-align:right; font-size:11.5px; color:var(--text-tertiary);">${n}</div>
+                </div>`;
+            }).join('')}
+          </div>` : `<p style="font-size:12.5px; color:var(--text-tertiary); margin-bottom:22px;">They signed in but did not navigate anywhere.</p>`}
+
+          ${errors.length ? `
+          <div style="font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#FF8A9B; margin-bottom:9px;">Problems they hit (${errors.length})</div>
+          <div style="margin-bottom:22px; border:1px solid rgba(244,63,94,.2); border-radius:10px; overflow:hidden;">
+            ${errors.slice(0,5).map(e => `
+              <div style="padding:10px 13px; border-bottom:1px solid rgba(255,255,255,.04); font-size:12px; color:var(--text-secondary);">
+                <span style="color:var(--text-tertiary);">${escapeHtml(_relTime(e.created_at))}</span> &middot;
+                ${escapeHtml(String((e.details && (e.details.stack || e.details.message)) || e.event).slice(0,110))}
+              </div>`).join('')}
+          </div>` : ''}
+
+          <div style="font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-tertiary); margin-bottom:9px;">Session history</div>
+          <div style="overflow-x:auto;">
+            <table class="data-table" style="min-width:460px;">
+              <thead><tr><th>When</th><th>Type</th><th>Device</th></tr></thead>
+              <tbody>
+                ${sessions.length ? sessions.slice(0,30).map(sn => {
+                    const a = _parseAgent(sn.user_agent);
+                    return `<tr>
+                      <td>${escapeHtml(_exactTime(sn.created_at))}
+                          <div style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(_relTime(sn.created_at))}</div></td>
+                      <td>${sn.event === 'auth.login' ? 'Signed in' : 'Returned to open tab'}</td>
+                      <td>${escapeHtml(a.device)} &middot; ${escapeHtml(a.browser)}</td>
+                    </tr>`;
+                }).join('') : `<tr><td colspan="3" style="padding:16px 12px; font-size:12.5px; color:var(--text-tertiary);">Activity recorded, but no sign-in event was captured. This happens for sessions that predate sign-in logging.</td></tr>`}
+              </tbody>
+            </table>
+          </div>`;
+    } catch (e) {
+        body.innerHTML = `<p style="font-size:13px; color:#FF8A9B;">Could not load the record: ${escapeHtml(e.message || String(e))}</p>`;
+    }
+}
+
+function closePersonActivity() {
+    document.getElementById('personActivityModal')?.classList.remove('open');
+}
+
 async function renderSignInActivity() {
     const cards = document.getElementById('signInCards');
     const recent = document.getElementById('signInRecent');
@@ -16638,6 +16801,21 @@ async function renderSignInActivity() {
             .order('created_at', { ascending: false })
             .limit(500);
 
+        // Sign-in logging was added after some of these accounts were first used, so an
+        // auth row can be missing while real activity exists. Last active therefore comes
+        // from ANY logged action, which is the honest answer to "were they in recently".
+        const { data: anyAct } = await sbClient
+            .from('system_logs')
+            .select('actor_email, created_at, user_agent')
+            .not('actor_email', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(800);
+        const lastActive = {};
+        (anyAct || []).forEach(r => {
+            const k = (r.actor_email || '').toLowerCase();
+            if (k && !lastActive[k]) lastActive[k] = r;   // first hit is newest
+        });
+
         const rows = events || [];
         const byEmail = {};
         rows.forEach(r => {
@@ -16649,8 +16827,13 @@ async function renderSignInActivity() {
 
         // Sort: people who have actually been in first, most recent at the top.
         const list = (people || []).map(p => {
-            const hist = byEmail[(p.email || '').toLowerCase()] || [];
-            return { p, hist, last: hist[0] || null };
+            const key = (p.email || '').toLowerCase();
+            const hist = byEmail[key] || [];
+            // Prefer the newest of (auth event, any activity).
+            const act = lastActive[key] || null;
+            let last = hist[0] || null;
+            if (act && (!last || new Date(act.created_at) > new Date(last.created_at))) last = act;
+            return { p, hist, last };
         }).sort((a, b) => {
             if (!a.last && !b.last) return 0;
             if (!a.last) return 1;
@@ -16675,8 +16858,11 @@ async function renderSignInActivity() {
             const statusText = !seen ? 'Never signed in' : _relTime(last.created_at);
 
             return `
-            <div style="border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:15px 16px;
-                        background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008));">
+            <div onclick="openPersonActivity('${escapeHtml(p.email || '')}', '${escapeHtml((p.display_name || '').replace(/'/g, ''))}', '${escapeHtml(p.role || '')}')"
+                 style="border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:15px 16px; cursor:pointer; transition:border-color .15s ease, transform .15s ease;
+                        background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.008));"
+                 onmouseover="this.style.borderColor='rgba(63,224,232,0.34)'; this.style.transform='translateY(-2px)';"
+                 onmouseout="this.style.borderColor='rgba(255,255,255,0.07)'; this.style.transform='none';">
               <div style="display:flex; align-items:center; gap:11px; margin-bottom:11px;">
                 <div style="width:36px; height:36px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center;
                             font-size:12.5px; font-weight:700; color:#04121A;
