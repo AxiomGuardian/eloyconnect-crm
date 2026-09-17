@@ -6544,6 +6544,16 @@ const SUPABASE_URL = 'https://ocmqgjltgmybqboynsce.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jbXFnamx0Z215YnFib3luc2NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNDkzOTQsImV4cCI6MjA5NDcyNTM5NH0.8X6IoPTLMhxJTIbrlBPIF1-zVSr1-uk18cF0npClHCA';
 
 let sbClient;
+
+// Element.closest() only exists on Elements. Mouse and click events can fire with
+// e.target being a TEXT NODE (the text inside a cell) or the document itself, and
+// those have no closest(), which throws. This was producing a steady stream of
+// "e.target.closest is not a function" in the system log. Walk text nodes up to
+// their parent element, and return null for anything that still cannot match.
+function _safeClosest(target, selector) {
+    const el = (target && target.nodeType === 3) ? target.parentElement : target;
+    return (el && typeof el.closest === 'function') ? el.closest(selector) : null;
+}
 try {
     sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 } catch(e) {
@@ -17107,7 +17117,7 @@ async function deactivateResident(userId) {
     const topnav = document.querySelector('.topnav-tabs');
     if (topnav) {
         topnav.addEventListener('click', function(e) {
-            const navItem = e.target.closest('.nav-item[data-page]');
+            const navItem = _safeClosest(e.target, '.nav-item[data-page]');
             if (navItem && !navItem.classList.contains('role-hidden')) {
                 const page = navItem.dataset.page;
                 if (page) navigateTo(page);
@@ -17183,9 +17193,9 @@ async function deactivateResident(userId) {
     var currentParent = null;
 
     document.addEventListener('mouseenter', function(e) {
-        var parent = e.target.closest('.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
+        var parent = _safeClosest(e.target, '.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
         if (!parent) {
-            parent = e.target.closest('.data-table tbody tr');
+            parent = _safeClosest(e.target, '.data-table tbody tr');
         }
         if (!parent) return;
         var localPopup = parent.querySelector('.hover-popup');
@@ -17201,9 +17211,9 @@ async function deactivateResident(userId) {
     }, true);
 
     document.addEventListener('mouseleave', function(e) {
-        var parent = e.target.closest('.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
+        var parent = _safeClosest(e.target, '.metric-card, .staff-card, .content-row-hover, [data-has-popup]');
         if (!parent) {
-            parent = e.target.closest('.data-table tbody tr');
+            parent = _safeClosest(e.target, '.data-table tbody tr');
         }
         if (!parent) return;
 
