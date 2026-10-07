@@ -4477,8 +4477,12 @@ function firstEntryTypeEffect(){
                     </div>
                 </div>
                 <div style="margin-bottom:14px;">
-                    <label class="form-label">Meeting Link <span style="color:var(--text-tertiary); font-weight:400;">(Zoom / Google Meet / Teams — powers Meeting Intelligence)</span></label>
+                    <label class="form-label">Meeting Link <span style="color:var(--text-tertiary); font-weight:400;">(optional: a Zoom or Meet link if the meeting is virtual)</span></label>
                     <input class="form-input" id="mtgLink" placeholder="https://zoom.us/j/…">
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="form-label">Stream link <span style="color:var(--text-tertiary); font-weight:400;">(optional: the Granicus page or stream for this meeting; leave blank and Eloy Connect finds the live broadcast on its own)</span></label>
+                    <input class="form-input" id="mtgStream" placeholder="https://eloyaz.granicus.com/MediaPlayer.php?view_id=1&clip_id=…">
                 </div>
                 <div style="margin-bottom:14px;">
                     <label class="form-label">Agenda / Description</label>
@@ -4544,7 +4548,7 @@ function firstEntryTypeEffect(){
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE
                             </div>
                             <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-                                Capture the meeting live — AI transcribes and residents follow the recap in the app.
+                                Capture the meeting live. AI transcribes it, and residents follow the recap in the app.
                             </div>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
@@ -4602,6 +4606,8 @@ function firstEntryTypeEffect(){
                     <div id="mdSumTabs" style="display:none; margin-bottom:14px;">
                         <div id="mdSumTabBar" class="port-grid"></div>
                     </div>
+                    <!-- WHO SPOKE: machine voices, proposed names, one-tap confirm -->
+                    <div id="mdSpeakers" style="display:none; margin-bottom:12px;"></div>
                     <div id="mdRecap" style="display:none; white-space:pre-wrap; font-size:13.5px; line-height:1.65; color:var(--text-primary); background:rgba(246,196,69,0.07); border:1px solid rgba(246,196,69,0.25); border-radius:12px; padding:14px 16px; margin-bottom:12px;"></div>
                     <div id="mdTranscript" style="min-height:230px; max-height:46vh; overflow-y:auto; font-size:13.5px; line-height:1.75; color:var(--text-secondary); background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px;"></div>
                 </div>
@@ -6960,9 +6966,13 @@ async function crmDictate(textareaId, btn) {
     // 2) Short-lived Deepgram credential (server-side, real key never exposed)
     let token, mode;
     try {
+        // The token function now requires a signed-in CRM user, so send the
+        // user's session, never the public anon key.
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (!session?.access_token) throw new Error('not signed in');
         const r = await fetch(SUPABASE_URL + '/functions/v1/deepgram-token', {
             method: 'POST',
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' }
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }
         });
         const d = await r.json();
         token = d.access_token;
@@ -12050,7 +12060,7 @@ function openNewMeeting() {
     setMtgModalMode(false);
     mtgTagList = [];
     renderMtgTags();
-    ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput', 'mtgLink'].forEach(id => {
+    ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput', 'mtgLink', 'mtgStream'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
     });
     const fileEl = document.getElementById('mtgFile'); if (fileEl) fileEl.value = '';
@@ -12074,6 +12084,7 @@ function openEditMeeting(id) {
     document.getElementById('mtgTime').value = mtgTimeValue(m) || '';
     document.getElementById('mtgLocation').value = m.location || '';
     document.getElementById('mtgLink').value = m.meeting_url || '';
+    document.getElementById('mtgStream').value = m.stream_url || '';
     document.getElementById('mtgBody').value = m.public_summary || '';
     document.getElementById('mtgTagInput').value = '';
     mtgTagList = mtgList(m.topics_discussed);
@@ -12140,6 +12151,11 @@ async function saveMeeting(publish) {
         }
 
         const startsAt = mtgStartsAt(date, document.getElementById('mtgTime')?.value || '');
+        const streamRaw = document.getElementById('mtgStream')?.value?.trim() || '';
+        const streamUrl = (streamRaw.match(/https?:\/\/[^\s"'<>]+/) || [null])[0];
+        // Where the audio comes from: a Zoom/Meet link means the Zoom bot joins;
+        // anything else is the city's own broadcast, read by the stream worker.
+        const captureSource = (meetingUrl && /zoom\.us|meet\.google|teams\.microsoft/i.test(meetingUrl)) ? 'zoom' : 'granicus';
 
         // EDIT: update the existing row in place. No push: residents were
         // already told about this meeting, and a second ping for a typo fix is noise.
@@ -12151,6 +12167,8 @@ async function saveMeeting(publish) {
                 starts_at: startsAt,
                 location: location || null,
                 meeting_url: meetingUrl || null,
+                stream_url: streamUrl || null,
+                capture_source: captureSource,
                 public_summary: body || null,
                 topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null
             };
@@ -12176,6 +12194,8 @@ async function saveMeeting(publish) {
             starts_at: startsAt,
             location: location || null,
             meeting_url: meetingUrl || null,
+            stream_url: streamUrl || null,
+            capture_source: captureSource,
             status: 'scheduled',
             public_summary: body || null,
             topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null,
@@ -12375,19 +12395,26 @@ async function openCouncilMeeting(id) {
             return;
         }
         try {
-            const { data: rows } = await sbClient.from('meeting_transcripts')
-                .select('seq, text').eq('meeting_id', m.id)
-                .order('seq', { ascending: true }).limit(1000);
+            const { data: allRows } = await sbClient.from('meeting_transcripts')
+                .select('seq, text, speaker, start_ms, source').eq('meeting_id', m.id)
+                .order('source', { ascending: true }).order('seq', { ascending: true }).limit(4000);
+            // Prefer the clean overnight pass when it exists; otherwise the live rows.
+            const finalRows = (allRows || []).filter(r => r.source === 'final');
+            const rows = finalRows.length ? finalRows : (allRows || []).filter(r => r.source !== 'final');
             const { data: rec } = await sbClient.from('meeting_records')
-                .select('bot_status, live_recap, public_summary').eq('id', m.id).single();
+                .select('bot_status, live_recap, public_summary, worker_seen_at, final_pass_at, capture_source').eq('id', m.id).single();
+            const { data: spk } = await sbClient.from('meeting_speakers')
+                .select('speaker, name, role, proposed_name, proposed_role, proposed_why, confirmed, word_count, sample_start_ms, sample_end_ms')
+                .eq('meeting_id', m.id).order('word_count', { ascending: false });
             const bsNow = rec?.bot_status || 'idle';
             const liveNow = ['requested', 'joining', 'live'].includes(bsNow);
             const summarizing = bsNow === 'summarizing';
             const trLoader = document.getElementById('mdTrLoader');
 
-            // The poll owns the whole panel: chip, button, engagement — no reopening, ever.
-            syncBotControls(bsNow);
+            // The poll owns the whole panel: chip, button, engagement. No reopening, ever.
+            syncBotControls(bsNow, rec);
             refreshEngagement();
+            renderSpeakerPanel(m.id, spk || [], !!finalRows.length);
 
             if ((rows && rows.length) || liveNow || summarizing) {
                 trWrap.style.display = 'block';
@@ -12399,10 +12426,12 @@ async function openCouncilMeeting(id) {
 
                 if (rows && rows.length) {
                     const nearBottom = trBox.scrollHeight - trBox.scrollTop - trBox.clientHeight < 50;
-                    trBox.textContent = rows.map(r => r.text).join(' ');
+                    trBox.innerHTML = renderTranscriptHtml(rows, spk || []);
                     if (liveNow && nearBottom) trBox.scrollTop = trBox.scrollHeight;
                 } else {
-                    trBox.textContent = 'Listening… words appear here as the bot hears them.';
+                    trBox.textContent = bsNow === 'joining'
+                        ? 'Connecting to the meeting broadcast…'
+                        : 'Listening… words appear here as they are spoken.';
                 }
 
                 // Recap: live recap while live → premium tabbed report once published.
@@ -12435,7 +12464,7 @@ async function openCouncilMeeting(id) {
     };
     // ONE source of truth for chip + button — called on open and by the 5s poll.
     // The modal never needs closing/reopening: every stage change lands in place.
-    function syncBotControls(bs) {
+    function syncBotControls(bs, rec) {
         if (isSample) {
             // Demo meetings show the finished report; nothing to dispatch.
             botChip.style.display = 'inline-flex';
@@ -12446,8 +12475,20 @@ async function openCouncilMeeting(id) {
         }
         if (botStates[bs]) {
             botChip.style.display = 'inline-flex';
-            botChip.textContent = botStates[bs][0];
-            botChip.style.color = botStates[bs][1];
+            let label = botStates[bs][0], color = botStates[bs][1];
+            // Heartbeat: if the worker has not checked in for 90s while it should be running, say so.
+            if (rec && ['requested', 'joining', 'live'].includes(bs)) {
+                const seen = rec.worker_seen_at ? (Date.now() - new Date(rec.worker_seen_at).getTime()) : null;
+                if (seen === null && bs === 'requested') label = 'Requested. Waiting for the capture worker to pick it up…';
+                else if (seen !== null && seen > 90000) { label = `Worker has not checked in for ${Math.round(seen / 60000)} min. It may be offline.`; color = 'var(--warning)'; }
+            }
+            if (bs === 'ended' && rec?.final_pass_at) { label = 'Final transcript ready'; color = 'var(--success)'; botChip.style.display = 'inline-flex'; }
+            botChip.textContent = label;
+            botChip.style.color = color;
+        } else if (bs === 'ended' && rec?.final_pass_at) {
+            botChip.style.display = 'inline-flex';
+            botChip.textContent = 'Final transcript ready. Confirm the speakers below.';
+            botChip.style.color = 'var(--success)';
         } else { botChip.style.display = 'none'; }
         botBtn.style.display = '';
         if (bs === 'summarizing') {
@@ -12461,11 +12502,12 @@ async function openCouncilMeeting(id) {
                 loadTranscript();
             };
         } else {
-            botBtn.textContent = 'Send Eloy Bot';
+            const viaZoom = (m.capture_source || 'granicus') === 'zoom';
+            botBtn.textContent = viaZoom ? 'Send Eloy Bot to Zoom' : 'Start Capture';
             botBtn.onclick = async () => {
-                if (!m.meeting_url) { showToast('The bot needs a Zoom or Meet link. Tap Edit to add one, or use Capture from this computer.', 'warning'); return; }
+                if (viaZoom && !m.meeting_url) { showToast('The bot needs a Zoom or Meet link. Tap Edit to add one, or use Capture from this computer.', 'warning'); return; }
                 await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
-                showToast('Eloy Bot dispatched — watch it live below', 'success');
+                showToast(viaZoom ? 'Eloy Bot dispatched. Watch it live below.' : 'Capture requested. The worker will find the city broadcast and start listening.', 'success');
                 syncBotControls('requested');
                 loadTranscript();
             };
@@ -12476,9 +12518,113 @@ async function openCouncilMeeting(id) {
     document.getElementById('mtgDetailModal').classList.add('open');
 }
 
+// ---- Speakers: labels, names, confirmation ----
+const SPEAKER_ROLES = [
+    ['mayor', 'Mayor'], ['vice_mayor', 'Vice Mayor'], ['council', 'Councilmember'],
+    ['staff', 'City staff'], ['clerk', 'City Clerk'], ['public', 'Public comment'], ['other', 'Other']
+];
+const ELOY_ROSTER = [
+    'Andrew Sutton', 'Michelle McKinley-Tarango', 'Daniel Snyder', 'Michael Vodrazka',
+    'Josephine Galindo', 'Sara Curtis', 'Jose Garcia', 'Mackenzie Letcher', 'Mary Myers'
+];
+
+// What a voice is called right now: confirmed name > "Speaker N".
+function speakerLabel(spkRows, n) {
+    if (n === null || n === undefined) return '';
+    const s = (spkRows || []).find(x => x.speaker === n);
+    if (s && s.confirmed && s.name) return s.name;
+    return 'Speaker ' + (n + 1);
+}
+
+function fmtMs(ms) {
+    if (ms === null || ms === undefined) return '';
+    const t = Math.max(0, Math.round(ms / 1000));
+    const h = Math.floor(t / 3600), mnt = Math.floor((t % 3600) / 60), s = t % 60;
+    return (h ? h + ':' : '') + String(mnt).padStart(h ? 2 : 1, '0') + ':' + String(s).padStart(2, '0');
+}
+
+// Transcript grouped by speaker turns, with timestamps. Plain text when no speaker data.
+function renderTranscriptHtml(rows, spkRows) {
+    const hasSpeakers = rows.some(r => r.speaker !== null && r.speaker !== undefined);
+    if (!hasSpeakers) return escapeHtml(rows.map(r => r.text).join(' '));
+    const palette = ['#3FE0E8', '#F6C445', '#34D399', '#A78BFA', '#F472B6', '#60A5FA', '#FB923C', '#2DD4BF'];
+    const out = [];
+    let cur = null;
+    for (const r of rows) {
+        const sp = (r.speaker === null || r.speaker === undefined) ? -1 : r.speaker;
+        if (!cur || cur.sp !== sp) {
+            if (cur) out.push(cur);
+            cur = { sp, start: r.start_ms, text: r.text };
+        } else cur.text += ' ' + r.text;
+    }
+    if (cur) out.push(cur);
+    return out.map(t => {
+        const color = t.sp < 0 ? 'var(--text-tertiary)' : palette[t.sp % palette.length];
+        const name = t.sp < 0 ? 'Unknown' : speakerLabel(spkRows, t.sp);
+        return `<div style="margin:0 0 10px;">
+            <span style="font-weight:700; color:${color};">${escapeHtml(name)}</span>
+            <span style="font-size:11px; color:var(--text-tertiary); margin-left:6px;">${fmtMs(t.start)}</span>
+            <div style="margin-top:2px;">${escapeHtml(t.text)}</div></div>`;
+    }).join('');
+}
+
+// The confirm panel. Shows after the final pass. Proposed names are suggestions
+// until a person taps Confirm; residents only ever see confirmed names.
+function renderSpeakerPanel(meetingId, spkRows, hasFinal) {
+    const wrap = document.getElementById('mdSpeakers');
+    if (!wrap) return;
+    if (!spkRows.length) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    const key = JSON.stringify(spkRows.map(s => [s.speaker, s.name, s.confirmed, s.proposed_name]));
+    if (wrap.dataset.key === key) return;   // nothing changed, do not blow away an open dropdown
+    wrap.dataset.key = key;
+    const roleOpts = (sel) => SPEAKER_ROLES.map(([v, l]) => `<option value="${v}"${sel === v ? ' selected' : ''}>${l}</option>`).join('');
+    const nameList = `<datalist id="spkNames">${ELOY_ROSTER.map(n => `<option value="${escapeHtml(n)}">`).join('')}</datalist>`;
+    const rows = spkRows.map(s => {
+        const n = s.speaker;
+        const name = s.confirmed ? (s.name || '') : (s.proposed_name || '');
+        const role = s.confirmed ? (s.role || 'other') : (s.proposed_role && s.proposed_role !== 'unknown' ? s.proposed_role : 'other');
+        return `<div style="display:grid; grid-template-columns: 90px 1fr 150px auto; gap:8px; align-items:center; padding:8px 0; border-top:1px solid rgba(255,255,255,0.06);">
+            <div style="font-size:12px; font-weight:700; color:var(--text-secondary);">Speaker ${n + 1}<div style="font-size:10.5px; font-weight:400; color:var(--text-tertiary);">${s.word_count || 0} words</div></div>
+            <div>
+                <input class="form-input" list="spkNames" data-spk="${n}" data-field="name" value="${escapeHtml(name)}" placeholder="Name (optional)" style="padding:7px 10px; font-size:13px;">
+                ${(!s.confirmed && s.proposed_why) ? `<div style="font-size:11px; color:var(--text-tertiary); margin-top:3px;">Suggested: ${escapeHtml(s.proposed_why)}</div>` : ''}
+            </div>
+            <select class="form-input" data-spk="${n}" data-field="role" style="padding:7px 10px; font-size:13px;">${roleOpts(role)}</select>
+            <button class="btn ${s.confirmed ? 'btn-ghost' : 'btn-primary'}" style="font-size:12px; padding:7px 12px; white-space:nowrap;" onclick="confirmSpeaker('${escapeHtml(meetingId)}', ${n}, this)">${s.confirmed ? 'Confirmed ✓' : 'Confirm'}</button>
+        </div>`;
+    }).join('');
+    wrap.innerHTML = `<div class="mtg-section-label" style="margin-bottom:6px;">WHO SPOKE</div>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:8px; line-height:1.5;">
+            The AI separated the voices${hasFinal ? ' and suggested names from roll call and who was addressed' : ''}. Residents see a name only after you confirm it. Leave the name blank to show just the role.
+        </div>
+        ${nameList}
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:4px 14px;">${rows}</div>`;
+}
+
+async function confirmSpeaker(meetingId, n, btn) {
+    const wrap = document.getElementById('mdSpeakers');
+    const nameEl = wrap.querySelector(`input[data-spk="${n}"][data-field="name"]`);
+    const roleEl = wrap.querySelector(`select[data-spk="${n}"][data-field="role"]`);
+    const name = (nameEl?.value || '').trim();
+    const role = roleEl?.value || 'other';
+    try {
+        const { data, error } = await sbClient.from('meeting_speakers')
+            .update({ name: name || null, role, confirmed: true, updated_at: new Date().toISOString() })
+            .eq('meeting_id', meetingId).eq('speaker', n).select('speaker');
+        if (error) throw error;
+        if (!data || !data.length) throw new Error('Nothing saved. You may not have permission.');
+        if (btn) { btn.textContent = 'Confirmed ✓'; btn.classList.remove('btn-primary'); btn.classList.add('btn-ghost'); }
+        showToast(name ? `Speaker ${n + 1} is ${name}` : `Speaker ${n + 1} confirmed`, 'success');
+        logEvent('meeting.speaker_confirmed', { message: 'Speaker confirmed', details: { meeting_id: meetingId, speaker: n, name, role } });
+        wrap.dataset.key = '';   // force the next poll to redraw with the new label
+    } catch (e) { showToast('Could not save: ' + e.message, 'error'); }
+}
+
 function closeMtgDetail() {
     document.getElementById('mtgDetailModal').classList.remove('open');
     mdCurrentId = null;
+    const sp = document.getElementById('mdSpeakers'); if (sp) { sp.style.display = 'none'; sp.dataset.key = ''; sp.innerHTML = ''; }
     if (mdTrTimer) { clearInterval(mdTrTimer); mdTrTimer = null; }
     if (mdSumTimer) { clearInterval(mdSumTimer); mdSumTimer = null; }
 }
@@ -12529,6 +12675,14 @@ function renderSummaryTabs(text) {
     }).join('');
 
     grid.innerHTML = '';
+    // Honesty label, once, under the cards.
+    let note = document.getElementById('mdSumNote');
+    if (!note) {
+        note = document.createElement('div'); note.id = 'mdSumNote';
+        note.style.cssText = 'font-size:11px; color:var(--text-tertiary); margin-top:10px;';
+        note.textContent = 'AI generated, unofficial. The approved minutes are the official record.';
+        grid.parentNode.appendChild(note);
+    }
     cards.forEach(([eyebrow, title, body], i) => {
         const card = document.createElement('div');
         card.className = 'port-card';
