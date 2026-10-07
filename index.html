@@ -4452,8 +4452,8 @@ function firstEntryTypeEffect(){
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; position:relative;">
                     <div>
                         <div class="mtg-section-label">CITY OF ELOY</div>
-                        <h3 style="font-size:20px; font-weight:700;">Schedule Council Meeting</h3>
-                        <p style="font-size:12px; color:var(--text-tertiary); margin-top:4px;">What residents will see in Eloy Connect</p>
+                        <h3 id="mtgModalTitle" style="font-size:20px; font-weight:700;">Schedule Council Meeting</h3>
+                        <p id="mtgModalSub" style="font-size:12px; color:var(--text-tertiary); margin-top:4px;">What residents will see in Eloy Connect</p>
                     </div>
                     <button class="btn btn-ghost" style="font-size:16px; padding:6px 12px;" onclick="closeMtgModal()">✕</button>
                 </div>
@@ -4462,10 +4462,14 @@ function firstEntryTypeEffect(){
                     <label class="form-label">Meeting Title</label>
                     <input class="form-input" id="mtgTitle" placeholder="e.g. Regular Council Meeting">
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div style="display:grid; grid-template-columns:1fr 0.8fr 1.4fr; gap:12px; margin-bottom:14px;">
                     <div>
                         <label class="form-label">Date</label>
                         <input class="form-input" type="date" id="mtgDate">
+                    </div>
+                    <div>
+                        <label class="form-label">Start time</label>
+                        <input class="form-input" type="time" id="mtgTime" value="18:00">
                     </div>
                     <div>
                         <label class="form-label">Location <span style="color:var(--text-tertiary); font-weight:400;">(optional)</span></label>
@@ -4504,17 +4508,17 @@ function firstEntryTypeEffect(){
 
                 <div style="padding:14px 16px; border:1px dashed rgba(246,196,69,0.35); border-radius:12px; margin-bottom:20px; position:relative;">
                     <div class="mtg-section-label" style="display:flex; align-items:center; gap:6px;">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE — COMING SOON
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1.5px;"><circle cx="12" cy="12" r="2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg> MEETING INTELLIGENCE
                     </div>
                     <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-                        Connect Zoom, Google Meet, or Teams → Eloy Connect transcribes the meeting live,
-                        and AI tells residents <em>what each decision means for them</em> — all fed back into this CRM.
+                        Once the meeting is saved, open it to capture it live. Eloy Connect transcribes what is said,
+                        and AI tells residents <em>what each decision means for them</em>, right in the app.
                     </div>
                 </div>
 
                 <div style="display:flex; justify-content:flex-end; gap:10px; position:relative;">
-                    <button class="btn btn-secondary" onclick="saveMeeting(false)">Save as Draft</button>
-                    <button class="btn btn-primary" onclick="saveMeeting(true)">Publish Meeting</button>
+                    <button class="btn btn-secondary" id="mtgDraftBtn" onclick="saveMeeting(false)">Save as Draft</button>
+                    <button class="btn btn-primary" id="mtgPublishBtn" onclick="saveMeeting(true)">Publish Meeting</button>
                 </div>
             </div>
         </div>
@@ -4546,6 +4550,7 @@ function firstEntryTypeEffect(){
                         <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
                             <span id="mdBotChip" class="mtg-chip" style="display:none;"></span>
                             <div style="display:flex; gap:8px;">
+                                <button class="btn btn-secondary" id="mdCaptureBtn" style="white-space:nowrap;" title="Backup: capture the room microphone and the meeting tab from this computer">Capture from this computer</button>
                                 <button class="btn btn-primary" id="mdBotBtn" style="white-space:nowrap;">Send Eloy Bot</button>
                             </div>
                         </div>
@@ -4602,6 +4607,7 @@ function firstEntryTypeEffect(){
                 </div>
 
                 <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; position:relative;">
+                    <button class="btn btn-secondary" id="mdEditBtn" style="margin-right:auto;">Edit</button>
                     <button class="btn btn-ghost" id="mdArchiveBtn" style="color:var(--text-secondary);">Archive</button>
                     <button class="btn btn-ghost" id="mdDeleteBtn" style="color:var(--warning);">Delete</button>
                     <button class="btn btn-primary" id="mdPublishBtn">Publish</button>
@@ -6268,7 +6274,8 @@ function openContentDetail(kind, id) {
         parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">Date:</strong> ${escapeHtml(item.meeting_date || '—')}${item.location ? ' · ' + escapeHtml(item.location) : ''}</div>`);
         if (item.public_summary) parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">Summary</strong><br>${escapeHtml(item.public_summary)}</div>`);
         const tryList = (raw, label) => {
-            try { const arr = JSON.parse(raw || '[]'); if (arr.length) parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">${label}</strong><br>${arr.map(escapeHtml).join('<br>')}</div>`); } catch(e) {}
+            const arr = mtgList(raw);
+            if (arr.length) parts.push(`<div style="margin-bottom:10px;"><strong style="color:var(--text-primary);">${label}</strong><br>${arr.map(escapeHtml).join('<br>')}</div>`);
         };
         tryList(item.key_decisions, 'Key decisions');
         tryList(item.topics_discussed, 'Topics discussed');
@@ -6284,7 +6291,19 @@ function openContentDetail(kind, id) {
         // Live counts from the app's "I attended / watched / read" toggles.
         (async () => {
             const bodyEl = document.getElementById('ceEngagementBody');
-            if (!bodyEl || !sbClient) return;
+            if (!bodyEl) return;
+            // Sample meetings have no database row, so never query with their fake id.
+            if (isSampleId(item.id)) {
+                const e = sampleEngagement(item);
+                bodyEl.innerHTML = e
+                    ? `<span style="color:var(--text-primary); font-weight:600;">${e.n}</span> residents engaged · ` +
+                      `<span style="color:var(--success);">${e.a}</span> attended in person · ` +
+                      `<span style="color:var(--accent);">${e.w}</span> watched online · ` +
+                      `<span style="color:var(--warm-accent);">${e.s}</span> read the summary`
+                    : 'No resident engagement yet. This meeting has not happened.';
+                return;
+            }
+            if (!sbClient) return;
             try {
                 const { data: rows, error } = await sbClient
                     .from('meeting_attendance').select('attended_in_person, watched_livestream, read_summary')
@@ -11872,6 +11891,45 @@ async function archiveRestoreMsg(id) {
 // ============================================
 // COUNCIL MEETINGS PAGE — the council command center
 // ============================================
+
+// Sample meetings carry fake ids like "sample-mtg-2". The database columns are
+// uuids, so any query or write with one of these ids fails with a 400.
+function isSampleId(id) { return String(id || '').startsWith('sample-'); }
+const SAMPLE_ACTION_MSG = 'This is sample data for the demo. Turn Sample Activity off to manage real records.';
+
+// Topics and decisions are a JSON string on real rows and a plain array on
+// sample rows. Accept both, never throw.
+function mtgList(raw) {
+    if (Array.isArray(raw)) return raw.filter(Boolean);
+    if (!raw) return [];
+    try { const v = JSON.parse(raw); return Array.isArray(v) ? v.filter(Boolean) : []; } catch (e) { return []; }
+}
+
+// Stable, believable engagement for completed sample meetings (demo mode only).
+function sampleEngagement(m) {
+    if (!m || m.status !== 'completed') return null;
+    const k = parseInt(String(m.id).replace(/\D/g, ''), 10) || 0;
+    const n = 48 + ((k * 37) % 71);
+    return { n, a: Math.round(n * 0.28), w: Math.round(n * 0.46), s: Math.round(n * 0.61) };
+}
+
+// Arizona does not observe daylight saving, so Eloy is always UTC-7.
+function mtgStartsAt(date, time) {
+    return (date && time) ? `${date}T${time}:00-07:00` : null;
+}
+function mtgTimeLabel(m) {
+    if (!m || !m.starts_at) return '';
+    const d = new Date(m.starts_at);
+    if (isNaN(d)) return '';
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Phoenix' });
+}
+function mtgTimeValue(m) {
+    if (!m || !m.starts_at) return '';
+    const d = new Date(m.starts_at);
+    if (isNaN(d)) return '';
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Phoenix' });
+}
+
 async function loadCouncilPage() {
     const tbody = document.getElementById('councilTableBody');
     if (!tbody) return;
@@ -11920,8 +11978,12 @@ async function loadCouncilPage() {
     const sorted = [...meetings].sort((a, b) => (b.meeting_date || '').localeCompare(a.meeting_date || ''));
     tbody.innerHTML = sorted.map(m => {
         const isPast = (m.meeting_date || '') < today;
-        const st = m.is_public === false ? { label: 'Draft', cls: 'status-draft' } : (mStatus[m.status] || mStatus.scheduled);
-        const eng = byMeeting[m.id];
+        let st = m.is_public === false ? { label: 'Draft', cls: 'status-draft' } : (mStatus[m.status] || mStatus.scheduled);
+        // A date that has passed but was never captured is not "Scheduled" anymore.
+        if (m.is_public !== false && isPast && (m.status || 'scheduled') === 'scheduled') st = { label: 'Held, no summary', cls: 'status-draft' };
+        const eng = isSampleId(m.id)
+            ? (() => { const e = sampleEngagement(m); return e ? { n: e.n, inPerson: e.a, online: e.w, read: e.s } : null; })()
+            : byMeeting[m.id];
         const engCell = eng
             ? `<span style="color:var(--success); font-weight:600;">${eng.n}</span> <span style="font-size:11px; color:var(--text-tertiary);">(${eng.inPerson} live · ${eng.online} online · ${eng.read} read)</span>`
             : '<span style="color:var(--text-tertiary);">—</span>';
@@ -11929,7 +11991,7 @@ async function loadCouncilPage() {
         return `<tr onclick="openCouncilMeeting('${esc(m.id)}')" style="cursor:pointer; ${isPast ? 'opacity:0.65;' : ''}">
             <td style="font-weight:500;">${esc(m.title || 'Untitled meeting')}${m.location ? `<div style="font-size:11px; color:var(--text-tertiary); font-weight:400; margin-top:2px;">${esc(m.location)}</div>` : ''}</td>
             <td><span class="tag" style="background: rgba(246,196,69,0.15); color: var(--warm-accent);">${esc(typeLabel)}</span></td>
-            <td style="color:var(--text-tertiary);">${m.meeting_date || '—'}</td>
+            <td style="color:var(--text-tertiary);">${m.meeting_date || '—'}${mtgTimeLabel(m) ? `<div style="font-size:11px; margin-top:2px;">${esc(mtgTimeLabel(m))}</div>` : ''}</td>
             <td><span class="status ${st.cls}"><span class="status-dot"></span>${st.label}</span></td>
             <td><span class="status ${m.is_public === false ? 'status-draft' : 'status-resolved'}"><span class="status-dot"></span>${m.is_public === false ? 'Hidden' : 'Live in app'}</span></td>
             <td>${engCell}</td>
@@ -11948,6 +12010,7 @@ async function loadCouncilPage() {
 let mtgTagList = [];
 
 async function councilArchive(id) {
+    if (isSampleId(id)) { showToast(SAMPLE_ACTION_MSG, 'info'); return; }
     try {
         await sbClient.from('meeting_records').update({ archived: true, is_public: false }).eq('id', id);
         showToast('Meeting archived — see the Archive tab', 'success');
@@ -11956,6 +12019,7 @@ async function councilArchive(id) {
 }
 
 async function councilDelete(id) {
+    if (isSampleId(id)) { showToast(SAMPLE_ACTION_MSG, 'info'); return; }
     const ok = await showConfirmDialog({
         title: 'Delete this meeting?',
         message: 'Removed from the app and the record permanently. Archiving keeps it.<br><span style="color: var(--text-tertiary); font-size: 13px;">This cannot be undone.</span>',
@@ -11969,7 +12033,21 @@ async function councilDelete(id) {
     } catch (e) { showToast('Delete failed: ' + e.message, 'error'); }
 }
 
+// The schedule modal doubles as the edit modal. null = creating a new meeting.
+let mtgEditingId = null;
+
+function setMtgModalMode(editing) {
+    document.getElementById('mtgModalTitle').textContent = editing ? 'Edit Council Meeting' : 'Schedule Council Meeting';
+    document.getElementById('mtgModalSub').textContent = editing
+        ? 'Changes show up in Eloy Connect right away'
+        : 'What residents will see in Eloy Connect';
+    document.getElementById('mtgDraftBtn').style.display = editing ? 'none' : '';
+    document.getElementById('mtgPublishBtn').textContent = editing ? 'Save Changes' : 'Publish Meeting';
+}
+
 function openNewMeeting() {
+    mtgEditingId = null;
+    setMtgModalMode(false);
     mtgTagList = [];
     renderMtgTags();
     ['mtgTitle', 'mtgLocation', 'mtgBody', 'mtgTagInput', 'mtgLink'].forEach(id => {
@@ -11980,6 +12058,31 @@ function openNewMeeting() {
     if (fileLabel) fileLabel.textContent = 'Click to attach a PDF or file for context';
     const d = document.getElementById('mtgDate');
     if (d) d.value = new Date().toISOString().split('T')[0];
+    const t = document.getElementById('mtgTime');
+    if (t) t.value = '18:00';   // Eloy council meets at 6:00 PM
+    document.getElementById('mtgModal').classList.add('open');
+}
+
+function openEditMeeting(id) {
+    const m = (liveData.meetings || []).find(x => String(x.id) === String(id));
+    if (!m) { showToast('Meeting not found. Try refreshing.', 'warning'); return; }
+    if (isSampleId(m.id)) { showToast(SAMPLE_ACTION_MSG, 'info'); return; }
+    mtgEditingId = m.id;
+    setMtgModalMode(true);
+    document.getElementById('mtgTitle').value = m.title || '';
+    document.getElementById('mtgDate').value = m.meeting_date || '';
+    document.getElementById('mtgTime').value = mtgTimeValue(m) || '';
+    document.getElementById('mtgLocation').value = m.location || '';
+    document.getElementById('mtgLink').value = m.meeting_url || '';
+    document.getElementById('mtgBody').value = m.public_summary || '';
+    document.getElementById('mtgTagInput').value = '';
+    mtgTagList = mtgList(m.topics_discussed);
+    renderMtgTags();
+    const fileEl = document.getElementById('mtgFile'); if (fileEl) fileEl.value = '';
+    const fileLabel = document.getElementById('mtgFileLabel');
+    if (fileLabel) fileLabel.textContent = m.agenda_packet_url
+        ? 'A file is attached. Click to replace it.'
+        : 'Click to attach a PDF or file for context';
     document.getElementById('mtgModal').classList.add('open');
 }
 
@@ -12036,10 +12139,41 @@ async function saveMeeting(publish) {
             }
         }
 
+        const startsAt = mtgStartsAt(date, document.getElementById('mtgTime')?.value || '');
+
+        // EDIT: update the existing row in place. No push: residents were
+        // already told about this meeting, and a second ping for a typo fix is noise.
+        if (mtgEditingId) {
+            const editId = mtgEditingId;
+            const changes = {
+                title,
+                meeting_date: date,
+                starts_at: startsAt,
+                location: location || null,
+                meeting_url: meetingUrl || null,
+                public_summary: body || null,
+                topics_discussed: mtgTagList.length ? JSON.stringify(mtgTagList) : null
+            };
+            if (agendaPacketUrl) changes.agenda_packet_url = agendaPacketUrl;
+            const { data: updated, error: upErr } = await sbClient.from('meeting_records')
+                .update(changes).eq('id', editId).select('id');
+            if (upErr) throw upErr;
+            if (!updated || !updated.length) throw new Error('No changes were saved. You may not have permission to edit this meeting.');
+            mtgEditingId = null;
+            closeMtgModal();
+            showToast('Meeting updated', 'success');
+            logEvent('meeting.edit', { message: 'Meeting edited', details: { id: editId } });
+            await fetchAllData();
+            loadCouncilPage();
+            openCouncilMeeting(editId);
+            return;
+        }
+
         const { data: created, error } = await sbClient.from('meeting_records').insert({
             meeting_type: 'council',
             title,
             meeting_date: date,
+            starts_at: startsAt,
             location: location || null,
             meeting_url: meetingUrl || null,
             status: 'scheduled',
@@ -12111,8 +12245,10 @@ async function openCouncilMeeting(id) {
     mdCurrentId = id;
     document.getElementById('mdTitle').textContent = m.title || 'Council meeting';
 
+    const isSample = isSampleId(m.id);
     const chips = [];
-    if (m.meeting_date) chips.push(`<span class="mtg-chip">${svgIco('calendar')} ${escapeHtml(m.meeting_date)}</span>`);
+    if (m.meeting_date) chips.push(`<span class="mtg-chip">${svgIco('calendar')} ${escapeHtml(m.meeting_date)}${mtgTimeLabel(m) ? ' · ' + escapeHtml(mtgTimeLabel(m)) : ''}</span>`);
+    if (isSample) chips.push(`<span class="mtg-chip" style="color:var(--warm-accent);">Sample meeting</span>`);
     if (m.location) chips.push(`<span class="mtg-chip">${svgIco('pin')} ${escapeHtml(m.location)}</span>`);
     chips.push(m.is_public === false
         ? `<span class="mtg-chip">${svgIco('eyeOff')} Hidden from app</span>`
@@ -12125,17 +12261,15 @@ async function openCouncilMeeting(id) {
             <div style="font-size:15px; line-height:1.65; color:var(--text-secondary); border-left:3px solid rgba(246,196,69,0.5); padding-left:14px; margin-bottom:16px;">${escapeHtml(m.public_summary)}</div>`);
     }
     const tryTags = (raw, label) => {
-        try {
-            const arr = JSON.parse(raw || '[]');
-            if (arr.length) parts.push(`<div class="mtg-section-label">${label}</div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">${arr.map(t => `<span class="mtg-tag" style="cursor:default;">${escapeHtml(t)}</span>`).join('')}</div>`);
-        } catch (e) {}
+        const arr = mtgList(raw);
+        if (arr.length) parts.push(`<div class="mtg-section-label">${label}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">${arr.map(t => `<span class="mtg-tag" style="cursor:default;">${escapeHtml(t)}</span>`).join('')}</div>`);
     };
     tryTags(m.topics_discussed, 'TOPICS ON THE TABLE');
     tryTags(m.key_decisions, 'KEY DECISIONS');
     if (m.video_url) parts.push(`<a href="${escapeHtml(m.video_url)}" target="_blank" style="color:var(--accent); font-size:14px;">${svgIco('play', '#3FE0E8')} Watch the meeting video</a>`);
     if (m.agenda_packet_url) parts.push(`<a href="${escapeHtml(m.agenda_packet_url)}" target="_blank" style="color:var(--accent); font-size:14px; display:inline-block; margin-top:8px;">${svgIco('columns', '#3FE0E8')} Open agenda packet / context file</a>`);
-    if (!parts.length) parts.push('<div style="color:var(--text-tertiary); font-size:13px;">No agenda published yet — edit coming with the Meeting Intelligence build.</div>');
+    if (!parts.length) parts.push(`<div style="color:var(--text-tertiary); font-size:13px;">No agenda yet.${isSample ? '' : ' Use Edit to add one.'}</div>`);
     document.getElementById('mdBody').innerHTML = parts.join('');
 
     // Engagement — live counts, refreshed by the same poll as the transcript
@@ -12143,6 +12277,17 @@ async function openCouncilMeeting(id) {
     eng.innerHTML = `<div class="mtg-section-label">RESIDENT ENGAGEMENT</div>
         <div id="mdEngBody" style="font-size:13px; color:var(--text-secondary); padding:12px 14px; background:rgba(246,196,69,0.05); border:1px solid rgba(246,196,69,0.22); border-radius:10px;">Loading…</div>`;
     async function refreshEngagement() {
+        if (isSample) {
+            const el = document.getElementById('mdEngBody');
+            const e = sampleEngagement(m);
+            if (el) el.innerHTML = e
+                ? `<span style="font-size:21px; font-weight:700; color:var(--text-primary);">${e.n}</span> residents engaged
+                   &nbsp;·&nbsp; <span style="color:var(--success); font-weight:600;">${e.a}</span> in person ·
+                   <span style="color:var(--accent); font-weight:600;">${e.w}</span> online ·
+                   <span style="color:var(--warm-accent); font-weight:600;">${e.s}</span> read the summary`
+                : 'No resident engagement yet. This meeting has not happened.';
+            return;
+        }
         try {
             const { data: rows, error } = await sbClient.from('meeting_attendance')
                 .select('attended_in_person, watched_livestream, read_summary').eq('meeting_id', m.id);
@@ -12165,6 +12310,13 @@ async function openCouncilMeeting(id) {
     refreshEngagement();
 
     // Action buttons
+    // Sample meetings are read-only: no edit, publish, archive, delete, or capture.
+    ['mdEditBtn', 'mdPublishBtn', 'mdArchiveBtn', 'mdDeleteBtn', 'mdCaptureBtn'].forEach(bid => {
+        const b = document.getElementById(bid); if (b) b.style.display = isSample ? 'none' : '';
+    });
+    document.getElementById('mdEditBtn').onclick = () => { closeMtgDetail(); openEditMeeting(m.id); };
+    document.getElementById('mdCaptureBtn').onclick = () => { closeMtgDetail(); openMicConsole(m.id); };
+
     const pubBtn = document.getElementById('mdPublishBtn');
     pubBtn.textContent = m.is_public === false ? 'Publish' : 'Unpublish';
     pubBtn.onclick = async () => {
@@ -12284,6 +12436,14 @@ async function openCouncilMeeting(id) {
     // ONE source of truth for chip + button — called on open and by the 5s poll.
     // The modal never needs closing/reopening: every stage change lands in place.
     function syncBotControls(bs) {
+        if (isSample) {
+            // Demo meetings show the finished report; nothing to dispatch.
+            botChip.style.display = 'inline-flex';
+            botChip.textContent = 'Demo meeting: this is what a finished capture looks like';
+            botChip.style.color = 'var(--warm-accent)';
+            botBtn.style.display = 'none';
+            return;
+        }
         if (botStates[bs]) {
             botChip.style.display = 'inline-flex';
             botChip.textContent = botStates[bs][0];
@@ -12303,7 +12463,7 @@ async function openCouncilMeeting(id) {
         } else {
             botBtn.textContent = 'Send Eloy Bot';
             botBtn.onclick = async () => {
-                if (!m.meeting_url) { showToast('Add a meeting link first (edit the meeting)', 'warning'); return; }
+                if (!m.meeting_url) { showToast('The bot needs a Zoom or Meet link. Tap Edit to add one, or use Capture from this computer.', 'warning'); return; }
                 await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
                 showToast('Eloy Bot dispatched — watch it live below', 'success');
                 syncBotControls('requested');
@@ -12392,11 +12552,24 @@ let mic = { meetingId: null, stream: null, recorder: null, seq: 0, startedAt: nu
 function openMicConsole(meetingId) {
     const m = (liveData.meetings || []).find(x => String(x.id) === String(meetingId));
     if (!m) { showToast('Meeting not found', 'warning'); return; }
+    if (mic.running && String(mic.meetingId) !== String(meetingId)) {
+        showToast('Another meeting is being captured. End it first.', 'warning');
+        document.getElementById('micModal').classList.add('open');
+        return;
+    }
+    if (mic.running) { document.getElementById('micModal').classList.add('open'); return; }
     mic.meetingId = meetingId;
     document.getElementById('micTitle').textContent = m.title || 'Council meeting';
     const link = document.getElementById('micJoinLink');
     if (m.meeting_url) { link.style.display = 'inline-flex'; link.href = m.meeting_url; }
     else link.style.display = 'none';
+    // Fresh console per meeting: never let one meeting's recap seed the next.
+    const recap = document.getElementById('micRecap');
+    recap.dataset.recap = '';
+    recap.innerHTML = '<span style="color:var(--text-tertiary);">The AI recap appears here about two minutes in, and on every resident\'s phone.</span>';
+    document.getElementById('micTranscript').innerHTML = '<span style="color:var(--text-tertiary);">Waiting for audio…</span>';
+    document.getElementById('micMeta').textContent = '0 segments · 0 min';
+    if (!mic.running) micSetStatus('Idle', false);
     document.getElementById('micModal').classList.add('open');
 }
 
@@ -12483,7 +12656,7 @@ async function micStart(mode = 'both') {
             pane.innerHTML = '<div style="color:var(--warm-accent);">No speech detected yet. ' +
                 (mic.mode === 'mic'
                     ? 'Speak near this computer — the microphone is listening.'
-                    : 'Tab audio only carries OTHER participants. Testing alone? End this and use "Use Microphone" instead.') + '</div>';
+                    : 'Tab audio only carries OTHER participants. Testing alone? End this and use "Mic Only" instead.') + '</div>';
         }
     }, 25000);
 
@@ -12556,8 +12729,32 @@ async function micRecap(finalPass = false) {
     try {
         const prev = document.getElementById('micRecap').dataset.recap || '';
         const grounding = 'STRICT RULES: Only report things ACTUALLY SAID in the transcript. Never invent agenda items, decisions, votes, or context that is not in the words. If the transcript is unclear, brief, or off-topic, say plainly that the discussion so far is brief or unclear — do not dress it up as council business.';
+        // Final pass uses the SAME four-section format as the meeting bot, so the
+        // three portrait cards in the meeting modal split it correctly.
         const prompt = finalPass
-            ? `A public meeting in Eloy, Arizona just ended. ${grounding}\n\nRunning recap so far:\n${prev}\n\nFinal transcript portion:\n${fresh}\n\nWrite the final summary for residents in 2-3 plain-language paragraphs: strictly what was said and, only if explicitly stated, what was decided. No jargon, no filler.`
+            ? `A public city meeting in Eloy, Arizona just ended. You write the official resident-facing summary shown in the Eloy Connect app. ${grounding}
+
+Running recap:
+${prev || '(none)'}
+
+Final transcript portion:
+${fresh || '(none)'}
+
+Write the summary now, in EXACTLY this structure (plain text, no markdown symbols except the bullets shown):
+
+One short paragraph: what the meeting covered, plain everyday language an 8th grader understands.
+
+WHAT THIS MEANS FOR YOU
+One short paragraph: what it means for residents day-to-day, ONLY consequences that follow directly from what was actually said. If nothing concrete was decided, say the discussion is ongoing.
+
+TOPICS DISCUSSED
+• Keyword: one line on what was said about it
+• (3 to 6 bullets, only topics actually spoken about)
+
+DECISIONS
+• One line per explicit decision or vote stated in the meeting. If none, write exactly: • No formal decisions were made in this session.
+
+Under 220 words total. No preamble, no closing line.`
             : `You are recapping a LIVE public meeting in Eloy, Arizona for residents on their phones. ${grounding}\n\nPrior recap:\n${prev || '(meeting just started)'}\n\nNew transcript segment:\n${fresh}\n\nUpdate the recap in 1-2 short plain-language paragraphs: strictly what is being said right now. Under 120 words. No preamble.`;
         const { data, error } = await sbClient.functions.invoke('grok-chat', {
             body: { messages: [{ role: 'user', content: prompt }] }
@@ -13228,6 +13425,7 @@ async function saveDraft() {
 // Toggle publish/unpublish for content
 async function togglePublish(table, id, currentlyPublished) {
     if (!sbClient) return;
+    if (isSampleId(id)) { showToast(SAMPLE_ACTION_MSG, 'info'); return; }
 
     const field = table === 'alerts' ? 'active' : (table === 'meeting_records' ? 'is_public' : 'published');
     const newValue = !currentlyPublished;
