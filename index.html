@@ -4640,8 +4640,9 @@ function firstEntryTypeEffect(){
                     </div>
                 </div>
                 <p style="font-size:12px; color:var(--text-tertiary); margin-bottom:16px; position:relative;">
-                    <strong>Capture Meeting</strong> hears everyone: this room through the microphone AND the Zoom/Meet tab
-                    (pick the meeting tab, <strong>check "Also share tab audio"</strong>). Mic Only / Tab Only are for special cases.
+                    <strong>Capture Meeting</strong> hears everyone: this room through the microphone AND the broadcast tab
+                    (pick the Granicus or Zoom tab, <strong>check "Also share tab audio"</strong>). Voices are separated live.
+                    The audio is saved as it goes, and the clean speaker-labeled transcript is ready the same night.
                 </p>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; position:relative;">
@@ -12503,11 +12504,14 @@ async function openCouncilMeeting(id) {
             };
         } else {
             const viaZoom = (m.capture_source || 'granicus') === 'zoom';
-            botBtn.textContent = viaZoom ? 'Send Eloy Bot to Zoom' : 'Start Capture';
+            // In-person meetings are captured from the computer running the
+            // broadcast (the clerk's). Zoom meetings dispatch the Zoom bot.
+            botBtn.textContent = viaZoom ? 'Send Eloy Bot to Zoom' : 'Capture this meeting';
             botBtn.onclick = async () => {
-                if (viaZoom && !m.meeting_url) { showToast('The bot needs a Zoom or Meet link. Tap Edit to add one, or use Capture from this computer.', 'warning'); return; }
+                if (!viaZoom) { closeMtgDetail(); openMicConsole(m.id); return; }
+                if (!m.meeting_url) { showToast('The bot needs a Zoom or Meet link. Tap Edit to add one, or use Capture from this computer.', 'warning'); return; }
                 await sbClient.from('meeting_records').update({ bot_status: 'requested' }).eq('id', m.id);
-                showToast(viaZoom ? 'Eloy Bot dispatched. Watch it live below.' : 'Capture requested. The worker will find the city broadcast and start listening.', 'success');
+                showToast('Eloy Bot dispatched. Watch it live below.', 'success');
                 syncBotControls('requested');
                 loadTranscript();
             };
@@ -12795,7 +12799,9 @@ async function micStart(mode = 'both') {
     } catch (e) { showToast('Capture cancelled', 'info'); return; }
 
     mic.running = true; mic.seq = 0; mic.startedAt = Date.now(); mic.transcriptBuf = [];
-    mic.gotText = false;
+    mic.gotText = false; mic.headerBlob = null; mic.partsSaved = 0; mic.ws = null;
+    // Mark this as a room capture so the right worker path handles the record.
+    await sbClient.from('meeting_records').update({ capture_source: 'room', bot_status: 'live' }).eq('id', mic.meetingId);
     document.getElementById('micTranscript').innerHTML = '';
     document.getElementById('micStartBtn').style.display = 'none';
     document.getElementById('micMicBtn').style.display = 'none';
@@ -12819,50 +12825,29 @@ async function micStart(mode = 'both') {
         live_status: 'live', status: 'in_progress', live_updated_at: new Date().toISOString()
     }).eq('id', mic.meetingId);
 
-    // Audio-only recorder, 6-second chunks.
+    // ONE continuous recorder. Its stream feeds two places at once:
+    //   1) Deepgram LIVE (speaker separated) for the transcript residents follow
+    //   2) your own storage, in 5 minute parts, so the overnight worker can
+    //      produce the clean speaker-labeled record without touching Granicus.
     const audioStream = new MediaStream(mic.stream.getAudioTracks());
     mic.recorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
-    mic.recorder.ondataavailable = async (ev) => {
-        if (!ev.data || ev.data.size < 2000) return;   // skip silence-sized blobs
-        const mySeq = ++mic.seq;
-        try {
-            const { data: { session } } = await sbClient.auth.getSession();
-            const resp = await fetch('https://ocmqgjltgmybqboynsce.supabase.co/functions/v1/deepgram-transcribe', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'audio/webm',
-                    'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_KEY)
-                },
-                body: ev.data
-            });
-            const r = await resp.json().catch(() => ({}));
-            const text = (r.transcript || '').trim();
-            if (!text) return;
-            mic.transcriptBuf.push(text);
-            mic.gotText = true;
-            // Show + persist
-            const pane = document.getElementById('micTranscript');
-            const p = document.createElement('div');
-            p.style.marginBottom = '8px';
-            p.textContent = text;
-            pane.appendChild(p);
-            pane.scrollTop = pane.scrollHeight;
-            sbClient.from('meeting_transcripts').insert({
-                meeting_id: mic.meetingId, seq: mySeq, text
-            }).then(() => {});
-            const mins = Math.round((Date.now() - mic.startedAt) / 60000);
-            document.getElementById('micMeta').textContent = `${mic.seq} segments · ${mins} min`;
-        } catch (e) { /* one lost chunk never stops the meeting */ }
+    mic.partBuf = []; mic.partSeq = 0; mic.partBytes = 0; mic.storagePrefix = `${mic.meetingId}/`;
+    mic.recorder.ondataavailable = (ev) => {
+        if (!ev.data || !ev.data.size) return;
+        if (!mic.headerBlob) mic.headerBlob = ev.data;   // first chunk carries the webm header
+        if (mic.ws && mic.ws.readyState === 1) mic.ws.send(ev.data);
+        mic.partBuf.push(ev.data); mic.partBytes += ev.data.size;
+        if (!mic.ws || mic.ws.readyState !== 1) micChunkFallback(ev.data);
     };
-    // Restarting per-chunk gives every blob a valid webm header.
-    mic.recorder.start();
-    mic.chunkTimer = setInterval(() => {
-        if (mic.recorder && mic.recorder.state === 'recording') {
-            mic.recorder.stop();
-            mic.recorder.start();
-        }
-    }, 6000);
     mic.recorder.onstop = () => {};
+    mic.recorder.start(1000);
+
+    // Save a part every 5 minutes (and on stop). Parts from one continuous
+    // recorder concatenate into one valid file; only the first has the header.
+    mic.partTimer = setInterval(() => micFlushPart(false), 300000);
+
+    // Live socket. Same engine as the worker: nova-3, diarize, Eloy key terms.
+    micConnectLive();
 
     // If the user stops sharing from the browser UI, end gracefully.
     const vTrack = mic.stream.getVideoTracks()[0];
@@ -12871,6 +12856,139 @@ async function micStart(mode = 'both') {
     // Grok recap loop — every 2 minutes, refresh what residents see.
     mic.recapTimer = setInterval(micRecap, 120000);
     showToast('Meeting Intelligence is LIVE — residents can follow along in the app', 'success');
+}
+
+// ---- Live transcription socket (speaker separated) ----
+const MIC_KEYTERMS = ['Eloy', 'Eloy Connect', 'Sutton', 'McKinley-Tarango', 'Vodrazka', 'Galindo', 'Snyder', 'Curtis', 'Garcia', 'Letcher', 'Myers', 'Sunshine Boulevard', 'Hanna Road', 'Battaglia Road', 'Casa Grande', 'Pinal County', 'Toltec'];
+const MIC_SPEAKER_COLORS = ['#3FE0E8', '#F6C445', '#34D399', '#A78BFA', '#F472B6', '#60A5FA', '#FB923C', '#2DD4BF'];
+
+async function micConnectLive() {
+    if (!mic.running) return;
+    let token, mode;
+    try {
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (!session?.access_token) throw new Error('not signed in');
+        const r = await fetch(SUPABASE_URL + '/functions/v1/deepgram-token', {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' }
+        });
+        const d = await r.json();
+        token = d.access_token; mode = d.mode || 'token';
+        if (!token) throw new Error('no token');
+    } catch (e) {
+        mic.ws = null;
+        micSetStatus('LIVE (basic)', true);
+        showToast('Live speaker separation unavailable. Transcribing in basic mode.', 'warning');
+        return;   // ondataavailable falls back to the chunk path on its own
+    }
+    const params = ['model=nova-3', 'diarize=true', 'smart_format=true', 'punctuate=true', 'interim_results=false', 'endpointing=400']
+        .concat(MIC_KEYTERMS.map(k => 'keyterm=' + encodeURIComponent(k))).join('&');
+    let ws;
+    try { ws = new WebSocket('wss://api.deepgram.com/v1/listen?' + params, [(mode === 'bearer' ? 'bearer' : 'token'), token]); }
+    catch (e) { mic.ws = null; return; }
+    mic.ws = ws;
+    mic.wsOpenedAt = null;
+    ws.onopen = () => {
+        mic.wsOpenedAt = Date.now();
+        mic.keepAlive = setInterval(() => { try { ws.readyState === 1 && ws.send(JSON.stringify({ type: 'KeepAlive' })); } catch (e) {} }, 8000);
+        micSetStatus('LIVE', true);
+    };
+    ws.onmessage = (msg) => {
+        let d; try { d = JSON.parse(msg.data); } catch (e) { return; }
+        if (d.type !== 'Results') return;
+        const alt = d.channel?.alternatives?.[0];
+        if (!alt || !alt.transcript) return;
+        const words = alt.words || [];
+        // Group consecutive words by speaker so each line is one voice.
+        const lines = [];
+        let cur = null;
+        for (const w of words) {
+            const sp = (typeof w.speaker === 'number') ? w.speaker : null;
+            const tok = w.punctuated_word || w.word;
+            if (!cur || cur.speaker !== sp) { if (cur) lines.push(cur); cur = { speaker: sp, start_ms: Math.round(w.start * 1000), end_ms: Math.round(w.end * 1000), text: tok, confidence: w.confidence ?? null }; }
+            else { cur.text += ' ' + tok; cur.end_ms = Math.round(w.end * 1000); }
+        }
+        if (cur) lines.push(cur);
+        if (!lines.length) lines.push({ speaker: null, start_ms: Math.round((d.start || 0) * 1000), end_ms: Math.round(((d.start || 0) + (d.duration || 0)) * 1000), text: alt.transcript, confidence: alt.confidence ?? null });
+        for (const l of lines) micCommitLine(l);
+    };
+    ws.onerror = () => {};
+    ws.onclose = () => {
+        clearInterval(mic.keepAlive);
+        if (!mic.running) return;
+        // Dropped mid-meeting: reconnect with a fresh token. Audio keeps being
+        // saved to storage the whole time, so nothing is lost for the record.
+        mic.ws = null;
+        micSetStatus('LIVE (reconnecting)', true);
+        setTimeout(micConnectLive, 3000);
+    };
+}
+
+// One transcript line: show it, persist it with speaker + timing.
+function micCommitLine(l) {
+    const text = (l.text || '').trim();
+    if (!text) return;
+    const mySeq = ++mic.seq;
+    mic.transcriptBuf.push(text);
+    mic.gotText = true;
+    const pane = document.getElementById('micTranscript');
+    const p = document.createElement('div');
+    p.style.marginBottom = '8px';
+    if (l.speaker !== null && l.speaker !== undefined) {
+        const c = MIC_SPEAKER_COLORS[l.speaker % MIC_SPEAKER_COLORS.length];
+        p.innerHTML = `<span style="font-weight:700; color:${c};">Speaker ${l.speaker + 1}</span> <span style="font-size:11px; color:var(--text-tertiary);">${fmtMs(l.start_ms)}</span><div>${escapeHtml(text)}</div>`;
+    } else p.textContent = text;
+    pane.appendChild(p);
+    pane.scrollTop = pane.scrollHeight;
+    sbClient.from('meeting_transcripts').insert({
+        meeting_id: mic.meetingId, seq: mySeq, text, source: 'live',
+        speaker: l.speaker ?? null, start_ms: l.start_ms ?? null, end_ms: l.end_ms ?? null, confidence: l.confidence ?? null,
+        city_id: (typeof activeCityId !== 'undefined' ? activeCityId : null)
+    }).then(() => {});
+    const mins = Math.round((Date.now() - mic.startedAt) / 60000);
+    document.getElementById('micMeta').textContent = `${mic.seq} lines · ${mins} min · ${Math.round(mic.partBytes / 1048576)} MB saved`;
+}
+
+// Basic mode: no socket, so transcribe 6 second pieces with no speaker labels.
+let _micFbBuf = [], _micFbTimer = null;
+function micChunkFallback(blob) {
+    _micFbBuf.push(blob);
+    if (_micFbTimer) return;
+    _micFbTimer = setTimeout(async () => {
+        const parts = _micFbBuf.splice(0); _micFbTimer = null;
+        if (!parts.length || !mic.running) return;
+        try {
+            // Needs a header: prepend the recorder's first chunk.
+            const head = (mic.headerBlob && parts[0] !== mic.headerBlob) ? [mic.headerBlob] : [];
+            const blob2 = new Blob(head.concat(parts), { type: 'audio/webm' });
+            const { data: { session } } = await sbClient.auth.getSession();
+            const resp = await fetch(SUPABASE_URL + '/functions/v1/deepgram-transcribe', {
+                method: 'POST', headers: { 'Content-Type': 'audio/webm', 'Authorization': 'Bearer ' + (session?.access_token || SUPABASE_KEY) }, body: blob2
+            });
+            const r = await resp.json().catch(() => ({}));
+            const text = (r.transcript || '').trim();
+            if (text) micCommitLine({ speaker: null, text, start_ms: Date.now() - mic.startedAt });
+        } catch (e) {}
+    }, 6000);
+}
+
+// Upload the buffered audio as the next part. Returns when the upload is done.
+async function micFlushPart(isFinal) {
+    const parts = mic.partBuf.splice(0);
+    if (!parts.length) return;
+    const n = ++mic.partSeq;
+    const blob = new Blob(parts, { type: 'audio/webm' });
+    const path = `${mic.storagePrefix}part-${String(n).padStart(4, '0')}.webm`;
+    try {
+        const { error } = await sbClient.storage.from('meeting-audio').upload(path, blob, { contentType: 'audio/webm', upsert: true });
+        if (error) throw error;
+        mic.partsSaved = (mic.partsSaved || 0) + 1;
+    } catch (e) {
+        // Keep the bytes for the next attempt rather than losing them.
+        mic.partBuf.unshift(...parts); mic.partSeq--;
+        if (!isFinal) showToast('Could not save an audio part. Will retry.', 'warning');
+        else throw e;
+    }
 }
 
 async function micRecap(finalPass = false) {
@@ -12928,30 +13046,53 @@ Under 220 words total. No preamble, no closing line.`
 async function micStop() {
     if (!mic.running) return;
     mic.running = false;
-    clearInterval(mic.chunkTimer); clearInterval(mic.recapTimer);
+    clearInterval(mic.chunkTimer); clearInterval(mic.recapTimer); clearInterval(mic.partTimer); clearInterval(mic.keepAlive);
     clearTimeout(mic.watchdog);
-    try { mic.recorder?.state === 'recording' && mic.recorder.stop(); } catch (e) {}
+    // Stop the recorder and wait for its last chunk before saving the final part.
+    await new Promise(res => {
+        try {
+            if (mic.recorder && mic.recorder.state === 'recording') { mic.recorder.onstop = () => res(); mic.recorder.stop(); setTimeout(res, 1500); }
+            else res();
+        } catch (e) { res(); }
+    });
+    try { if (mic.ws && mic.ws.readyState === 1) mic.ws.send(JSON.stringify({ type: 'CloseStream' })); } catch (e) {}
+    setTimeout(() => { try { mic.ws && mic.ws.close(); } catch (e) {} }, 1200);
     mic.stream?.getTracks().forEach(t => t.stop());
     (mic.extraStreams || []).forEach(s => s.getTracks().forEach(t => t.stop()));
     try { mic.audioCtx?.close(); } catch (e) {}
-    micSetStatus('Wrapping up…', false);
+    micSetStatus('Saving…', false);
 
-    // Final pass: full summary written into the permanent record.
+    // Save the last audio part. Retry a few times: this is the permanent record.
+    let saved = false;
+    for (let i = 0; i < 4 && !saved; i++) {
+        try { await micFlushPart(true); saved = true; } catch (e) { await new Promise(r => setTimeout(r, 2000)); }
+    }
+    if (!saved && mic.partBuf.length) showToast('Audio could not be saved to storage. The live transcript is kept.', 'error');
+
+    micSetStatus('Wrapping up…', false);
+    // Quick summary now, from the live transcript, so residents get something tonight.
     await micRecap(true);
     const finalRecap = document.getElementById('micRecap').dataset.recap || null;
     const endUpdate = {
-        live_status: 'ended', status: 'completed',
-        live_updated_at: new Date().toISOString()
+        live_status: 'ended', status: 'completed', bot_status: 'ended', capture_source: 'room',
+        live_updated_at: new Date().toISOString(),
+        duration_minutes: Math.max(1, Math.round((Date.now() - mic.startedAt) / 60000))
     };
+    // Tell the overnight worker where the audio is. It produces the clean,
+    // speaker-labeled transcript from this without ever touching Granicus.
+    if (mic.partsSaved) endUpdate.recording_url = `storage://meeting-audio/${mic.storagePrefix}`;
     if (finalRecap) endUpdate.public_summary = finalRecap;   // silence never overwrites
     await sbClient.from('meeting_records').update(endUpdate).eq('id', mic.meetingId);
+    logEvent('meeting.capture_ended', { message: 'Capture ended', details: { meeting_id: mic.meetingId, lines: mic.seq, parts: mic.partsSaved || 0, minutes: endUpdate.duration_minutes } });
 
     micSetStatus('Ended', false);
     document.getElementById('micStartBtn').style.display = 'inline-flex';
     document.getElementById('micMicBtn').style.display = 'inline-flex';
     document.getElementById('micTabBtn').style.display = 'inline-flex';
     document.getElementById('micStopBtn').style.display = 'none';
-    showToast('Meeting ended — final summary published to residents', 'success');
+    showToast(mic.partsSaved
+        ? 'Meeting ended. Summary published. The clean speaker-labeled transcript arrives tonight.'
+        : 'Meeting ended. Summary published to residents.', 'success');
     await fetchAllData(); loadCouncilPage();
 }
 
