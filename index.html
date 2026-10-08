@@ -33,12 +33,12 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2338e6f4'/%3E%3Cstop offset='0.55' stop-color='%23a78bfa'/%3E%3Cstop offset='1' stop-color='%231aa5c8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='15' fill='%2304070d'/%3E%3Crect x='8' y='8' width='48' height='48' rx='12' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='6.5' fill='url(%23g)'/%3E%3Ccircle cx='32' cy='32' r='15' fill='none' stroke='url(%23g)' stroke-width='2' opacity='0.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
 <style>
 /* ============================================
    ELOY CONNECT CRM — PREMIUM DESIGN SYSTEM
@@ -7563,7 +7563,13 @@ async function submitPasswordChange() {
         // Coming from an email link means there is no CRM session context yet.
         if (wasRecovery) { try { await checkExistingSession(); } catch (e) {} }
     } catch (e) {
-        fail(e.message || 'Could not update the password.');
+        // Supabase answers 422 when the new password matches the old one. Say so
+        // in plain words: Mackenzie hit this twice on Oct 1 with no explanation.
+        const msg = /different from the old|same_password|422/i.test(String(e.message || e.status || ''))
+            ? 'That is already your password. Choose a new one.'
+            : (e.message || 'Could not update the password.');
+        logEvent('auth.password_change_failed', { level: 'warn', message: msg, details: { mode: _pwMode, raw: String(e.message || '').slice(0, 120) } });
+        fail(msg);
     } finally {
         btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Update password';
     }
@@ -8789,12 +8795,25 @@ function _scheduleLogFlush() {
 }
 
 // Catch crashes: uncaught errors and rejected promises both land in the log.
+// Same message within 60s is counted, not re-logged: on Oct 7 one masked
+// "Script error." wrote 11,186 rows in an afternoon and buried everything else.
+const _jsErrSeen = {};
 window.addEventListener('error', function (e) {
+    const key = (e.message || '') + '|' + (e.filename || '') + '|' + (e.lineno || 0);
+    const now = Date.now();
+    const seen = _jsErrSeen[key];
+    if (seen && now - seen.at < 60000) { seen.n++; return; }
+    const repeats = seen ? seen.n : 0;
+    _jsErrSeen[key] = { at: now, n: 1 };
+    // "Script error." with no file means a script from another origin (a CDN
+    // library or a browser extension) threw and the browser hid the details.
+    const masked = e.message === 'Script error.' && !e.filename;
     logEvent('js.error', {
-        level: 'error',
-        message: e.message,
+        level: masked ? 'warn' : 'error',
+        message: masked ? 'Script error (from a CDN library or browser extension; details hidden by the browser)' : e.message,
         details: {
             file: e.filename, line: e.lineno, col: e.colno,
+            repeats_suppressed_last_minute: repeats,
             stack: ((e.error && e.error.stack) || '').slice(0, 1500)
         }
     });
@@ -12802,6 +12821,7 @@ async function micStart(mode = 'both') {
     mic.gotText = false; mic.headerBlob = null; mic.partsSaved = 0; mic.ws = null;
     // Mark this as a room capture so the right worker path handles the record.
     await sbClient.from('meeting_records').update({ capture_source: 'room', bot_status: 'live' }).eq('id', mic.meetingId);
+    logEvent('meeting.capture_started', { message: 'Capture started (' + mode + ')', details: { meeting_id: mic.meetingId, mode, tab_audio: !!(mic.extraStreams && mic.extraStreams.length) } });
     document.getElementById('micTranscript').innerHTML = '';
     document.getElementById('micStartBtn').style.display = 'none';
     document.getElementById('micMicBtn').style.display = 'none';
@@ -12879,6 +12899,7 @@ async function micConnectLive() {
         mic.ws = null;
         micSetStatus('LIVE (basic)', true);
         showToast('Live speaker separation unavailable. Transcribing in basic mode.', 'warning');
+        logEvent('meeting.live_socket_fallback', { level: 'warn', message: 'No Deepgram token; basic mode (no speakers)', details: { meeting_id: mic.meetingId, reason: String(e.message || e) } });
         return;   // ondataavailable falls back to the chunk path on its own
     }
     const params = ['model=nova-3', 'diarize=true', 'smart_format=true', 'punctuate=true', 'interim_results=false', 'endpointing=400']
@@ -12892,6 +12913,7 @@ async function micConnectLive() {
         mic.wsOpenedAt = Date.now();
         mic.keepAlive = setInterval(() => { try { ws.readyState === 1 && ws.send(JSON.stringify({ type: 'KeepAlive' })); } catch (e) {} }, 8000);
         micSetStatus('LIVE', true);
+        logEvent('meeting.live_socket_open', { message: 'Live speaker-separated transcription connected', details: { meeting_id: mic.meetingId, reconnect: !!mic.wsReconnects } });
     };
     ws.onmessage = (msg) => {
         let d; try { d = JSON.parse(msg.data); } catch (e) { return; }
@@ -12919,7 +12941,9 @@ async function micConnectLive() {
         // Dropped mid-meeting: reconnect with a fresh token. Audio keeps being
         // saved to storage the whole time, so nothing is lost for the record.
         mic.ws = null;
+        mic.wsReconnects = (mic.wsReconnects || 0) + 1;
         micSetStatus('LIVE (reconnecting)', true);
+        logEvent('meeting.live_socket_dropped', { level: 'warn', message: 'Live socket dropped; reconnecting', details: { meeting_id: mic.meetingId, attempt: mic.wsReconnects, open_for_s: mic.wsOpenedAt ? Math.round((Date.now() - mic.wsOpenedAt) / 1000) : 0 } });
         setTimeout(micConnectLive, 3000);
     };
 }
@@ -12983,9 +13007,11 @@ async function micFlushPart(isFinal) {
         const { error } = await sbClient.storage.from('meeting-audio').upload(path, blob, { contentType: 'audio/webm', upsert: true });
         if (error) throw error;
         mic.partsSaved = (mic.partsSaved || 0) + 1;
+        logEvent('meeting.audio_part_saved', { message: `Audio part ${n} saved (${Math.round(blob.size / 1048576)} MB)`, details: { meeting_id: mic.meetingId, part: n, bytes: blob.size, final: isFinal } });
     } catch (e) {
         // Keep the bytes for the next attempt rather than losing them.
         mic.partBuf.unshift(...parts); mic.partSeq--;
+        logEvent('meeting.audio_part_failed', { level: 'error', message: `Audio part ${n} failed to save`, details: { meeting_id: mic.meetingId, part: n, bytes: blob.size, error: String(e.message || e) } });
         if (!isFinal) showToast('Could not save an audio part. Will retry.', 'warning');
         else throw e;
     }
